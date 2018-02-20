@@ -1,0 +1,12 @@
+archive				https://archive-api.lco.global/
+api_token			api-token-auth/
+api_frames			frames/
+username			name@address.com
+password			XXXXX
+proposal			PROPOSAL_CODE
+date_start			2017-02-26
+date_end			
+rlevel				91
+obstype				EXPOSE
+object				ROME
+
