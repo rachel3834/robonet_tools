@@ -38,12 +38,20 @@ def compress_dandia_reduced_data_products(event_dir):
 def fpack_image_dir(dir_path):
     """Function to fpack compress all FITS images within a specified directory"""
     
-    (iexec,output) = getstatusoutput('fpack -q 64 '+os.path.join(dir_path,'*.fits'))
-
-    if len(output.replace(' ','').replace('\n','')) > 0:
-        
-        print(output)
+    file_list = glob.glob( os.path.join(dir_path,'*.fits') )
     
+    for f in file_list:
+        
+        (iexec,output) = getstatusoutput('fpack -q 64 '+f)
+
+        if len(output.replace(' ','').replace('\n','')) > 0:
+            
+            print(output)
+        
+        else:
+        
+            os.remove(f)
+
 def get_args():
     """Function to acquire the necessary commandline arguments"""
     
