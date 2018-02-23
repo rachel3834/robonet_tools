@@ -7,7 +7,7 @@ Created on Fri Feb 23 14:52:49 2018
 import os
 import sys
 import glob
-import subprocess
+from commands import getstatusoutput
 
 def compress_dandia_reduced_data_products(event_dir):
     """Function to prepare a dataset processed by DanDIA for archive storage.
@@ -38,10 +38,8 @@ def compress_dandia_reduced_data_products(event_dir):
 def fpack_image_dir(dir_path):
     """Function to fpack compress all FITS images within a specified directory"""
     
-    p = subprocess.Popen(['fpack', '-q 64', dir_path], stdout=subprocess.PIPE)
+    (iexec,output) = getstatusoutput('fpack -q 64 '+os.path.join(dir_path,'*.fits'))
 
-    output = p.communicate()[0]
-    
     print(output)
     
 def get_args():
