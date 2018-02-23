@@ -49,8 +49,10 @@ def fpack_image_dir(dir_path):
             print(output)
         
         else:
-        
-            os.remove(f)
+            
+            if os.path.isfile(f+'.fz'):
+            
+                os.remove(f)
 
 def get_args():
     """Function to acquire the necessary commandline arguments"""
