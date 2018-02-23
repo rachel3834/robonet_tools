@@ -40,7 +40,9 @@ def fpack_image_dir(dir_path):
     
     (iexec,output) = getstatusoutput('fpack -q 64 '+os.path.join(dir_path,'*.fits'))
 
-    print(output)
+    if len(output.replace(' ','').replace('\n','')) > 0:
+        
+        print(output)
     
 def get_args():
     """Function to acquire the necessary commandline arguments"""
