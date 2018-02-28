@@ -7,6 +7,7 @@ Created on Tue Feb 20 10:09:58 2018
 
 import os
 import sys
+import glob
 
 def clear_old_season_data_dirs():
     """WARNING: DELETES DATA
