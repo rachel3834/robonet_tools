@@ -33,17 +33,32 @@ def remove_raw_image_data(dir_path):
     """Function to walk through the directory tree of the ROMEREA project
     and remove all raw images."""
     
-    for root, dirs, files in os.walk(dir_path):
-
-        for name in files:
+    top_dirs = ['bad', 'good']
+    
+    for d in top_dirs:
+        
+        for s in [ 'rea', 'rome' ]:
             
-            local_file_path = os.path.join(root,name)
-            
-            if '.fits' in local_file_path:
-            
-                print('Removing '+local_file_path)
+            for t in [ 'coj', 'cpt', 'lsc' ]:
                 
-                #os.remove(local_file_path)
+                cameras = glob.glob(os.path.join(dir_path,d,s,t,'*'))
+                
+                for c in cameras:
+                    
+                    filters = glob.glob(os.path.join(dir_path,d,s,t,c,'*'))
+                    
+                    for f in filters:
+                        
+                        fields = glob.glob(os.path.join(dir_path,d,s,t,c,f,'*'))
+                        
+                        for field in fields:
+                            
+                            files = glob.glob(os.path.join(dir_path,d,s,t,c,f,field,'*.fits'))
+                            
+                            for i in files:
+                                
+                                print('Removing '+i)
+                                #os.remove(i)
 
 
 if __name__ == '__main__':
