@@ -97,7 +97,9 @@ def upload_directory(dir_path, local_root):
             
             local_file_path = os.path.join(root,name)
             
-            aws_cp(aws_config,local_file_path,local_root)
+            if not os.path.islink(local_file_path):
+                
+                aws_cp(aws_config,local_file_path,local_root)
 
 
 if __name__ == '__main__':
