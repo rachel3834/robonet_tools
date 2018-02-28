@@ -18,7 +18,7 @@ def clear_old_season_data_dirs():
     print('WARNING: THIS FUNCTION WILL REMOVE DATA!')
     dir_path = raw_input('Please enter the path to the top level data directory to be cleared: ')
     
-    if os.sys.isdir(dir_path):
+    if os.path.isdir(dir_path):
         
         opt = raw_input('Are you sure you want to remove all image data from this location? Y or N: ')
         
