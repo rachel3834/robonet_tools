@@ -43,11 +43,12 @@ def remove_raw_image_data(dir_path):
             for t in [ 'coj', 'cpt', 'lsc' ]:
                 
                 cameras = glob.glob(os.path.join(dir_path,d,s,t,'*'))
+                print(camera)
                 
                 for c in cameras:
                     
                     filters = glob.glob(os.path.join(dir_path,d,s,t,c,'*'))
-                    
+                    print(filters)
                     for f in filters:
                         
                         fields = glob.glob(os.path.join(dir_path,d,s,t,c,f,'*'))

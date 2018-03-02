@@ -73,10 +73,10 @@ def get_config_path():
     
     return config_file_path
 
-def aws_cp(aws_config, local_file_path, local_root):
+def aws_cp(aws_config, local_file_path, local_root, aws_root):
     """Function to compose an awscli commandline for a given file"""
     
-    aws_path = os.path.join(aws_config.bucket, local_file_path.replace(local_root,''))
+    aws_path = os.path.join(aws_config.bucket, local_file_path.replace(local_root,aws_root))
     
     cl = 'aws --profile='+aws_config.profile+' s3 cp '+local_file_path+' '+aws_path
 
@@ -84,7 +84,7 @@ def aws_cp(aws_config, local_file_path, local_root):
     
     print(coutput)
     
-def upload_directory(dir_path, local_root):
+def upload_directory(dir_path, local_root, aws_root):
     """Function to upload the contents of a data directory to AWS, 
     including all files and sub-directories.  
     """
@@ -99,16 +99,18 @@ def upload_directory(dir_path, local_root):
             
             if not os.path.islink(local_file_path):
                 
-                aws_cp(aws_config,local_file_path,local_root)
+                aws_cp(aws_config,local_file_path,local_root,aws_root)
 
 
 if __name__ == '__main__':
     
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 4:
         
         dir_path = raw_input('Please enter the path to the directory to upload: ')
     
         local_root = raw_input('Please enter the local root path (will be stripped off the path uploaded to AWS): ')
+        
+        aws_root = raw_input('Please enter the AWS root path (will be prefixed to the path uploaded to AWS): ')
         
     else:
         
@@ -116,6 +118,7 @@ if __name__ == '__main__':
         
         local_root = sys.argv[2]
         
-    
-    upload_directory(dir_path, local_root)
+        aws_root = sys.argv[3]
+        
+    upload_directory(dir_path, local_root, aws_root)
     
