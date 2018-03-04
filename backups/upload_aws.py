@@ -67,7 +67,7 @@ def get_config_path():
         
         config_file_path = '/Users/rstreet/software/robonet_tools/configs/aws.xml'
     
-    elif 'einstein' in str(host_name).lower():
+    elif 'einstein' in str(host_name).lower() or 'einstore' in str(host_name).lower():
         
         config_file_path = '/data/romerea/configs/aws.xml'
     
