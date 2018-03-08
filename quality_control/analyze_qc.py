@@ -142,7 +142,7 @@ def read_image_qc_stats(file_path):
                 
                 entries = line.replace('\n','').split()
                 
-                image_list.append(entries[0:2])
+                image_list.append(entries[0:3])
                 
                 tlist = []
                 
