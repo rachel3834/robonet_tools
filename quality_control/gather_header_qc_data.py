@@ -60,7 +60,7 @@ def process_image_set():
     'Mean ellipticity', 'Average ellipticity',exclude_no_data=True)
     
 def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
-                         ylabel,title,exclude_no_data=False):
+                         ylabel,title,exclude_no_data=False,bad_images=None):
     """Function to plot the values of cloud / sky temperture"""
     
     sites = { 'lsc': 'm', 'cpt': 'b', 'coj': 'c' }
@@ -70,6 +70,8 @@ def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
     for s in sites.keys():
         
         ydata = []
+        bad_xdata = []
+        bad_ydata = []
         
         for i in range(0,len(image_list),1):
             
@@ -79,14 +81,28 @@ def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
                     
                     ydata.append(image_data[i,key_index])
                     
+                    if bad_images != None and image_list[i,0] in bad_images.keys():
+                        
+                        bad_xdata.append(i)
+                        bad_ydata.append(image_data[i,key_index])
+
                 elif not exclude_no_data:
                     
                     ydata.append(image_data[i,key_index])
                     
+                    if bad_images != None and image_list[i,0] in bad_images.keys():
+                        
+                        bad_xdata.append(i)
+                        bad_ydata.append(image_data[i,key_index])
+                        
         xdata = range(0,len(ydata),1)
         
         plt.plot(xdata,np.array(ydata),sites[s]+'.',label=s)
         
+        if bad_images != None:
+            
+            plt.plot(bad_xdata,np.array(bad_ydata),'rx')
+            
     plt.xlabel('Image index')
     
     plt.ylabel(ylabel)
@@ -101,7 +117,7 @@ def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
 
 
 def plot_delta_stats_for_sites(image_list,image_data,dir_path,plot_file,
-                               key_index1,key_index2,ylabel,title):
+                               key_index1,key_index2,ylabel,title,bad_images=None):
     """Function to plot the values of cloud / sky temperture"""
     
     sites = { 'lsc': 'm', 'cpt': 'b', 'coj': 'c' }
@@ -111,6 +127,8 @@ def plot_delta_stats_for_sites(image_list,image_data,dir_path,plot_file,
     for s in sites.keys():
         
         ydata = []
+        bad_xdata = []
+        bad_ydata = []
         
         for i in range(0,len(image_list),1):
             
@@ -118,10 +136,19 @@ def plot_delta_stats_for_sites(image_list,image_data,dir_path,plot_file,
                 
                 ydata.append(image_data[i,key_index1]-image_data[i,key_index2])
         
+                if bad_images != None and image_list[i,0] in bad_images.keys():
+                        
+                    bad_xdata.append(i)
+                    bad_ydata.append(image_data[i,key_index])
+
         xdata = range(0,len(ydata),1)
         
         plt.plot(xdata,np.array(ydata),sites[s]+'.',label=s)
         
+        if bad_images != None:
+            
+            plt.plot(bad_xdata,np.array(bad_ydata),'rx')
+            
     plt.xlabel('Image index')
     
     plt.ylabel(ylabel)
@@ -135,7 +162,7 @@ def plot_delta_stats_for_sites(image_list,image_data,dir_path,plot_file,
     plt.close(1)
     
 def plot_compare_stats_for_sites(image_list,image_data,dir_path,plot_file,
-                               key_index1,key_index2,xlabel,ylabel,title):
+                               key_index1,key_index2,xlabel,ylabel,title,bad_images=None):
     """Function to plot one statistic against another"""
     
     sites = { 'lsc': 'm', 'cpt': 'b', 'coj': 'c' }
@@ -146,6 +173,8 @@ def plot_compare_stats_for_sites(image_list,image_data,dir_path,plot_file,
         
         xdata = []
         ydata = []
+        bad_xdata = []
+        bad_ydata = []
         
         for i in range(0,len(image_list),1):
             
@@ -154,8 +183,17 @@ def plot_compare_stats_for_sites(image_list,image_data,dir_path,plot_file,
                 xdata.append(image_data[i,key_index1])
                 ydata.append(image_data[i,key_index2])
         
+                if bad_images != None and image_list[i,0] in bad_images.keys():
+                        
+                    bad_xdata.append(image_data[i,key_index1])
+                    bad_ydata.append(image_data[i,key_index2])
+                    
         plt.plot(xdata,ydata,sites[s]+'.',label=s)
         
+        if bad_images != None:
+            
+            plt.plot(bad_xdata,np.array(bad_ydata),'rx')
+            
     plt.xlabel(xlabel)
     
     plt.ylabel(ylabel)
