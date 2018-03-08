@@ -57,7 +57,8 @@ def process_image_set():
     plot_stats_for_sites(image_list,image_data,dir_path,'mean_ellipticity.png', 19, 
     'Mean ellipticity', 'Average ellipticity')
     
-def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,ylabel,title):
+def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
+                         ylabel,title,exclude_no_data=False):
     """Function to plot the values of cloud / sky temperture"""
     
     sites = { 'lsc': 'm', 'cpt': 'b', 'coj': 'c' }
@@ -72,8 +73,14 @@ def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,ylab
             
             if image_list[i,1] == s:
                 
-                ydata.append(image_data[i,key_index])
-        
+                if exclude_no_data and image_data[i,key_index] != -99.999:
+                    
+                    ydata.append(image_data[i,key_index])
+                    
+                elif not exclude_no_data:
+                    
+                    ydata.append(image_data[i,key_index])
+                    
         xdata = range(0,len(ydata),1)
         
         plt.plot(xdata,np.array(ydata),sites[s]+'.',label=s)
