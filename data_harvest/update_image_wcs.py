@@ -79,7 +79,7 @@ def update_image_wcs(image_file,wcs_data):
             
         else:
         
-            print('ERROR: No entry for '+os.path.basename(new_image_file)+' in WCS data')
+            print('ERROR: No entry for '+os.path.basename(image_file)+' in WCS data')
             
             
 def load_header_data(wcs_path):
