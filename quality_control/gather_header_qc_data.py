@@ -199,7 +199,7 @@ def parse_image_header(image_file,keys):
             
                 data.append( float(header[key]) )
             
-        except ValueError:
+            except ValueError:
                 
                 data.append( -99.999 )
     return data
