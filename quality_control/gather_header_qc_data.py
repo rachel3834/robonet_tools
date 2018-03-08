@@ -69,6 +69,7 @@ def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
     
     for s in sites.keys():
         
+        xdata = []
         ydata = []
         bad_xdata = []
         bad_ydata = []
@@ -79,6 +80,7 @@ def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
                 
                 if exclude_no_data and image_data[i,key_index] != -99.999:
                     
+                    xdata.append(i)
                     ydata.append(image_data[i,key_index])
                     
                     if bad_images != None and image_list[i,0] in bad_images.keys():
@@ -88,6 +90,7 @@ def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
 
                 elif not exclude_no_data:
                     
+                    xdata.append(i)
                     ydata.append(image_data[i,key_index])
                     
                     if bad_images != None and image_list[i,0] in bad_images.keys():
