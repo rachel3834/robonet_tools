@@ -270,7 +270,8 @@ def plot_compare_stats_for_sites(image_list,image_data,dir_path,plot_file,
     plt.close(1)
     
 def plot_compare_stats_per_filter(image_list,image_data,dir_path,plot_file,
-                               key_index1,key_index2,xlabel,ylabel,title,bad_images=None):
+                               key_index1,key_index2,xlabel,ylabel,title,
+                               bad_images=None,reason=None):
     """Function to plot one statistic against another"""
     
     sites = { 'lsc': 'm', 'cpt': 'b', 'coj': 'c' }
@@ -297,9 +298,16 @@ def plot_compare_stats_per_filter(image_list,image_data,dir_path,plot_file,
                     ydata.append(image_data[i,key_index2])
             
                     if bad_images != None and image_list[i,0] in bad_images.keys():
+                        
+                        if reason != None and reason in bad_images[image_list[i,0]]:
                             
-                        bad_xdata.append(image_data[i,key_index1])
-                        bad_ydata.append(image_data[i,key_index2])
+                            bad_xdata.append(image_data[i,key_index1])
+                            bad_ydata.append(image_data[i,key_index2])
+                        
+                        else:
+                        
+                            bad_xdata.append(image_data[i,key_index1])
+                            bad_ydata.append(image_data[i,key_index2])
                         
             plt.plot(xdata,ydata,filters[f]+'.',label=f)
             
