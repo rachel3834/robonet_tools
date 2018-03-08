@@ -77,7 +77,7 @@ def update_image_wcs(image_file,wcs_data):
                 
                 except KeyError:
                 
-                    print('ERROR: Missing header keys from WCS solution')
+                    print('ERROR: Missing header keys from WCS solution for '+os.path.basename(image_file))
                     
                     hdr_ok = False
                     
