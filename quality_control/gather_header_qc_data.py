@@ -291,7 +291,7 @@ def plot_compare_stats_per_filter(image_list,image_data,dir_path,plot_file,
             
             for i in range(0,len(image_list),1):
                 
-                if image_list[i,1] == s:
+                if image_list[i,1] == s and image_list[i,2] == f:
                     
                     xdata.append(image_data[i,key_index1])
                     ydata.append(image_data[i,key_index2])
