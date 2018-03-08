@@ -79,7 +79,6 @@ def analyze_qc_data():
     'Mean sky sigma [ADU]', 'Average sky background deviation',
     bad_images=bad_images)
     
-    
     gather_header_qc_data.plot_stats_for_sites(image_list,image_data,dir_path,'mean_fwhm.png', 16, 
     'Mean FWHM [arcsec]', 'Average FWHM',exclude_no_data=True,
     bad_images=bad_images)
@@ -88,9 +87,9 @@ def analyze_qc_data():
     'Mean ellipticity', 'Average ellipticity',exclude_no_data=True,
     bad_images=bad_images)
     
-    plot_qc_pie_charts(dir_path,bad_images)
+    plot_qc_pie_charts(dir_path,bad_images_image_data)
     
-def plot_qc_pie_charts(dir_path,bad_images):
+def plot_qc_pie_charts(dir_path,bad_images,image_data):
     """Function to plot a pie chart of the reasons for image rejections"""
 
     fig = plt.figure(2)
@@ -118,6 +117,9 @@ def plot_qc_pie_charts(dir_path,bad_images):
 
     plt.pie(counts, labels=reject_reasons, autopct='%1.1f%%', startangle=90)
     plt.axis('equal')  # Equal aspect r
+
+    percent_reject = (float(len(bad_images))/float(len(image_data)))*100.0
+    plt.title('Images rejected: '+str(percent_reject)+'% of dataset')
 
     plt.savefig( os.path.join(dir_path,'image_reject_reasons.png') )
 
