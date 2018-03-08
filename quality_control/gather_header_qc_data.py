@@ -138,6 +138,7 @@ def plot_stats_per_filter(image_list,image_data,dir_path,plot_file,key_index,
             
             for ii,i in enumerate(range(0,len(image_list),1)):
                 
+                print f, image_data[i,2]
                 if image_list[i,1] == s and image_data[i,2] == f:
                     
                     if exclude_no_data and image_data[i,key_index] != -99.999:
