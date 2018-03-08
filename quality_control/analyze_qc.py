@@ -57,6 +57,10 @@ def analyze_qc_data():
     'Lunar separation',
     bad_images=bad_images)
     
+    gather_header_qc_data.plot_stats_per_filter(image_list,image_data,dir_path,'moon_frac.png', 11, 
+    'Moon fraction', 'Moon fraction for observations',
+    bad_images=bad_images)
+    
     gather_header_qc_data.plot_stats_per_filter(image_list,image_data,dir_path,'mean_sky.png', 17, 
     'Mean sky value [ADU]', 'Average sky background data',
     bad_images=bad_images)
