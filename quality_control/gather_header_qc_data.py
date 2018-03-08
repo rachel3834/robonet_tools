@@ -219,6 +219,11 @@ def parse_image_header(image_file,keys):
             except ValueError:
                 
                 data.append( -99.999 )
+                
+            except KeyError:
+                
+                data.append( -99.999 )
+                
     return data
     
 def get_args():
