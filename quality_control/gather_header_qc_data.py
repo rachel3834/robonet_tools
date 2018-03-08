@@ -20,7 +20,8 @@ def process_image_set():
 
     keys = [ 'WMSHUMID', 'WMSTEMP', 'WMSPRES', 'WINDSPEE', 'WINDDIR', 
             'WMSMOIST', 'WMSDEWPT', 'WMSCLOUD', 'WMSSKYBR', 'SKYMAG', 
-            'AIRMASS', 'MOONFRAC', 'MOONDIST', 'FOCPOSN', 'FOCTELZP', 'FOCTOFF']
+            'AIRMASS', 'MOONFRAC', 'MOONDIST', 'FOCPOSN', 'FOCTELZP', 'FOCTOFF',
+            'L1FWHM','L1MEAN', 'L1SIGMA', 'L1ELLIP']
     
     (image_list,image_data) = get_image_data(file_list,keys,dir_path)
     
@@ -43,6 +44,18 @@ def process_image_set():
     plot_compare_stats_for_sites(image_list,image_data,dir_path,'moon_distance.png', 12, 8, 
     'Moon separation [$^{\circ}$]','Sky brightness [mag]', 
     'Measured sky brightness as a function of lunar separation')
+    
+    plot_stats_for_sites(image_list,image_data,dir_path,'mean_sky.png', 17, 
+    'Mean sky value [ADU]', 'Average sky background data for all sites')
+    
+    plot_stats_for_sites(image_list,image_data,dir_path,'mean_sky_sigma.png', 18, 
+    'Mean sky sigma [ADU]', 'Average sky background deviation for all sites')
+    
+    plot_stats_for_sites(image_list,image_data,dir_path,'mean_fwhm.png', 16, 
+    'Mean FWHM [arcsec]', 'Average FWHM')
+    
+    plot_stats_for_sites(image_list,image_data,dir_path,'mean_ellipticity.png', 19, 
+    'Mean ellipticity', 'Average ellipticity')
     
 def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,ylabel,title):
     """Function to plot the values of cloud / sky temperture"""
