@@ -126,6 +126,7 @@ def plot_delta_stats_for_sites(image_list,image_data,dir_path,plot_file,
     
     for s in sites.keys():
         
+        xdata = []
         ydata = []
         bad_xdata = []
         bad_ydata = []
@@ -134,16 +135,15 @@ def plot_delta_stats_for_sites(image_list,image_data,dir_path,plot_file,
             
             if image_list[i,1] == s:
                 
+                xdata.append(i)
                 ydata.append(image_data[i,key_index1]-image_data[i,key_index2])
         
                 if bad_images != None and image_list[i,0] in bad_images.keys():
                         
                     bad_xdata.append(i)
                     bad_ydata.append(image_data[i,key_index1]-image_data[i,key_index2])
-
-        xdata = range(0,len(ydata),1)
         
-        plt.plot(xdata,np.array(ydata),sites[s]+'.',label=s)
+        plt.plot(np.array(xdata),np.array(ydata),sites[s]+'.',label=s)
         
         if bad_images != None:
             
