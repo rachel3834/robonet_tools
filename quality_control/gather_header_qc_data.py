@@ -195,8 +195,13 @@ def parse_image_header(image_file,keys):
         
         for key in keys:
             
-            data.append( float(header[key]) )
+            try:
             
+                data.append( float(header[key]) )
+            
+        except ValueError:
+                
+                data.append( -99.999 )
     return data
     
 def get_args():
