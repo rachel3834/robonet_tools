@@ -52,10 +52,10 @@ def process_image_set():
     'Mean sky sigma [ADU]', 'Average sky background deviation for all sites')
     
     plot_stats_for_sites(image_list,image_data,dir_path,'mean_fwhm.png', 16, 
-    'Mean FWHM [arcsec]', 'Average FWHM')
+    'Mean FWHM [arcsec]', 'Average FWHM',exclude_no_data=True)
     
     plot_stats_for_sites(image_list,image_data,dir_path,'mean_ellipticity.png', 19, 
-    'Mean ellipticity', 'Average ellipticity')
+    'Mean ellipticity', 'Average ellipticity',exclude_no_data=True)
     
 def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
                          ylabel,title,exclude_no_data=False):
