@@ -186,7 +186,7 @@ def get_image_data(file_list,keys,dir_path):
         
         site = os.path.basename(image_file)[0:3]
         
-        tstr = os.path.basename(image_file)+' '+site
+        tstr = os.path.basename(image_file)+' '+site+' '+
         
         for i in range(0,len(keys),1):
             
