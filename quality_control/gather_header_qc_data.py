@@ -20,7 +20,7 @@ def process_image_set():
 
     keys = [ 'WMSHUMID', 'WMSTEMP', 'WMSPRES', 'WINDSPEE', 'WINDDIR', 
             'WMSMOIST', 'WMSDEWPT', 'WMSCLOUD', 'WMSSKYBR', 'SKYMAG', 
-            'AIRMASS', 'MOONFRAC', 'MOONDIST', 'FOCPOSN']
+            'AIRMASS', 'MOONFRAC', 'MOONDIST', 'FOCPOSN', 'FOCTELZP', 'FOCTOFF']
     
     (image_list,image_data) = get_image_data(file_list,keys,dir_path)
     
@@ -28,17 +28,21 @@ def process_image_set():
     'Temperature [$^{\circ}$ C]', 'Measured sky temperature across all sites')
     
     plot_delta_stats_for_sites(image_list,image_data,dir_path,'delta_sky_mag.png', 9, 8, 
-    '$\Delta$ sky brightness [mag]', 'Difference between measured and computed sky brightness across all sites')
+    '$\Delta$ sky brightness [mag]', 'Difference between measured and computed sky brightness')
     
     plot_stats_for_sites(image_list,image_data,dir_path,'focal_position.png', 13, 
     'Focus offset [mm]', 'Actual focal position for all sites')
+    plot_stats_for_sites(image_list,image_data,dir_path,'focal_zp.png', 14, 
+    'Focus offset [mm]', 'Telescope focal zeropoint')
+    plot_stats_for_sites(image_list,image_data,dir_path,'focal_therm_offset.png', 15, 
+    'Focus offset [mm]', 'Focal thermal offset')
     
     plot_stats_for_sites(image_list,image_data,dir_path,'moon_frac.png', 11, 
     'Moon fraction', 'Moon fraction for observations')
     
     plot_compare_stats_for_sites(image_list,image_data,dir_path,'moon_distance.png', 12, 8, 
     'Moon separation [$^{\circ}$]','Sky brightness [mag]', 
-    'Measured sky brightness as a function of lunar separation across all sites')
+    'Measured sky brightness as a function of lunar separation')
     
 def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,ylabel,title):
     """Function to plot the values of cloud / sky temperture"""
