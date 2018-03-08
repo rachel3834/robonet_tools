@@ -52,6 +52,11 @@ def analyze_qc_data():
     'Measured sky brightness as a function of lunar separation',
     bad_images=bad_images)
     
+    gather_header_qc_data.plot_compare_stats_for_sites(image_list,image_data,dir_path,'moon_distance_fraction.png', 12, 11, 
+    'Moon separation [$^{\circ}$]','Moon fraction', 
+    'Moon fraction and lunar separation',
+    bad_images=bad_images)
+    
     gather_header_qc_data.plot_stats_per_filter(image_list,image_data,dir_path,'moon_distance.png', 12, 
     'Moon separation [$^{\circ}$]',
     'Lunar separation',
