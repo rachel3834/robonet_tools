@@ -52,7 +52,7 @@ def analyze_qc_data():
     'Measured sky brightness as a function of lunar separation',
     bad_images=bad_images)
     
-    gather_header_qc_data.plot_stats_by_filter(image_list,image_data,dir_path,'moon_distance.png', 12, 
+    gather_header_qc_data.plot_stats_per_filter(image_list,image_data,dir_path,'moon_distance.png', 12, 
     'Moon separation [$^{\circ}$]',
     'Lunar separation',
     bad_images=bad_images)
