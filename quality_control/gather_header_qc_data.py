@@ -279,11 +279,11 @@ def plot_compare_stats_per_filter(image_list,image_data,dir_path,plot_file,
     
     
     for s in sites.keys():
-        
-        fig = plt.figure(1)
-        
+                
         for f in filters.keys():
             
+            fig = plt.figure(1)
+        
             xdata = []
             ydata = []
             bad_xdata = []
@@ -307,18 +307,18 @@ def plot_compare_stats_per_filter(image_list,image_data,dir_path,plot_file,
                 
                 plt.plot(bad_xdata,np.array(bad_ydata),'rx')
                 
-        plt.xlabel(xlabel)
-        
-        plt.ylabel(ylabel)
-        
-        plt.title(title)
-        
-        plt.legend()
+            plt.xlabel(xlabel)
             
-        plt.savefig( os.path.join(dir_path,plot_file.replace('.png','_'+s+'.png')) )
-    
-        plt.close(1)
-    
+            plt.ylabel(ylabel)
+            
+            plt.title(title)
+            
+            plt.legend()
+                
+            plt.savefig( os.path.join(dir_path,plot_file.replace('.png','_'+s+'_'+f+'.png')) )
+        
+            plt.close(1)
+        
     
 def get_image_data(file_list,keys,dir_path):
     """Function to extract the image header keyword parameters relating 
