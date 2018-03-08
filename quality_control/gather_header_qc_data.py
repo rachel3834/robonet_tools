@@ -98,9 +98,7 @@ def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
                         
                         bad_xdata.append(ii)
                         bad_ydata.append(image_data[i,key_index])
-                        
-        xdata = range(0,len(ydata),1)
-        
+                                
         plt.plot(xdata,np.array(ydata),sites[s]+'.',label=s)
         
         if bad_images != None:
