@@ -139,7 +139,7 @@ def plot_delta_stats_for_sites(image_list,image_data,dir_path,plot_file,
                 if bad_images != None and image_list[i,0] in bad_images.keys():
                         
                     bad_xdata.append(i)
-                    bad_ydata.append(image_data[i,key_index])
+                    bad_ydata.append(image_data[i,key_index1]-image_data[i,key_index2])
 
         xdata = range(0,len(ydata),1)
         
