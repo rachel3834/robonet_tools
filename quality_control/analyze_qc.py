@@ -87,7 +87,7 @@ def analyze_qc_data():
     'Mean ellipticity', 'Average ellipticity',exclude_no_data=True,
     bad_images=bad_images)
     
-    plot_qc_pie_charts(dir_path,bad_images_image_data)
+    plot_qc_pie_charts(dir_path,bad_images,image_data)
     
 def plot_qc_pie_charts(dir_path,bad_images,image_data):
     """Function to plot a pie chart of the reasons for image rejections"""
