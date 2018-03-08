@@ -178,15 +178,15 @@ def get_image_data(file_list,keys,dir_path):
     image_data = []
     
     foutput = open(os.path.join(dir_path,'image_qc.dat'),'w')
-    foutput.write('# Image  Site '+' '.join(keys)+'\n')
+    foutput.write('# Image  Site  Filter '+' '.join(keys)+'\n')
     
     for image_file in file_list:
         
-        data = parse_image_header(image_file,keys)
+        (data,f) = parse_image_header(image_file,keys)
         
         site = os.path.basename(image_file)[0:3]
         
-        tstr = os.path.basename(image_file)+' '+site+' '
+        tstr = os.path.basename(image_file)+' '+site+' '+f+' '
         
         for i in range(0,len(keys),1):
             
@@ -214,10 +214,13 @@ def parse_image_header(image_file,keys):
     """
     
     data = []
+    f = None
     
     if os.path.isfile(image_file):
         
         header = fits.getheader(image_file)
+        
+        f = header['FILTER']
         
         for key in keys:
             
@@ -233,7 +236,7 @@ def parse_image_header(image_file,keys):
                 
                 data.append( -99.999 )
                 
-    return data
+    return data,f
     
 def get_args():
     """Function to obtain or prompt for commandline arguments"""
