@@ -59,6 +59,7 @@ def process_image_set():
     plot_stats_for_sites(image_list,image_data,dir_path,'mean_ellipticity.png', 19, 
     'Mean ellipticity', 'Average ellipticity',exclude_no_data=True)
     
+    
 def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
                          ylabel,title,exclude_no_data=False,bad_images=None):
     """Function to plot the values of cloud / sky temperture"""
@@ -74,28 +75,28 @@ def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
         bad_xdata = []
         bad_ydata = []
         
-        for i in range(0,len(image_list),1):
+        for ii,i in enumerate(range(0,len(image_list),1)):
             
             if image_list[i,1] == s:
                 
                 if exclude_no_data and image_data[i,key_index] != -99.999:
                     
-                    xdata.append(i)
+                    xdata.append(ii)
                     ydata.append(image_data[i,key_index])
                     
                     if bad_images != None and image_list[i,0] in bad_images.keys():
                         
-                        bad_xdata.append(i)
+                        bad_xdata.append(ii)
                         bad_ydata.append(image_data[i,key_index])
 
                 elif not exclude_no_data:
                     
-                    xdata.append(i)
+                    xdata.append(ii)
                     ydata.append(image_data[i,key_index])
                     
                     if bad_images != None and image_list[i,0] in bad_images.keys():
                         
-                        bad_xdata.append(i)
+                        bad_xdata.append(ii)
                         bad_ydata.append(image_data[i,key_index])
                         
         xdata = range(0,len(ydata),1)
@@ -134,16 +135,16 @@ def plot_delta_stats_for_sites(image_list,image_data,dir_path,plot_file,
         bad_xdata = []
         bad_ydata = []
         
-        for i in range(0,len(image_list),1):
+        for ii,i in enumerate(range(0,len(image_list),1)):
             
             if image_list[i,1] == s:
                 
-                xdata.append(i)
+                xdata.append(ii)
                 ydata.append(image_data[i,key_index1]-image_data[i,key_index2])
         
                 if bad_images != None and image_list[i,0] in bad_images.keys():
                         
-                    bad_xdata.append(i)
+                    bad_xdata.append(ii)
                     bad_ydata.append(image_data[i,key_index1]-image_data[i,key_index2])
         
         plt.plot(np.array(xdata),np.array(ydata),sites[s]+'.',label=s)
