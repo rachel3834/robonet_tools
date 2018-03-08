@@ -269,6 +269,57 @@ def plot_compare_stats_for_sites(image_list,image_data,dir_path,plot_file,
 
     plt.close(1)
     
+def plot_compare_stats_per_filter(image_list,image_data,dir_path,plot_file,
+                               key_index1,key_index2,xlabel,ylabel,title,bad_images=None):
+    """Function to plot one statistic against another"""
+    
+    sites = { 'lsc': 'm', 'cpt': 'b', 'coj': 'c' }
+    
+    filters= {'gp': 'g', 'rp': 'r', 'ip': 'k'}
+    
+    
+    for s in sites.keys():
+        
+        fig = plt.figure(1)
+        
+        for f in filters.keys():
+            
+            xdata = []
+            ydata = []
+            bad_xdata = []
+            bad_ydata = []
+            
+            for i in range(0,len(image_list),1):
+                
+                if image_list[i,1] == s:
+                    
+                    xdata.append(image_data[i,key_index1])
+                    ydata.append(image_data[i,key_index2])
+            
+                    if bad_images != None and image_list[i,0] in bad_images.keys():
+                            
+                        bad_xdata.append(image_data[i,key_index1])
+                        bad_ydata.append(image_data[i,key_index2])
+                        
+            plt.plot(xdata,ydata,filters[f]+'.',label=f)
+            
+            if bad_images != None:
+                
+                plt.plot(bad_xdata,np.array(bad_ydata),'rx')
+                
+        plt.xlabel(xlabel)
+        
+        plt.ylabel(ylabel)
+        
+        plt.title(title)
+        
+        plt.legend()
+            
+        plt.savefig( os.path.join(dir_path,plot_file.replace('.png','_'+s+'.png')) )
+    
+        plt.close(1)
+    
+    
 def get_image_data(file_list,keys,dir_path):
     """Function to extract the image header keyword parameters relating 
     to weather and other factors influencing data quality from a set
