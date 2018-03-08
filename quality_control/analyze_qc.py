@@ -52,13 +52,14 @@ def analyze_qc_data():
     'Measured sky brightness as a function of lunar separation',
     bad_images=bad_images)
     
-    gather_header_qc_data.plot_stats_for_sites(image_list,image_data,dir_path,'mean_sky.png', 17, 
-    'Mean sky value [ADU]', 'Average sky background data for all sites',
+    gather_header_qc_data.plot_stats_per_filter(image_list,image_data,dir_path,'mean_sky.png', 17, 
+    'Mean sky value [ADU]', 'Average sky background data',
     bad_images=bad_images)
     
-    gather_header_qc_data.plot_stats_for_sites(image_list,image_data,dir_path,'mean_sky_sigma.png', 18, 
-    'Mean sky sigma [ADU]', 'Average sky background deviation for all sites',
+    gather_header_qc_data.plot_stats_per_filter(image_list,image_data,dir_path,'mean_sky_sigma.png', 18, 
+    'Mean sky sigma [ADU]', 'Average sky background deviation',
     bad_images=bad_images)
+    
     
     gather_header_qc_data.plot_stats_for_sites(image_list,image_data,dir_path,'mean_fwhm.png', 16, 
     'Mean FWHM [arcsec]', 'Average FWHM',exclude_no_data=True,

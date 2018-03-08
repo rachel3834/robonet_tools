@@ -116,6 +116,67 @@ def plot_stats_for_sites(image_list,image_data,dir_path,plot_file,key_index,
     plt.savefig( os.path.join(dir_path,plot_file) )
 
     plt.close(1)
+    
+def plot_stats_per_filter(image_list,image_data,dir_path,plot_file,key_index,
+                         ylabel,title,exclude_no_data=False,bad_images=None):
+    
+    sites = { 'lsc': 'm', 'cpt': 'b', 'coj': 'c' }
+    
+    filters= {'gp': 'g', 'rp': 'r', 'ip': 'k'}
+    
+    
+    for s in sites.keys():
+        
+        fig = plt.figure(1)
+        
+        for f in filters.keys():
+            
+            xdata = []
+            ydata = []
+            bad_xdata = []
+            bad_ydata = []
+            
+            for ii,i in enumerate(range(0,len(image_list),1)):
+                
+                if image_list[i,1] == s and image_list[i,2] == f:
+                    
+                    if exclude_no_data and image_data[i,key_index] != -99.999:
+                        
+                        xdata.append(ii)
+                        ydata.append(image_data[i,key_index])
+                        
+                        if bad_images != None and image_list[i,0] in bad_images.keys():
+                            
+                            bad_xdata.append(ii)
+                            bad_ydata.append(image_data[i,key_index])
+    
+                    elif not exclude_no_data:
+                        
+                        xdata.append(ii)
+                        ydata.append(image_data[i,key_index])
+                        
+                        if bad_images != None and image_list[i,0] in bad_images.keys():
+                            
+                            bad_xdata.append(ii)
+                            bad_ydata.append(image_data[i,key_index])
+                                    
+            plt.plot(xdata,np.array(ydata),filters[f]+'.',label=f)
+            
+            if bad_images != None:
+                
+            plt.plot(bad_xdata,np.array(bad_ydata),'rx')
+            
+        plt.xlabel('Image index')
+        
+        plt.ylabel(ylabel)
+        
+        plt.title(title)
+        
+        plt.legend()
+            
+        plt.savefig( os.path.join(dir_path,plot_file.replace('.png','_'+s+'.png')) )
+    
+        plt.close(1)
 
 
 def plot_delta_stats_for_sites(image_list,image_data,dir_path,plot_file,
