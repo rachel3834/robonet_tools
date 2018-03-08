@@ -164,7 +164,7 @@ def plot_stats_per_filter(image_list,image_data,dir_path,plot_file,key_index,
             
             if bad_images != None:
                 
-            plt.plot(bad_xdata,np.array(bad_ydata),'rx')
+                plt.plot(bad_xdata,np.array(bad_ydata),'rx')
             
         plt.xlabel('Image index')
         
