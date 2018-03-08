@@ -119,7 +119,7 @@ def plot_qc_pie_charts(dir_path,bad_images,image_data):
     plt.axis('equal')  # Equal aspect r
 
     percent_reject = (float(len(bad_images))/float(len(image_data)))*100.0
-    plt.title('Images rejected: '+str(percent_reject)+'% of dataset')
+    plt.title('Images rejected: '+str(round(percent_reject,1))+'% of dataset')
 
     plt.savefig( os.path.join(dir_path,'image_reject_reasons.png') )
 
