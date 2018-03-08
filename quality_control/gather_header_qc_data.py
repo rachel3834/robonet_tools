@@ -17,7 +17,9 @@ def process_image_set():
     dir_path = get_args()
     
     file_list = glob.glob(os.path.join(dir_path,'*.fits'))
-
+    
+    file_list.sort()
+    
     keys = [ 'WMSHUMID', 'WMSTEMP', 'WMSPRES', 'WINDSPEE', 'WINDDIR', 
             'WMSMOIST', 'WMSDEWPT', 'WMSCLOUD', 'WMSSKYBR', 'SKYMAG', 
             'AIRMASS', 'MOONFRAC', 'MOONDIST', 'FOCPOSN', 'FOCTELZP', 'FOCTOFF',
