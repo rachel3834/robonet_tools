@@ -67,15 +67,27 @@ def update_image_wcs(image_file,wcs_data):
                     
                     header.pop(key,None)
             
+            hdr_ok = True
+            
             for key in new_wcs_keys:
                 
-                header[key] = wcs_header[key]
-
+                try:
+                    
+                    header[key] = wcs_header[key]
+                
+                except KeyError:
+                
+                    print('ERROR: Missing header keys from WCS solution')
+                    
+                    hdr_ok = False
+                    
             header['WCSERR'] = 0
             
-            new_image_file = image_file.replace('.fits','_wcs.fits')
+            if hdr_ok:
+                
+                new_image_file = image_file.replace('.fits','_wcs.fits')
             
-            fits.writeto(new_image_file, data, header)
+                fits.writeto(new_image_file, data, header)
             
         else:
         
