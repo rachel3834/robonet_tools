@@ -69,7 +69,7 @@ def crop_image(image_file,target,params,crop_half_width_pix):
                int(target_pixel[1]) + crop_half_width_pix ]
     
     print(os.path.basename(image_file)+' cropsize= '+str(xlimits[1] - xlimits[0])+
-            ' x '+str(ylimits[1] - ylimits[0])+' pix'
+            ' x '+str(ylimits[1] - ylimits[0])+' pix')
     
     if xlimits[0] > 0.0 and ylimits[0] > 0.0 and \
         xlimits[1] < header['NAXIS2'] and ylimits[1] < header['NAXIS1']:
