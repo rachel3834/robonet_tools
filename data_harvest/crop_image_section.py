@@ -24,12 +24,18 @@ def process_image_set():
     target = coords.SkyCoord(params['target_ra']+' '+params['target_dec'],
                              unit=(u.hourangle, u.deg),frame='icrs')
     
+    header = fits.getheader(file_list[0])
+    
+    crop_half_width_pix = int((params['sub_image_width']*60.0)/float(header['SECPIX1']))/2
+    
+    print('Half width of sub-image will be '+str(crop_half_width_pix)+' pix')
+    
     for image in file_list:
         
-        crop_image(image,target,params)
+        crop_image(image,target,params,crop_half_width_pix)
 
 
-def crop_image(image_file,target,params):
+def crop_image(image_file,target,params,crop_half_width_pix):
     """Function to crop a single image around the target location given"""
 
     new_wcs_keys = ['WCSIMCAT', 'WCSMATCH', 'WCSNREF', 'WCSTOL', 'RA', 'DEC',
@@ -44,7 +50,6 @@ def crop_image(image_file,target,params):
     image_centre = coords.SkyCoord(header['RA']+' '+header['DEC'],
                              unit=(u.hourangle, u.deg),frame='icrs')
     
-    crop_half_width_pix = int((params['sub_image_width']*60.0)/float(header['SECPIX1']))
     
     w = wcs.WCS(naxis=2)
     w.wcs.cdelt = [header['CDELT1'],header['CDELT2']]
@@ -62,6 +67,8 @@ def crop_image(image_file,target,params):
                int(target_pixel[0]) + crop_half_width_pix ]
     ylimits = [ int(target_pixel[1]) - crop_half_width_pix, 
                int(target_pixel[1]) + crop_half_width_pix ]
+    
+    print(os.path.basename(image_file)+' limits= '+repr(xlimits)+' '+repr(ylimits))
     
     if xlimits[0] > 0.0 and ylimits[0] > 0.0 and \
         xlimits[1] < header['NAXIS2'] and ylimits[1] < header['NAXIS1']:
