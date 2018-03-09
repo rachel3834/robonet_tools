@@ -24,8 +24,10 @@ def process_image_set():
     target = coords.SkyCoord(params['target_ra']+' '+params['target_dec'],
                              unit=(u.hourangle, u.deg),frame='icrs')
     
-    
-    crop_image(file_list[0],target,params)
+    for image in file_list:
+        
+        crop_image(image,target,params)
+
 
 def crop_image(image_file,target,params):
     """Function to crop a single image around the target location given"""
@@ -42,8 +44,7 @@ def crop_image(image_file,target,params):
     image_centre = coords.SkyCoord(header['RA']+' '+header['DEC'],
                              unit=(u.hourangle, u.deg),frame='icrs')
     
-    crop_half_width_pix = params['sub_image_width']/float(header['SECPIX1'])
-    print('Image section = '+str(2.0*crop_half_width_pix)+'x'+str(2.0*crop_half_width_pix)+' pixels')
+    crop_half_width_pix = (params['sub_image_width']*60.0)/float(header['SECPIX1'])
     
     w = wcs.WCS(naxis=2)
     w.wcs.cdelt = [header['CDELT1'],header['CDELT2']]
@@ -57,26 +58,26 @@ def crop_image(image_file,target,params):
     
     target_pixel = wcs.utils.skycoord_to_pixel(target,w,origin=1)
     
-    xlimits = [ target_pixel[0] - crop_half_width_pix, target_pixel[0] + crop_half_width_pix ]
-    ylimits = [ target_pixel[1] - crop_half_width_pix, target_pixel[1] + crop_half_width_pix ]
+    xlimits = [ int(target_pixel[0] - crop_half_width_pix), 
+               int(target_pixel[0] + crop_half_width_pix) ]
+    ylimits = [ int(target_pixel[1] - crop_half_width_pix), 
+               int(target_pixel[1] + crop_half_width_pix) ]
     
     if xlimits[0] > 0.0 and ylimits[0] > 0.0 and \
         xlimits[1] < header['NAXIS2'] and ylimits[1] < header['NAXIS1']:
             
             new_data = data[ylimits[0]:ylimits[1],xlimits[0]:xlimits[1]]
             
-            new_header = {}
-            for key,value in header:
-                new_header[key] = value
-            new_header['NAXIS1'],new_header['NAXIS2'] = data.shape
-            new_header['RA'] = params['target_ra']
-            new_header['DEC'] = params['target_dec']
-            new_header['CRPIX1'] = new_header['NAXIS1']/2.0
-            new_header['CRPIX2'] = new_header['NAXIS2']/2.0
+            header['NAXIS1'] = data.shape[0]
+            header['NAXIS2'] = data.shape[1]
+            header['RA'] = params['target_ra']
+            header['DEC'] = params['target_dec']
+            header['CRPIX1'] = header['NAXIS1']/2.0
+            header['CRPIX2'] = header['NAXIS2']/2.0
             
             new_image_file = image_file.replace('.fits','_crop.fits')
             
-            fits.writeto(new_image_file, new_data, new_header)
+            fits.writeto(new_image_file, new_data, header, overwrite=True)
                 
 def get_args():
     """Function to obtain or prompt for commandline arguments"""
