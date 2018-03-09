@@ -44,7 +44,7 @@ def crop_image(image_file,target,params):
     image_centre = coords.SkyCoord(header['RA']+' '+header['DEC'],
                              unit=(u.hourangle, u.deg),frame='icrs')
     
-    crop_half_width_pix = (params['sub_image_width']*60.0)/float(header['SECPIX1'])
+    crop_half_width_pix = int((params['sub_image_width']*60.0)/float(header['SECPIX1']))
     
     w = wcs.WCS(naxis=2)
     w.wcs.cdelt = [header['CDELT1'],header['CDELT2']]
@@ -58,10 +58,10 @@ def crop_image(image_file,target,params):
     
     target_pixel = wcs.utils.skycoord_to_pixel(target,w,origin=1)
     
-    xlimits = [ int(target_pixel[0] - crop_half_width_pix), 
-               int(target_pixel[0] + crop_half_width_pix) ]
-    ylimits = [ int(target_pixel[1] - crop_half_width_pix), 
-               int(target_pixel[1] + crop_half_width_pix) ]
+    xlimits = [ int(target_pixel[0]) - crop_half_width_pix, 
+               int(target_pixel[0]) + crop_half_width_pix ]
+    ylimits = [ int(target_pixel[1]) - crop_half_width_pix, 
+               int(target_pixel[1]) + crop_half_width_pix ]
     
     if xlimits[0] > 0.0 and ylimits[0] > 0.0 and \
         xlimits[1] < header['NAXIS2'] and ylimits[1] < header['NAXIS1']:
