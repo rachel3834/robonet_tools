@@ -80,6 +80,8 @@ def get_config_path():
 def aws_cp(aws_config, local_file_path, local_root, aws_root):
     """Function to compose an awscli commandline for a given file"""
     
+    print aws_config.bucket
+    
     aws_path = os.path.join(aws_config.bucket, local_file_path.replace(local_root,aws_root))
     
     cl = 'aws --profile='+aws_config.profile+' s3 cp '+local_file_path+' '+aws_path
