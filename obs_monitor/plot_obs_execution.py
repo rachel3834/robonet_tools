@@ -36,8 +36,8 @@ def plot_percent_completed(frames,data):
     
     dates = np.array(dates)
     
-    start_date = datetime.datetime.strptime('2017-01-01T00:00:00',"%Y-%m-%dT%H:%M:%S")
-    end_date = datetime.datetime.strptime('2017-12-31T00:00:00',"%Y-%m-%dT%H:%M:%S")
+    start_date = datetime.datetime.strptime('2018-01-01T00:00:00',"%Y-%m-%dT%H:%M:%S")
+    end_date = datetime.datetime.strptime('2018-12-31T00:00:00',"%Y-%m-%dT%H:%M:%S")
     dt = datetime.timedelta(days=7.0)
     dbin = datetime.timedelta(days=3.5)
     nbins = 52
@@ -73,9 +73,10 @@ def plot_percent_completed(frames,data):
                 xdata.append( bin_start + dbin )
                 ydata1.append( nsuccess )
                 ydata2.append( nrequested )
-                ydata3.append( nsuccess/nrequested )
+                ydata3.append( (nsuccess/nrequested)*100.0 )
                 
             bin_start = bin_end
+        print xdata, ydata1, ydata2, ydata3
         
         ax.plot(xdata,ydata1,'g-',label='Obs successful')
         ax.fill_between(xdata, 0, ydata1, facecolor='g',alpha=0.2)
@@ -92,10 +93,10 @@ def plot_percent_completed(frames,data):
         plt.legend(loc=1)
         
         ([xmin,xmax,ymin,ymax]) = plt.axis()
-        xmin = 736406.65
-        xmax= 736645.35
+        #xmin = 736406.65
+        #xmax= 736645.35
         plt.axis([xmin,xmax,ymin,ymax])
-        ax2.set_ylabel('Fraction obs successful')
+        ax2.set_ylabel('% obs successful')
         
         ax.set_title('Success rate of observation requests for '+cameras[c])
     
