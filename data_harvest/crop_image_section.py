@@ -77,7 +77,8 @@ def crop_image(image_file,target,params,crop_half_width_pix):
     w.wcs.ctype = ['RA---TAN', 'DEC--TAN']
     w.wcs.radesys = 'ICRS'
     w.wcs.cunit = [u.deg,u.deg]
-    w.wcs.equinox = header['EQUINOX']
+    if 'EQUINOX' in header:
+        w.wcs.equinox = header['EQUINOX']
     
     target_pixel = wcs.utils.skycoord_to_pixel(target,w,origin=1)
     
