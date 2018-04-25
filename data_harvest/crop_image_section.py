@@ -69,7 +69,8 @@ def crop_image(image_file,target,params,crop_half_width_pix):
     
     
     w = wcs.WCS(naxis=2)
-    w.wcs.cdelt = [header['CDELT1'],header['CDELT2']]
+    if 'CDELT1' in header:
+        w.wcs.cdelt = [header['CDELT1'],header['CDELT2']]
     w.wcs.crval = [image_centre.ra.deg,image_centre.dec.deg]
     w.wcs.crpix = [header['NAXIS1']/2, header['NAXIS2']/2]
     w.wcs.cd = np.array([[header['CD1_1'],header['CD1_2']],[header['CD2_1'],header['CD2_2']]])
