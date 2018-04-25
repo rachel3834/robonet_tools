@@ -28,7 +28,7 @@ def process_image_set():
     
     pixscale = get_pixel_scale(header)
     
-    crop_half_width_pix = int((params['sub_image_width']*60.0)/float(pixscale)/2
+    crop_half_width_pix = int((params['sub_image_width']*60.0)/pixscale)/2
     
     print('Half width of sub-image will be '+str(crop_half_width_pix)+' pix')
     
