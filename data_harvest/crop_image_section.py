@@ -26,7 +26,9 @@ def process_image_set():
     
     header = fits.getheader(file_list[0])
     
-    crop_half_width_pix = int((params['sub_image_width']*60.0)/float(header['SECPIX1']))/2
+    pixscale = get_pixel_scale(header)
+    
+    crop_half_width_pix = int((params['sub_image_width']*60.0)/float(pixscale)/2
     
     print('Half width of sub-image will be '+str(crop_half_width_pix)+' pix')
     
@@ -34,7 +36,22 @@ def process_image_set():
         
         crop_image(image,target,params,crop_half_width_pix)
 
-
+def get_pixel_scale(header):
+    """Function to return the pixel scale from the image header, 
+    accommodating different keyword conventions"""
+    
+    keywords = [ 'SECPIX1', 'PIXSCALE' ]
+    
+    pixscale = None
+    
+    for key in keywords:
+        
+        if key in header.keys():
+            
+            pixscale = header[key]
+    
+    return float(pixscale)
+    
 def crop_image(image_file,target,params,crop_half_width_pix):
     """Function to crop a single image around the target location given"""
 
