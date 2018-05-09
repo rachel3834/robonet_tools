@@ -61,8 +61,14 @@ def crop_image(image_file,target,params,crop_half_width_pix):
                     'EQUINOX', 'CD1_1','CD1_2','CD2_1','CD2_2','EPOCH',
                     'IMWCS']
     
-    header = fits.getheader(image_file)
-    data = fits.getdata(image_file)
+    hdu = fits.open(image_file)
+    header = hdu[0].header
+    data = hdu[0].data
+    cat = None
+    bpm = None
+    if len(hdu) > 1:
+        cat = hdu[1]
+        bpm = hdu[2]
     
     image_centre = coords.SkyCoord(header['RA']+' '+header['DEC'],
                              unit=(u.hourangle, u.deg),frame='icrs')
@@ -95,6 +101,9 @@ def crop_image(image_file,target,params,crop_half_width_pix):
             
             new_data = data[ylimits[0]:ylimits[1],xlimits[0]:xlimits[1]]
             
+            if bpm != None:
+                bpm.data = bpm.data[ylimits[0]:ylimits[1],xlimits[0]:xlimits[1]]
+                
             header['NAXIS1'] = data.shape[0]
             header['NAXIS2'] = data.shape[1]
             header['RA'] = params['target_ra']
@@ -104,8 +113,15 @@ def crop_image(image_file,target,params,crop_half_width_pix):
             
             new_image_file = image_file.replace('.fits','_crop.fits')
             
-            fits.writeto(new_image_file, new_data, header, overwrite=True)
-                
+            new_hdu = fits.HDUList()
+            new_hdu.append(fits.PrimaryHDU(data=new_data, header=header))
+            
+            if bpm != None:
+                new_hdu.append(fits.BinTableHDU(data=cat.data, header=cat.header))
+                new_hdu.append(fits.ImageHDU(data=bpm.data, header=bpm.header))
+
+            new_hdu.writeto(new_image_file, overwrite=True)
+            
 def get_args():
     """Function to obtain or prompt for commandline arguments"""
     
