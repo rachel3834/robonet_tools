@@ -100,7 +100,7 @@ def make_image_list(data_dir):
             
         else:
             
-            print('Cannot find the input directory')
+            print('Cannot find input directory: '+data_dir)
             exit()
     
     return frame_list
