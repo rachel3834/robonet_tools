@@ -98,10 +98,10 @@ def make_image_list(data_dir):
             print('Cannot find any FITS images in the input directory')
             exit()
             
-        else:
+    else:
             
-            print('Cannot find input directory: '+data_dir)
-            exit()
+        print('Cannot find input directory: '+data_dir)
+        exit()
     
     return frame_list
 
