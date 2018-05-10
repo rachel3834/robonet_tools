@@ -66,7 +66,9 @@ def crop_image(image_file,target,params,crop_half_width_pix):
     data = hdu[0].data
     cat = None
     bpm = None
-    if len(hdu) > 1:
+    if len(hdu) == 2:
+        bpm = hdu[1]
+    elif len(hdu) == 3:
         cat = hdu[1]
         bpm = hdu[2]
     
