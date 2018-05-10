@@ -118,8 +118,10 @@ def crop_image(image_file,target,params,crop_half_width_pix):
             new_hdu = fits.HDUList()
             new_hdu.append(fits.PrimaryHDU(data=new_data, header=header))
             
-            if bpm != None:
+            if cat != None:
                 new_hdu.append(fits.BinTableHDU(data=cat.data, header=cat.header))
+
+            if bpm != None:
                 new_hdu.append(fits.ImageHDU(data=bpm.data, header=bpm.header))
 
             new_hdu.writeto(new_image_file, overwrite=True)
