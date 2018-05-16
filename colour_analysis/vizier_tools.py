@@ -9,7 +9,7 @@ from sys import argv
 from astroquery.vizier import Vizier
 from astropy import wcs, coordinates, units, visualization
 
-def search_vizier_for_sources(ra, dec, radius, catalog):
+def search_vizier_for_sources(ra, dec, radius, catalog, row_limit=-1):
     """Function to perform online query of the 2MASS catalogue and return
     a catalogue of known objects within the field of view
     
@@ -29,13 +29,13 @@ def search_vizier_for_sources(ra, dec, radius, catalog):
                                       ['_RAJ2000', '_DEJ2000', 'gmag', 'e_gmag', 'rmag', 'e_rmag', 'imag', 'e_imag', 'clean'],
                                     {}]
                            }
-    
+
     (cat_id,cat_col_list,cat_filters) = supported_catalogs[catalog]
     
     v = Vizier(columns=cat_col_list,\
                 column_filters=cat_filters)
 
-    v.ROW_LIMIT = 5000
+    v.ROW_LIMIT = row_limit
     c = coordinates.SkyCoord(ra+' '+dec, frame='icrs', unit=(units.hourangle, units.deg))
     r = radius * units.arcminute
     
