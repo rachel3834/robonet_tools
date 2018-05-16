@@ -291,10 +291,10 @@ def initial_guess(params,star_catalog,vphas_cat,match_index,log):
     
     grad = (cat_mags[:-1] - cat_mags[1:]) / (det_mags[:-1] - det_mags[1:])
     
-    if grad < 1.0: 
-        fit = [ 0.0, grad.mean() ]
-    else:
-        fit = [ 0.0, 0.5]
+#    if grad.mean() < 1.0: 
+    fit = [ 0.0, grad.mean() ]
+#    else:
+#        fit = [ 0.0, 0.5 ]
     
     log.info('Fit initial guess: '+repr(fit))
     
