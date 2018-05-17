@@ -148,7 +148,7 @@ def select_good_detected_stars(star_catalog,log):
     """Function to identify and flag stars detected in the reference image
     for which the photometry is poor."""
     
-    idx1 = np.where(star_catalog['mag'] > 0.0)[0].tolist()
+    idx1 = np.where(star_catalog['mag'] > 10.0)[0].tolist()
     idx2 = np.where(star_catalog['mag_err'] > 0.0)[0].tolist()
     
     idx = set(idx1).intersection(set(idx2))
@@ -291,10 +291,19 @@ def initial_guess(params,star_catalog,vphas_cat,match_index,log):
     
     grad = (cat_mags[:-1] - cat_mags[1:]) / (det_mags[:-1] - det_mags[1:])
     
-#    if grad.mean() < 1.0: 
-    fit = [ 0.0, grad.mean() ]
-#    else:
-#        fit = [ 0.0, 0.5 ]
+    if params['filter'] == 'gp':
+        
+        fit = [ 0.0, grad.mean() ]
+        
+    else:
+        
+        if grad.mean() < 1.0: 
+            
+            fit = [ 0.0, grad.mean() ]
+            
+        else:
+
+            fit = [ 0.0, 0.5 ]
     
     log.info('Fit initial guess: '+repr(fit))
     
@@ -359,9 +368,9 @@ def apply_phot_calib(star_catalog,fit_params,log):
     
     cal_mags = phot_func(fit_params,mags) + fit_params[2]
     
-    idx = np.where(star_catalog['mag'] == 0.0)
+    idx = np.where(star_catalog['mag'] < 10.0)
     cal_mags[idx] = 0.0
-        
+    
     star_catalog['cal_ref_mag'] = cal_mags
 
     log.info('Calculated calibrated reference magnitudes for all detected stars')
