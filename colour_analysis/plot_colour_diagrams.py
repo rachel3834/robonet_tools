@@ -23,9 +23,13 @@ def plot_colour_diagrams():
     
     target = find_target_data(params,star_catalog)
     
-    plot_colour_mag_diagram(params,star_catalog,catalog_header,target)
+    print target
     
-    plot_colour_colour_diagram(params,star_catalog,catalog_header,target)
+    #plot_colour_mag_diagram(params,star_catalog,catalog_header,target)
+    
+    #plot_colour_colour_diagram(params,star_catalog,catalog_header,target)
+
+    plot_instrumental_colour_colour_diagram(params,star_catalog,catalog_header,target)
     
 def get_args():
     """Function to gather the necessary commandline arguments"""
@@ -95,16 +99,20 @@ def find_target_data(params,star_catalog):
         
         match_data = matching.search_around_sky(target_location, stars, 
                                                 seplimit=tolerance)    
+        print match_data
         
         if len(match_data[0]) > 0:
             target['star_index'] = star_catalog[match_data[1][0],0]
             target['ra'] = star_catalog[match_data[1][0],1]
             target['dec'] = star_catalog[match_data[1][0],2]
             target['mag1'] = star_catalog[match_data[1][0],3]
-            target['mag2'] = star_catalog[match_data[1][0],5]
+            target['cal_mag1'] = star_catalog[match_data[1][0],5]
+            target['mag2'] = star_catalog[match_data[1][0],7]
+            target['cal_mag2'] = star_catalog[match_data[1][0],9]
             target['separation'] = match_data[2][0].to_string(unit=u.arcsec)
-            if star_catalog.shape[1] == 9:
-                target['mag3'] = star_catalog[match_data[1][0],7]
+            if star_catalog.shape[1] == 15:
+                target['mag3'] = star_catalog[match_data[1][0],11]
+                target['cal_mag3'] = star_catalog[match_data[1][0],13]
             print 'Target identified as '+repr(target)
     
     return target
@@ -201,7 +209,73 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,target):
     else:
             
         print 'Warning: Insufficient data for colour-colour diagram'
+        
+def plot_instrumental_colour_colour_diagram(params,star_catalog,catalog_header,target):
+    """Function to plot a colour-colour diagram, if sufficient data are
+    available within the given star catalog"""
     
+    filters = { 'ip': 'SDSS-i', 'rp': 'SDSS-r', 'gp': 'SDSS-g' }
+    
+    if star_catalog.shape[1] == 15:
+    
+        idx1 = np.where(star_catalog[:,5] > 0.0)[0]
+        idx2 = np.where(star_catalog[:,9] > 0.0)[0]
+        idx3 = np.where(star_catalog[:,13] > 0.0)[0]
+        idx = set(idx1).intersection(set(idx2))
+        idx = list(idx.intersection(set(idx3)))
+        
+        inst_mag1 = star_catalog[idx,3]
+        inst_mag2 = star_catalog[idx,7]
+        inst_mag3 = star_catalog[idx,11]
+        inst_colour1 = inst_mag3 - inst_mag1    # Catalogue column order is red -> blue
+        inst_colour2 = inst_mag2 - inst_mag1    
+        
+        cal_mag1 = star_catalog[idx,5]
+        cal_mag2 = star_catalog[idx,9]
+        cal_mag3 = star_catalog[idx,13]
+        cal_colour1 = cal_mag3 - cal_mag1    # Catalogue column order is red -> blue
+        cal_colour2 = cal_mag2 - cal_mag1    
+        
+        if len(target) > 0 and target['mag1'] > 0.0 and \
+            target['mag2'] > 0.0 and target['mag2']:
+            target_colour1 = target['mag3'] - target['mag1']
+            target_colour2 = target['mag2'] - target['mag1']
+    
+        fig = plt.figure(1)
+    
+        plt.plot(inst_colour1, inst_colour2,'.',
+                 color='#8c6931',markersize=1,alpha=0.4,
+                 label='Instrumental')
+        plt.plot(cal_colour1, cal_colour2,'.',
+                 color='#2b8c85',markersize=1,alpha=0.4,
+                 label='Catalogue')
+        
+#        if len(target) > 0 and target['mag1'] > 0.0 and \
+#            target['mag2'] > 0.0 and target['mag2']:
+#            plt.plot(target_colour2, target_colour1,'md',markersize=6)
+            
+        plt.xlabel(filters[catalog_header['FILTER3']]+'-'+\
+                    filters[catalog_header['FILTER1']]+' [mag]')
+    
+        plt.ylabel(filters[catalog_header['FILTER2']]+'-'+\
+                    filters[catalog_header['FILTER1']]+' [mag]')
+        
+        plot_file = path.join(params['red_dir'],'colour_colour_diagram.png')
+        
+        plt.grid()
+        
+        plt.legend()
+        
+        plt.savefig(plot_file)
+    
+        plt.close(1)
+        
+        print 'Colour-colour diagram output to '+plot_file
+        
+    else:
+            
+        print 'Warning: Insufficient data for colour-colour diagram'
+
 if __name__ == '__main__':
     
     plot_colour_diagrams()

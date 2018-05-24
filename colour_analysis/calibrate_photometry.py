@@ -9,6 +9,7 @@ import sys
 from pyDANDIA import pipeline_setup
 from pyDANDIA import logs
 from pyDANDIA import metadata
+from pyDANDIA import catalog_utils
 from astropy.coordinates import SkyCoord
 from astropy.coordinates import matching
 import astropy.units as u
@@ -38,7 +39,11 @@ def calibrate_photometry():
     
     vphas_cat = select_calibration_stars(vphas_cat,params,log)
     
+    catalog_file = os.path.join(params['red_dir'],'vphas_catalog.fits')
+        
     match_index = match_stars_by_position(star_catalog,vphas_cat,log)
+    
+    catalog_utils.output_vphas_catalog_file(catalog_file,vphas_cat,match_index=match_index)
     
     fit = calc_phot_calib(params,star_catalog,vphas_cat,match_index,log)
     
@@ -171,31 +176,41 @@ def select_calibration_stars(vphas_cat,params,log):
     cerr = params['cat_err_col']
     cmag = params['cat_mag_col']
     
-    vphas_cat['clean'] = 0
-    
-    med = np.median(vphas_cat[cerr][np.where(vphas_cat[cerr]>0)])
-    max_err = 2.0 * med
-    
-    log.info('Median photometric uncertainty of catalog stars: '+str(med))
-    log.info('Excluding catalog stars with uncertainty > '+str(max_err))
-    
-    idx1 = np.where(vphas_cat[cerr] <= max_err)
-    idx2 = np.where(vphas_cat[cerr] > 0)
-    idx = set(idx1[0]).intersection(set(idx2[0]))
-    
     limit_mag = 17.5
-    if params['filter'] == 'gp':
-        limit_mag = 22.0
+    if params['filter'] == 'gp': limit_mag = 22.0
         
     log.info('Using limiting mag '+str(limit_mag)+\
-            ' for catalog selection for filter '+params['filter'])
-                
-    idx2 = np.where(vphas_cat[cmag] < limit_mag)
-    idx = idx.intersection(set(idx2[0]))
+                    ' for catalog selection for filter '+params['filter'])
+            
+    vphas_cat['clean'] = 0
+    
+    idx = []
+    for f in ['g','r','i']:
+        
+        col = 'e_'+f+'mag'
+
+        med = np.median(vphas_cat[col][np.where(vphas_cat[col]>0)])
+
+        max_err = 2.0 * med
+
+        log.info('Median photometric uncertainty of catalog stars: '+str(med))
+        log.info('Excluding catalog stars with uncertainty > '+str(max_err))
+                    
+        idx1 = np.where(vphas_cat[col] <= max_err)
+        idx2 = np.where(vphas_cat[col] > 0)
+        idx3 = np.where(vphas_cat[cmag] < limit_mag)
+        
+        jdx = (set(idx1[0]).intersection(set(idx2[0]))).intersection(set(idx3[0]))
+        
+        if len(idx) == 0:
+            idx = list(idx) + list(jdx)
+        else:
+            idx = list(set(idx).intersection(jdx))
     
     vphas_cat['clean'][list(idx)] = 1
     
-    log.info('Selected '+str(len(idx))+' stars suitable for use in photometric calibration')
+    log.info('Selected '+str(len(idx))+\
+            ' stars suitable for use in photometric calibration')
     
     return vphas_cat
 
@@ -214,15 +229,25 @@ def match_stars_by_position(star_catalog,vphas_cat,log):
 
     cat_stars = SkyCoord(vphas_cat['_RAJ2000'][vdx], vphas_cat['_DEJ2000'][vdx], unit="deg")
     
-    tolerance = 1.0 * u.arcsec
+    tolerance = 0.5 * u.arcsec
     
     match_data = matching.search_around_sky(det_stars, cat_stars, 
                                              seplimit=tolerance)    
     
-    match_index = np.array(zip(ddx[match_data[0]],vdx[match_data[1]]))
+    idx = np.argsort(match_data[2].value)
+    
+    det_index = match_data[0][idx]
+    cat_index = match_data[1][idx]
+    
+    match_index = np.array(zip(ddx[det_index],vdx[cat_index]))
     
     log.info('Matched '+str(len(match_index)))
-        
+    
+#    for i,j in enumerate(match_index[:,0]):
+#        if star_catalog['mag'][j] < 13.0:
+#            print star_catalog['star_index'][j],star_catalog['mag'][j],\
+#                vphas_cat['rmag'][match_index[i,1]]
+    
     return match_index
 
 def calc_phot_calib(params,star_catalog,vphas_cat,match_index,log):
@@ -231,7 +256,7 @@ def calc_phot_calib(params,star_catalog,vphas_cat,match_index,log):
     cmag = params['cat_mag_col']
     cerr = params['cat_err_col']
     
-    for i in range(0,4,1):
+    for i in range(0,1,1):
 
         fit = initial_guess(params,star_catalog,vphas_cat,match_index,log)
         
@@ -263,6 +288,9 @@ def calc_phot_calib(params,star_catalog,vphas_cat,match_index,log):
              xerr=vphas_cat[cerr][match_index[:,1]],
              color='m', fmt='none')
     
+    plt.plot(vphas_cat[cmag][match_index[:,1]], 
+             star_catalog['mag'][match_index[:,0]],'k.',markersize=1)
+
     plt.plot(xplot, yplot,'k-')
     
     plt.xlabel('VPHAS+ catalog magnitude')
@@ -289,17 +317,17 @@ def initial_guess(params,star_catalog,vphas_cat,match_index,log):
     cat_mags = vphas_cat[cmag][match_index[:,1]]
     det_mags = star_catalog['mag'][match_index[:,0]]
     
-    grad = (cat_mags[:-1] - cat_mags[1:]) / (det_mags[:-1] - det_mags[1:])
+    grad = ((cat_mags[:-1] - cat_mags[1:]) / (det_mags[:-1] - det_mags[1:])).mean()
     
-    if params['filter'] == 'gp':
+    if params['filter'] == 'gp' and grad > 0.0:
         
-        fit = [ 0.0, grad.mean() ]
+        fit = [ 0.0, grad ]
         
     else:
         
-        if grad.mean() < 1.0: 
+        if grad < 1.0 and grad > 0.0: 
             
-            fit = [ 0.0, grad.mean() ]
+            fit = [ 0.0, grad ]
             
         else:
 

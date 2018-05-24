@@ -82,8 +82,8 @@ def extract_star_catalog(params,filter_id,log):
     meta_file = params[filter_id]
     
     reduction_metadata = metadata.MetaData()
-    reduction_metadata.load_a_layer_from_file( path.dirname(meta_file), meta_file, 'star_catalog' )
-    reduction_metadata.load_a_layer_from_file( path.dirname(meta_file), meta_file, 'phot_calib' )
+    reduction_metadata.load_a_layer_from_file( path.dirname(meta_file), path.basename(meta_file), 'star_catalog' )
+    reduction_metadata.load_a_layer_from_file( path.dirname(meta_file), path.basename(meta_file), 'phot_calib' )
 
     star_catalog = Table()
     star_catalog['star_index'] = reduction_metadata.star_catalog[1]['star_index']
@@ -129,14 +129,15 @@ def init_combined_catalog(datasets,f1,log):
     max_stars = len(datasets[f1])
     
     col_names = [ 'star_index', 'RA', 'DEC' ]
-    formats = [ 'I', 'D', 'D' ]
+    formats = [ 'J', 'D', 'D' ]
     units = [ None, 'deg', 'deg' ]
     
     for f in datasets.keys():
         if datasets[f] != None:
-            col_names += [ 'cal_ref_mag_'+f,  'cal_ref_mag_err_'+f ]
-            formats += [ 'E', 'E' ]
-            units += [ 'mag', 'mag' ]
+            col_names += [ 'ref_mag_'+f, 'ref_mag_err_'+f, 
+                           'cal_ref_mag_'+f, 'cal_ref_mag_err_'+f ]
+            formats += [ 'E', 'E', 'E', 'E' ]
+            units += [ 'mag', 'mag', 'mag', 'mag' ]
             
     combined_catalog = np.zeros([max_stars,len(col_names)])
 
@@ -204,9 +205,11 @@ def cross_match_stars(f1,dataset1,f2,dataset2,log):
     tolerance = 1.0 * u.arcsec
     
     match_data = matching.search_around_sky(stars1, stars2, 
-                                             seplimit=tolerance)    
+                                             seplimit=tolerance)   
+                                             
+    idx = np.argsort(match_data[2].value)
     
-    match_index = np.array(zip(match_data[0],match_data[1]))
+    match_index = np.array(zip(match_data[0][idx],match_data[1][idx]))
     
     log.info('Matched '+str(len(match_index))+' stars between '+f1+' and '+f2)
         
@@ -223,23 +226,29 @@ def populate_combined_catalog(combined_catalog,f1,dataset1,match_index,log,
         combined_catalog[:,0] = dataset1['star_index']
         combined_catalog[:,1] = dataset1['RA']
         combined_catalog[:,2] = dataset1['DEC']
-        combined_catalog[:,3] = dataset1['cal_ref_mag']
-        combined_catalog[:,4] = 0.0             # cal_ref_err
-        combined_catalog[:,6] = 0.0             # cal_ref_err2
-        combined_catalog[:,8] = 0.0             # cal_ref_err3
+        combined_catalog[:,3] = dataset1['mag']
+        combined_catalog[:,4] = dataset1['mag_err']
+        combined_catalog[:,5] = dataset1['cal_ref_mag']
+        combined_catalog[:,6] = 0.0             # cal_ref_err
+        combined_catalog[:,10] = 0.0            # cal_ref_err2
+        combined_catalog[:,14] = 0.0             # cal_ref_err3
         
         log.info('Populated the combined catalog with primary dataset, '+f1)
     
     if f2 != None:
         
-        combined_catalog[match_index[:,0],5] = dataset2['cal_ref_mag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],7] = dataset2['mag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],8] = dataset2['mag_err'][match_index[:,1]]
+        combined_catalog[match_index[:,0],9] = dataset2['cal_ref_mag'][match_index[:,1]]
         
         log.info('Populated the combined catalog with '+str(len(match_index))+\
             ' stars from dataset '+f2)
             
     elif f3 != None:
 
-        combined_catalog[match_index[:,0],7] = dataset3['cal_ref_mag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],11] = dataset3['mag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],12] = dataset3['mag_err'][match_index[:,1]]
+        combined_catalog[match_index[:,0],13] = dataset3['cal_ref_mag'][match_index[:,1]]
     
         log.info('Populated the combined catalog with '+str(len(match_index))+\
             ' stars from dataset '+f3)
@@ -267,10 +276,20 @@ def output_combined_catalog(combined_catalog,col_names,formats,units,f1,f2,f3,
     
     col_list = []
     for i in range(0,len(col_names),1):
-        col_list.append(fits.Column(name=col_names[i], 
+        
+        if formats[i] == 'E' or formats[i] == 'D':
+            
+            col_list.append(fits.Column(name=col_names[i], 
                                     format=formats[i], 
                                     unit=units[i],
                                     array=combined_catalog[:,i]))
+                                    
+        elif formats[i] == 'J':
+            
+            col_list.append(fits.Column(name=col_names[i], 
+                                    format=formats[i], 
+                                    unit=units[i],
+                                    array=combined_catalog[:,i].astype('int')))
                                     
     tbhdu = fits.BinTableHDU.from_columns(col_list)
     
