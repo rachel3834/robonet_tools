@@ -176,13 +176,13 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,target):
         mag1 = star_catalog[idx,3]
         mag2 = star_catalog[idx,5]
         mag3 = star_catalog[idx,7]
-        colour1 = mag3 - mag1    # Catalogue column order is red -> blue
-        colour2 = mag2 - mag1    
+        colour1 = mag2 - mag1    # Catalogue column order is red -> blue
+        colour2 = mag3 - mag2   
         
         if len(target) > 0 and target['mag1'] > 0.0 and \
             target['mag2'] > 0.0 and target['mag2']:
-            target_colour1 = target['mag3'] - target['mag1']
-            target_colour2 = target['mag2'] - target['mag1']
+            target_colour1 = target['mag2'] - target['mag1']
+            target_colour2 = target['mag3'] - target['mag2']
     
         fig = plt.figure(1)
     
@@ -192,10 +192,10 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,target):
             target['mag2'] > 0.0 and target['mag2']:
             plt.plot(target_colour2, target_colour1,'md',markersize=6)
             
-        plt.xlabel(filters[catalog_header['FILTER2']]+'-'+\
-                    filters[catalog_header['FILTER1']]+' [mag]')
+        plt.xlabel(filters[catalog_header['FILTER3']]+'-'+\
+                    filters[catalog_header['FILTER2']]+' [mag]')
     
-        plt.ylabel(filters[catalog_header['FILTER3']]+'-'+\
+        plt.ylabel(filters[catalog_header['FILTER2']]+'-'+\
                     filters[catalog_header['FILTER1']]+' [mag]')
         
         plot_file = path.join(params['red_dir'],'colour_colour_diagram.png')
@@ -227,18 +227,22 @@ def plot_instrumental_colour_colour_diagram(params,star_catalog,catalog_header,t
         inst_mag1 = star_catalog[idx,3]
         inst_mag2 = star_catalog[idx,7]
         inst_mag3 = star_catalog[idx,11]
-        inst_colour1 = inst_mag3 - inst_mag1    # Catalogue column order is red -> blue
+        inst_colour1 = inst_mag3 - inst_mag2    # Catalogue column order is red -> blue
         inst_colour2 = inst_mag2 - inst_mag1    
+        
+        jdx = np.where(inst_colour1 > 10.0)   
+        print jdx
+        print star_catalog[idx[jdx[0][0]],:]
         
         cal_mag1 = star_catalog[idx,5]
         cal_mag2 = star_catalog[idx,9]
         cal_mag3 = star_catalog[idx,13]
-        cal_colour1 = cal_mag3 - cal_mag1    # Catalogue column order is red -> blue
+        cal_colour1 = cal_mag3 - cal_mag2    # Catalogue column order is red -> blue
         cal_colour2 = cal_mag2 - cal_mag1    
         
         if len(target) > 0 and target['mag1'] > 0.0 and \
             target['mag2'] > 0.0 and target['mag2']:
-            target_colour1 = target['mag3'] - target['mag1']
+            target_colour1 = target['mag3'] - target['mag2']
             target_colour2 = target['mag2'] - target['mag1']
     
         fig = plt.figure(1)
@@ -246,9 +250,9 @@ def plot_instrumental_colour_colour_diagram(params,star_catalog,catalog_header,t
         plt.plot(inst_colour1, inst_colour2,'.',
                  color='#8c6931',markersize=1,alpha=0.4,
                  label='Instrumental')
-        plt.plot(cal_colour1, cal_colour2,'.',
-                 color='#2b8c85',markersize=1,alpha=0.4,
-                 label='Catalogue')
+#        plt.plot(cal_colour1, cal_colour2,'.',
+#                 color='#2b8c85',markersize=1,alpha=0.4,
+#                 label='Calibrated')
         
 #        if len(target) > 0 and target['mag1'] > 0.0 and \
 #            target['mag2'] > 0.0 and target['mag2']:
