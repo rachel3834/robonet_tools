@@ -43,14 +43,14 @@ def calibrate_photometry():
         
     match_index = match_stars_by_position(star_catalog,vphas_cat,log)
     
-    catalog_utils.output_vphas_catalog_file(catalog_file,vphas_cat,match_index=match_index)
+#    catalog_utils.output_vphas_catalog_file(catalog_file,vphas_cat,match_index=match_index)
     
     fit = calc_phot_calib(params,star_catalog,vphas_cat,match_index,log)
     
     star_catalog = apply_phot_calib(star_catalog,fit,log)
     
-    output_to_metadata(star_catalog, reduction_metadata,setup,params,log)
-    
+    output_to_metadata(star_catalog, reduction_metadata,vphas_cat,match_index,
+                       setup,params,log)
     logs.close_log(log)
     
 def get_args():
@@ -106,7 +106,7 @@ def fetch_metadata(setup,params,log):
         reduction_metadata.load_a_layer_from_file( setup.red_dir, 
                                               params['metadata'],
                                               'phot_calib' )
-    except AttributeError:
+    except KeyError:
         pass
     
     params['fov'] = reduction_metadata.reduction_parameters[1]['FOV'][0]
@@ -488,23 +488,44 @@ def apply_phot_calib(star_catalog,fit_params,log):
     
     return star_catalog
 
-def output_to_metadata(star_catalog, reduction_metadata,setup,params,log):
+def output_to_metadata(star_catalog, reduction_metadata,vphas_cat,match_index,
+                       setup,params,log):
     """Function to output the star catalog to the reduction metadata. 
     Creates a phot_catalog extension if none exists, or overwrites an 
     existing one"""
+    
+    cmag = params['cat_mag_col']
     
     try:
         
         reduction_metadata.phot_calib[1]['star_index'] = star_catalog['star_index'][:]
         reduction_metadata.phot_calib[1]['cal_ref_mag'] = star_catalog['cal_ref_mag'][:]
+        reduction_metadata.phot_calib[1]['_RAJ2000'][match_index[:,0]] = vphas_cat['_RAJ2000'][match_index[:,1]]
+        reduction_metadata.phot_calib[1]['_DEJ2000'][match_index[:,0]] = vphas_cat['_DEJ2000'][match_index[:,1]]
+        reduction_metadata.phot_calib[1]['imag'][match_index[:,0]] = vphas_cat['imag'][match_index[:,1]]
+        reduction_metadata.phot_calib[1]['e_imag'][match_index[:,0]] = vphas_cat['e_imag'][match_index[:,1]]
+        reduction_metadata.phot_calib[1]['rmag'][match_index[:,0]] = vphas_cat['rmag'][match_index[:,1]]
+        reduction_metadata.phot_calib[1]['e_rmag'][match_index[:,0]] = vphas_cat['e_rmag'][match_index[:,1]]
+        reduction_metadata.phot_calib[1]['imag'][match_index[:,0]] = vphas_cat['imag'][match_index[:,1]]
+        reduction_metadata.phot_calib[1]['e_imag'][match_index[:,0]] = vphas_cat['e_imag'][match_index[:,1]]
+        reduction_metadata.phot_calib[1]['clean'][match_index[:,0]] = vphas_cat['clean'][match_index[:,1]]
 
         log.info('Updating existing phot_calib table')
         
     except AttributeError:
         
-        phot_catalog = np.zeros([len(star_catalog),2])
+        phot_catalog = np.zeros([len(star_catalog),11])
         phot_catalog[:,0] = star_catalog['star_index'][:]
         phot_catalog[:,1] = star_catalog['cal_ref_mag'][:]
+        phot_catalog[match_index[:,0],2] = vphas_cat['_RAJ2000'][match_index[:,1]]
+        phot_catalog[match_index[:,0],3] = vphas_cat['_DEJ2000'][match_index[:,1]]
+        phot_catalog[match_index[:,0],4] = vphas_cat['imag'][match_index[:,1]]
+        phot_catalog[match_index[:,0],5] = vphas_cat['e_imag'][match_index[:,1]]
+        phot_catalog[match_index[:,0],6] = vphas_cat['rmag'][match_index[:,1]]
+        phot_catalog[match_index[:,0],7] = vphas_cat['e_rmag'][match_index[:,1]]
+        phot_catalog[match_index[:,0],8] = vphas_cat['gmag'][match_index[:,1]]
+        phot_catalog[match_index[:,0],9] = vphas_cat['e_gmag'][match_index[:,1]]
+        phot_catalog[match_index[:,0],10] = vphas_cat['clean'][match_index[:,1]]
     
         reduction_metadata.create_phot_calibration_layer(phot_catalog,log=log)
         

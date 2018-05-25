@@ -92,6 +92,14 @@ def extract_star_catalog(params,filter_id,log):
     star_catalog['mag'] = reduction_metadata.star_catalog[1]['ref_mag']
     star_catalog['mag_err'] = reduction_metadata.star_catalog[1]['ref_mag_err']
     star_catalog['cal_ref_mag'] = reduction_metadata.phot_calib[1]['cal_ref_mag']
+    star_catalog['_RAJ2000'] = reduction_metadata.phot_calib[1]['_RAJ2000']
+    star_catalog['_DEJ2000'] = reduction_metadata.phot_calib[1]['_DEJ2000']
+    star_catalog['imag'] = reduction_metadata.phot_calib[1]['imag']
+    star_catalog['e_imag'] = reduction_metadata.phot_calib[1]['e_imag']
+    star_catalog['rmag'] = reduction_metadata.phot_calib[1]['rmag']
+    star_catalog['e_rmag'] = reduction_metadata.phot_calib[1]['e_rmag']
+    star_catalog['gmag'] = reduction_metadata.phot_calib[1]['gmag']
+    star_catalog['e_gmag'] = reduction_metadata.phot_calib[1]['e_gmag']
 
     log.info('Extracted data for '+str(len(star_catalog))+\
             ' stars for dataset '+filter_id)
@@ -138,7 +146,11 @@ def init_combined_catalog(datasets,f1,log):
                            'cal_ref_mag_'+f, 'cal_ref_mag_err_'+f ]
             formats += [ 'E', 'E', 'E', 'E' ]
             units += [ 'mag', 'mag', 'mag', 'mag' ]
-            
+    
+    col_names += [ 'imag', 'e_imag', 'rmag', 'e_rmag', 'gmag', 'e_gmag' ]
+    formats += [ 'E', 'E', 'E', 'E', 'E', 'E' ]
+    units += [ 'mag', 'mag', 'mag', 'mag', 'mag', 'mag' ]
+    
     combined_catalog = np.zeros([max_stars,len(col_names)])
 
     log.info('Initialized combined catalog for '+str(max_stars)+' stars')
@@ -232,6 +244,12 @@ def populate_combined_catalog(combined_catalog,f1,dataset1,match_index,log,
         combined_catalog[:,6] = 0.0             # cal_ref_err
         combined_catalog[:,10] = 0.0            # cal_ref_err2
         combined_catalog[:,14] = 0.0             # cal_ref_err3
+        combined_catalog[:,15] = dataset1['imag']
+        combined_catalog[:,16] = dataset1['e_imag']
+        combined_catalog[:,17] = dataset1['rmag']
+        combined_catalog[:,18] = dataset1['e_rmag']
+        combined_catalog[:,19] = dataset1['gmag']
+        combined_catalog[:,20] = dataset1['e_gmag']
         
         log.info('Populated the combined catalog with primary dataset, '+f1)
     
@@ -241,6 +259,13 @@ def populate_combined_catalog(combined_catalog,f1,dataset1,match_index,log,
         combined_catalog[match_index[:,0],8] = dataset2['mag_err'][match_index[:,1]]
         combined_catalog[match_index[:,0],9] = dataset2['cal_ref_mag'][match_index[:,1]]
         
+        combined_catalog[match_index[:,0],15] = dataset2['imag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],16] = dataset2['e_imag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],17] = dataset2['rmag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],18] = dataset2['e_rmag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],19] = dataset2['gmag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],20] = dataset2['e_gmag'][match_index[:,1]]
+
         log.info('Populated the combined catalog with '+str(len(match_index))+\
             ' stars from dataset '+f2)
             
@@ -250,6 +275,13 @@ def populate_combined_catalog(combined_catalog,f1,dataset1,match_index,log,
         combined_catalog[match_index[:,0],12] = dataset3['mag_err'][match_index[:,1]]
         combined_catalog[match_index[:,0],13] = dataset3['cal_ref_mag'][match_index[:,1]]
     
+        combined_catalog[match_index[:,0],15] = dataset3['imag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],16] = dataset3['e_imag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],17] = dataset3['rmag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],18] = dataset3['e_rmag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],19] = dataset3['gmag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],20] = dataset3['e_gmag'][match_index[:,1]]
+        
         log.info('Populated the combined catalog with '+str(len(match_index))+\
             ' stars from dataset '+f3)
             
