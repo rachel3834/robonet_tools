@@ -32,6 +32,11 @@ def process_image_set():
     
     print('Half width of sub-image will be '+str(crop_half_width_pix)+' pix')
     
+    if params['xoffset'] != 0.0 or params['yoffset'] != 0.0:
+        
+        print('Applying offset to cropped section: dx='+str(params['xoffset'])+\
+                                                ', dy='+str(params['yoffset']))
+                        
     for image in file_list:
         
         crop_image(image,target,params,crop_half_width_pix)
@@ -90,10 +95,10 @@ def crop_image(image_file,target,params,crop_half_width_pix):
     
     target_pixel = wcs.utils.skycoord_to_pixel(target,w,origin=1)
     
-    xlimits = [ int(target_pixel[0]) - crop_half_width_pix, 
-               int(target_pixel[0]) + crop_half_width_pix ]
-    ylimits = [ int(target_pixel[1]) - crop_half_width_pix, 
-               int(target_pixel[1]) + crop_half_width_pix ]
+    xlimits = [ int(target_pixel[0]) - crop_half_width_pix + params['xoffset'], 
+               int(target_pixel[0]) + crop_half_width_pix + params['xoffset'] ]
+    ylimits = [ int(target_pixel[1]) - crop_half_width_pix + params['yoffset'], 
+               int(target_pixel[1]) + crop_half_width_pix + params['yoffset'] ]
     
     print(os.path.basename(image_file)+' cropsize= '+str(xlimits[1] - xlimits[0])+
             ' x '+str(ylimits[1] - ylimits[0])+' pix')
@@ -142,6 +147,8 @@ def get_args():
         params['target_ra'] = raw_input('Please enter the target RA: ')    
         params['target_dec'] = raw_input('Please enter the target Dec: ')    
         params['sub_image_width'] = float(raw_input('Please enter the width of the cropped image [arcmin]: '))
+        params['xoffset'] = float(raw_input('Please enter the box offset in the X-axis: '))
+        params['yoffset'] = float(raw_input('Please enter the box offset in the Y-axis: '))
         
     else:
         
@@ -149,6 +156,8 @@ def get_args():
         params['target_ra'] = sys.argv[2]
         params['target_dec'] = sys.argv[3]
         params['sub_image_width'] = float(sys.argv[4])
+        params['xoffset'] = float(sys.argv[5])
+        params['yoffset'] = float(sys.argv[6])
         
     return params
 
