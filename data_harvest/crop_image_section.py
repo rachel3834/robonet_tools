@@ -36,7 +36,7 @@ def process_image_set():
         
         print('Applying offset to cropped section: dx='+str(params['xoffset'])+\
                                                 ', dy='+str(params['yoffset']))
-                        
+                            
     for image in file_list:
         
         crop_image(image,target,params,crop_half_width_pix)
@@ -95,10 +95,10 @@ def crop_image(image_file,target,params,crop_half_width_pix):
     
     target_pixel = wcs.utils.skycoord_to_pixel(target,w,origin=1)
     
-    xlimits = [ int(target_pixel[0]) - crop_half_width_pix + params['xoffset'], 
-               int(target_pixel[0]) + crop_half_width_pix + params['xoffset'] ]
-    ylimits = [ int(target_pixel[1]) - crop_half_width_pix + params['yoffset'], 
-               int(target_pixel[1]) + crop_half_width_pix + params['yoffset'] ]
+    xlimits = [ int(target_pixel[0] - crop_half_width_pix + params['xoffset']), 
+               int(target_pixel[0] + crop_half_width_pix + params['xoffset']) ]
+    ylimits = [ int(target_pixel[1] - crop_half_width_pix + params['yoffset']), 
+               int(target_pixel[1] + crop_half_width_pix + params['yoffset']) ]
     
     print(os.path.basename(image_file)+' cropsize= '+str(xlimits[1] - xlimits[0])+
             ' x '+str(ylimits[1] - ylimits[0])+' pix')
