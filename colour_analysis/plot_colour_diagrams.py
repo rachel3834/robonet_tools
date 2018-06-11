@@ -14,6 +14,7 @@ from astropy.table import Table
 import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
+import star_colour_data
 
 def plot_colour_diagrams():
     """Function to plot colour magnitude and colour-colour plots"""
@@ -224,7 +225,13 @@ def plot_colour_colour_diagram(params,star_catalog,deltas,catalog_header,target)
             plt.plot(target_gr+deltas['dgr'], 
                      target_ri+deltas['dri'],
                      'md',markersize=6)
-            
+        
+        (dwarf_stars, dwarf_labels) = star_colour_data.get_dwarf_star_colours()
+        (giant_stars, giant_labels) = star_colour_data.get_giant_star_colours()
+        
+        #plt.plot(dwarf_stars[:,1],dwarf_stars[:,2], 'b.')
+        #plt.plot(giant_stars[:,1],giant_stars[:,2], 'r.')
+        
         plt.xlabel('SDSS (g-r) [mag]')
     
         plt.ylabel('SDSS (r-i) [mag]')
@@ -318,7 +325,7 @@ def calibrate_instrumental_colour_colour_diagram(params,star_catalog,catalog_hea
         print 'Warning: Insufficient data for colour-colour diagram'
     
     return deltas
-    
+
 if __name__ == '__main__':
     
     plot_colour_diagrams()

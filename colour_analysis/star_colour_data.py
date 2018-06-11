@@ -6,6 +6,7 @@ Created on Thu May 24 16:52:15 2018
 """
 
 import numpy as np
+from astropy.table import Table
 
 # Tables of synthesized u'g'r'i'z' colors for the Gunn-Stryker Stellar Atlas,
 # from Lens, D.D et al. (1998), Apj, 119, 121, Table 2.
@@ -299,10 +300,51 @@ def get_dwarf_star_colours():
     
     (star_colours, star_labels) = load_lenz_table2()
     
-    print star_colours
+    idx = []
+    labels = []
+    
+    for i,t in enumerate(star_labels):
+        
+        if 'V' in t:
+            
+            idx.append(i)
+            labels.append(t)
+            
+    dwarf_star_colours = star_colours[idx]
+    
+    return dwarf_star_colours, labels
+
+def get_giant_star_colours():
+    """Synthesized u'g'r'i'z' colors for the giant (type III) stars in the
+    Gunn-Stryker Stellar Atlas, taken from 
+    Lens, D.D et al. (1998), Apj, 119, 121, Table 2."""
+    
+    (star_colours, star_labels) = load_lenz_table2()
+    
+    idx = []
+    labels = []
+    
+    for i,t in enumerate(star_labels):
+        
+        if 'III' in t:
+            
+            idx.append(i)
+            labels.append(t)
+            
+    giant_star_colours = star_colours[idx]
+    
+    return giant_star_colours, labels
     
 
 if __name__ == '__main__':
     
-    get_dwarf_star_colours()
+    (dwarf_star_colours, labels) = get_dwarf_star_colours()
+    
+    print dwarf_star_colours.shape
+    print len(labels)
+    
+    (giant_star_colours, labels) = get_giant_star_colours()
+    
+    print giant_star_colours.shape
+    print len(labels)
     

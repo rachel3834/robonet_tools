@@ -126,6 +126,11 @@ def crop_image(image_file,target,params,crop_half_width_pix):
 
             new_hdu.writeto(new_image_file, overwrite=True)
             
+    else:
+        
+        print('--> Warning: crop limits exceed image boundaries ('+\
+                repr(xlimits)+', '+repr(ylimits)+')')
+                
 def get_args():
     """Function to obtain or prompt for commandline arguments"""
     
