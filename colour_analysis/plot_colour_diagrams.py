@@ -15,6 +15,7 @@ import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
 import star_colour_data
+import spectral_type_data
 
 def plot_colour_diagrams():
     """Function to plot colour magnitude and colour-colour plots"""
@@ -44,6 +45,9 @@ def get_args():
         params['red_dir'] = raw_input('Please enter the path to the output directory: ')
         params['target_ra'] = raw_input('Please enter the RA of target to highlight, if any [sexigesimal format or none]:')
         params['target_dec'] = raw_input('Please enter the Dec of target to highlight, if any [sexigesimal format or none]:')
+        params['i_offset'] = raw_input('Please enter the extinction correction in i [mag]: ')
+        params['gr_offset'] = raw_input('Please enter the reddening correction in g-r [mag]: ')
+        params['ri_offset'] = raw_input('Please enter the reddening correction in r-i [mag]: ')
         
     else:
 
@@ -51,6 +55,9 @@ def get_args():
         params['red_dir'] = argv[2]
         params['target_ra'] = argv[3]
         params['target_dec'] = argv[4]
+        params['i_offset'] = float(argv[5])
+        params['gr_offset'] = float(argv[6])
+        params['ri_offset'] = float(argv[7])
     
     for key, value in params.items():
         
@@ -155,8 +162,8 @@ def plot_colour_mag_diagram(params,star_catalog,deltas,catalog_header,target):
     
     fig = plt.figure(1)
 
-    plt.scatter(inst_ri+deltas['dri'], 
-                inst_r+deltas['dr'], 
+    plt.scatter(inst_ri+deltas['dri']+params['ri_offset'], 
+                inst_i+deltas['di'], 
                  c='#2b8c85', 
                  marker='.', s=1)
     
@@ -166,13 +173,13 @@ def plot_colour_mag_diagram(params,star_catalog,deltas,catalog_header,target):
     
     if len(target) > 0 and target['ref_mag_ip'] > 0.0 and \
             target['ref_mag_rp'] > 0.0:
-        plt.plot(target_ri+deltas['dri'], 
-                 target['ref_mag_rp']+deltas['dr'],
+        plt.plot(target_ri+deltas['dri']+params['ri_offset'], 
+                 target['ref_mag_ip']+deltas['di'],
                  'md',markersize=6)
         
     plt.xlabel('SDSS (r-i) [mag]')
 
-    plt.ylabel('SDSS-r [mag]')
+    plt.ylabel('SDSS-i [mag]')
     
     [xmin,xmax,ymin,ymax] = plt.axis()
     
@@ -184,7 +191,7 @@ def plot_colour_mag_diagram(params,star_catalog,deltas,catalog_header,target):
     
 #    plt.legend()
     
-    plt.axis([0.0,2.0,20.0,14.0])
+    plt.axis([-0.5,1.0,18.0,13.0])
     
     plt.savefig(plot_file)
 
@@ -215,30 +222,61 @@ def plot_colour_colour_diagram(params,star_catalog,deltas,catalog_header,target)
     
         fig = plt.figure(1)
     
-        plt.scatter(inst_gr+deltas['dgr'], 
-                    inst_ri+deltas['dri'], 
+        plt.scatter(inst_gr+deltas['dgr']+params['gr_offset'], 
+                    inst_ri+deltas['dri']+params['ri_offset'], 
                      c='#2b8c85', 
                      marker='.', s=1)
         
         if len(target) > 0 and target['ref_mag_ip'] > 0.0 and \
             target['ref_mag_rp'] > 0.0 and target['ref_mag_gp']:
-            plt.plot(target_gr+deltas['dgr'], 
-                     target_ri+deltas['dri'],
+            plt.plot(target_gr+deltas['dgr']+params['gr_offset'], 
+                     target_ri+deltas['dri']+params['ri_offset'],
                      'md',markersize=6)
         
-        (dwarf_stars, dwarf_labels) = star_colour_data.get_dwarf_star_colours()
-        (giant_stars, giant_labels) = star_colour_data.get_giant_star_colours()
+        (spectral_type, luminosity_class, gr_colour, ri_colour) = spectral_type_data.get_spectral_class_data()
+        
+        #(dwarf_stars, dwarf_labels) = star_colour_data.get_dwarf_star_colours()
+        #(giant_stars, giant_labels) = star_colour_data.get_giant_star_colours()
         
         #plt.plot(dwarf_stars[:,1],dwarf_stars[:,2], 'b.')
         #plt.plot(giant_stars[:,1],giant_stars[:,2], 'r.')
         
+        plot_dwarfs = False
+        plot_giants = True
+        for i in np.arange(len(spectral_type)):
+            
+            spt = spectral_type[i]+luminosity_class[i]
+            
+            if luminosity_class[i] == 'V':
+                c = 'b'
+            else:
+                c = 'k'
+                        
+            if luminosity_class[i] == 'III' and plot_giants:
+                
+                plt.plot(gr_colour[i], ri_colour[i], c+'.', alpha=0.5)
+
+                plt.annotate(spt, (gr_colour[i], 
+                               ri_colour[i]-0.1), 
+                                 color=c, size=10, 
+                                 rotation=-30.0, alpha=0.5)
+
+            if luminosity_class[i] == 'V' and plot_dwarfs:
+                
+                plt.plot(gr_colour[i], ri_colour[i], c+'.', alpha=0.5)
+
+                plt.annotate(spt, (gr_colour[i], 
+                               ri_colour[i]+0.1), 
+                                 color=c, size=10, 
+                                 rotation=-30.0, alpha=0.5)
+
         plt.xlabel('SDSS (g-r) [mag]')
     
         plt.ylabel('SDSS (r-i) [mag]')
         
         plot_file = path.join(params['red_dir'],'colour_colour_diagram.png')
         
-        plt.axis([0.5,3.0,0.0,2.0])
+        plt.axis([-1.0,2.0,-0.5,1.0])
     
         plt.grid()
         

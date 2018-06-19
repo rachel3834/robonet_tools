@@ -15,7 +15,9 @@ from pyDANDIA import metadata
 import numpy as np
 import png
 from matplotlib import pyplot as plt
-
+from scipy import ndimage, stats
+from astropy.visualization import ZScaleInterval, ImageNormalize
+from astropy.visualization import make_lupton_rgb
 
 class ColourImage:
     """Class describing the separate images combined to make a colour image"""
@@ -80,6 +82,8 @@ class ColourImage:
         
         for key,par in {'b_offset':'b_cat', 'g_offset':'g_cat'}.items():
             
+            f = par.split('_')[0]
+            
             cat = getattr(self, par)
             
             cat_stars = SkyCoord(cat['RA'], cat['DEC'], unit="deg")
@@ -91,74 +95,115 @@ class ColourImage:
             dx = self.r_cat['x'][match_data[0]] - cat['x'][match_data[1]]
             dy = self.r_cat['y'][match_data[0]] - cat['y'][match_data[1]]
             
-            setattr(self, key, (dx.mean(), dy.mean()) )
-            print dx.mean(), dy.mean(), np.median(dx), np.median(dy)
-    
+            (hist_dx,binsx) = np.histogram(dx,bins=50)
+            (hist_dy,binsy) = np.histogram(dy,bins=50)
+            
+            idx = np.where(hist_dx == max(hist_dx))[0][0]
+            idy = np.where(hist_dy == max(hist_dy))[0][0]
+            
+            xmin = binsx[idx-2]
+            xmax = binsx[idx+2]
+            ymin = binsy[idy-2]
+            ymax = binsy[idy+2]
+            
+            idx = np.where(dx >= xmin)[0]
+            jdx = np.where(dx <= xmax)[0]
+            
+            kdx = list(set(idx).intersection(set(jdx)))
+            
+            deltax = np.median(dx[kdx]) + getattr(self,f+'_offset_x')
+            
+            idy = np.where(dy >= ymin)[0]
+            jdy = np.where(dy <= ymax)[0]
+                        
+            kdy = list(set(idy).intersection(set(jdy)))
+            
+            deltay = np.median(dy[kdy]) + getattr(self,f+'_offset_y')
+            
+            if par == 'b_cat':
+                setattr(self, key, (-deltax, -deltay) )
+            else:
+                setattr(self, key, (deltax, deltay) )
+                
+            plot_offsets(par,dx,dy)
+            
     def stack_colour_layers(self):
         """Method to apply the calculated offsets and combine the 3 images
         into a single array"""
+                    
+        self.output_image(self.r_image, 'input_r_image.png', norm='zscale')
+        self.output_image(self.g_image, 'input_g_image.png', norm='zscale')
+        self.output_image(self.b_image, 'input_b_image.png', norm='zscale')
         
         image = np.zeros([self.r_image.shape[0], self.r_image.shape[1], 3])
         
         image[:,:,0] = self.r_image
         
-        x = np.arange(0, len(self.g_image[0]),1) + self.g_offset[0]
-        idx = np.where(x > 0)
-        x = x[idx]
-        idx = np.where(x < len(self.g_image[0]))
-        x = x[idx]
+        image[:,:,1] = ndimage.shift(self.g_image,self.g_offset)
         
-        print x
-        print self.g_offset
+        self.output_image(image[:,:,1], 'offset_g_image.png')
         
-        y = np.arange(0, len(self.g_image[1]),1) + self.g_offset[1]
-        jdx = np.where(y > 0)
-        y = y[jdx]
-        jdx = np.where(y < len(self.g_image[1]))
-        y = y[jdx]
+        image[:,:,2] = ndimage.shift(self.b_image,self.b_offset)
         
-        (xx, yy) = np.meshgrid(x, y)
-        (xv, yv) = np.meshgrid(idx[0], jdx[0])
+        self.output_image(image[:,:,2], 'offset_b_image.png')
         
-        image[xx,yy,1] = self.g_image[xv,yv]
-        
-        x2 = np.arange(0, len(self.b_image[0]),1) + self.b_offset[0]
-        idx = np.where(x2 > 0)
-        x2 = x2[idx]
-        idx = np.where(x2 < len(self.b_image[0]))
-        x2 = x2[idx]
-        
-        print x2
-        print self.b_offset
-        
-        y2 = np.arange(0, len(self.b_image[1]),1) + self.b_offset[1]
-        jdx = np.where(y2 > 0)
-        y2 = y2[jdx]
-        jdx = np.where(y2 < len(self.b_image[1]))
-        y2 = y2[jdx]
-        
-        (xx, yy) = np.meshgrid(x2, y2)
-        (xv, yv) = np.meshgrid(idx[0], jdx[0])
-        
-        image[xx,yy,2] = self.b_image[xv,yv]
-        
-        self.colour_image = image
+        self.colour_image = make_lupton_rgb(image[:,:,0], image[:,:,1], image[:,:,2], stretch=0.5)
         
     def output_colour_image(self):
         """Method to output the colour image in PNG format"""
-                
-        fig = plt.figure(1,(10,10))
         
+        self.output_image(self.colour_image, self.out_image_path)
+    
+    def output_image(self, image, file_name, norm=None):
+        """Method to output an image to a PNG file"""
+        
+        fig = plt.figure(1,(50,50))
+            
         ax=plt.subplot(1,1,1)
         
-        plt.imshow(self.colour_image, aspect='equal')
+        if norm == 'zscale':
+            
+            norm = ImageNormalize(image, interval=ZScaleInterval())
+                      
+        plt.imshow(image, aspect='equal', norm=norm)
 
         plt.axis('off')
         
         extent = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
         
-        plt.savefig(self.out_image_path, bbox_inches=extent)
+        plt.savefig(file_name, bbox_inches=extent)
+
+def plot_offsets(cat,dx,dy):
+    """Function to plot the measured shifts for a set of stars"""
+    
+    fig = plt.figure(1,(10,10))
+
+    (n, bins, patches) = plt.hist(dx, 50, facecolor='green', alpha=0.75, label='dx')
         
+    plt.xlabel('X shift [pixels]')
+    
+    plt.ylabel('Frequency')
+    
+    plt.title('Measured star offsets from red frame for '+cat)
+    
+    plt.savefig(cat+'_dx.png')
+    
+    plt.close(1)
+    
+    fig = plt.figure(2,(10,10))
+    
+    (n, bins, patches) = plt.hist(dy, 50, facecolor='magenta', alpha=0.75, label='dy')
+    
+    plt.xlabel('Y shift [pixels]')
+    
+    plt.ylabel('Frequency')
+    
+    plt.title('Measured star offsets from red frame for '+cat)
+    
+    plt.savefig(cat+'_dy.png')
+    
+    plt.close(2)
+    
 def make_colour_movie():
     """Function to combine near-simultaneous images acquired in 3 passbands
     to make a series of colour images of the same field and combine them
@@ -205,10 +250,11 @@ def make_colour_image():
     
     cimage.calc_offsets_from_red()
     
-    # Transform images into a common reference frame
+    cimage.stack_colour_layers()
     
-    # Colourise and combine into the final image
-
+    cimage.output_colour_image()
+    
+    
 def get_args():
     """Function to harvest the required arguments from the user, either
     via the commandline arguments or by request.  
@@ -216,7 +262,7 @@ def get_args():
     
     if len(argv) == 1:
         
-        cmd_file = input('Please enter the path to the input command file: ')
+        cmd_file = raw_input('Please enter the path to the input command file: ')
     
     else:
         
@@ -253,7 +299,11 @@ def intialise_colour_image(cmd_file):
         try:
             (param, entry) = line.replace('\n', '').split()
             
-            setattr(cimage, str(param).lower(), entry)
+            if 'OFFSET' in param:
+                setattr(cimage, str(param).lower(), float(entry))
+            else:
+                setattr(cimage, str(param).lower(), entry)
+                
         except ValueError:
             
             print('ERROR: Mal-formed command file entry at line:')

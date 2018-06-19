@@ -99,7 +99,7 @@ def test_stack_colour_layers():
     
     cimage.g_image = np.zeros([100,100])
     cimage.g_image[35:55,35:55] = 1.0
-    cimage.g_offset = (-5,-5)
+    cimage.g_offset = (5,5)
     
     cimage.b_image = np.zeros([100,100])
     cimage.b_image[45:65,45:65] = 1.0
@@ -124,13 +124,13 @@ def test_output_colour_image():
     
     cimage.output_colour_image()
     
-    
+
 if __name__ == '__main__':
     
-    #test_intialise_colour_image()
-    #test_read_image_data()
-    #test_read_star_catalogs()
-    #test_calc_offsets_from_red()
+    test_intialise_colour_image()
+    test_read_image_data()
+    test_read_star_catalogs()
+    test_calc_offsets_from_red()
     test_stack_colour_layers()
-    #test_output_colour_image()
+    test_output_colour_image()
     
