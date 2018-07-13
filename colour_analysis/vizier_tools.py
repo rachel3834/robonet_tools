@@ -26,7 +26,7 @@ def search_vizier_for_sources(ra, dec, radius, catalog, row_limit=-1):
                                     'Hmag', 'e_Hmag','Kmag', 'e_Kmag'],
                                     {'Jmag':'<20'}],
                            'VPHAS+': ['II/341', 
-                                      ['_RAJ2000', '_DEJ2000', 'gmag', 'e_gmag', 'rmag', 'e_rmag', 'imag', 'e_imag', 'clean'],
+                                      ['sourceID', '_RAJ2000', '_DEJ2000', 'gmag', 'e_gmag', 'rmag', 'e_rmag', 'imag', 'e_imag', 'clean'],
                                     {}]
                            }
 
