@@ -1,0 +1,14 @@
+Colour analysis procedure
+
+* Select trio of best-quality gri reference images and use these to reduce
+both lightcurve and colour data for LSC
+
+* Determine offset from true WCS for ref_image_wcs.fits in all filters.
+
+* Apply the offset to the star_catalog table coordinates.
+
+* Run calibrate_photometry, matching the reference image data against VPHAS+
+
+* Run combine_colour_data to produce a combined star catalog with calibrated and instrumental magnitudes.
+
+* Run plot_colour_diagrams.
