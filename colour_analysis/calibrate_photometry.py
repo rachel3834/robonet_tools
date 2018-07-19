@@ -202,6 +202,7 @@ def select_calibration_stars(vphas_cat,params,log):
     
     limit_mag = 17.5
     if params['filter'] == 'gp': limit_mag = 22.0
+    if params['filter'] == 'rp': limit_mag = 18.0
         
     log.info('Using limiting mag '+str(limit_mag)+\
                     ' for catalog selection for filter '+params['filter'])
@@ -298,6 +299,9 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
                          log, diagnostics=True):
     """Function to make an initial guess at the fit parameters"""
     
+    
+    log.info('Fit initial parameters: '+repr(fit))
+    
     cmag = params['cat_mag_col']
     cerr = params['cat_err_col']
     
@@ -307,8 +311,16 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
 
     if params['filter'] == 'gp':
         xbin1 = 20.5
+        det_mags_max = 15.0
+        det_mags_min = 10.0
+    elif params['filter'] == 'rp':
+        xbin1 = 18.0
+        det_mags_max = 15.0
+        det_mags_min = 10.0
     else:
         xbin1 = 17.5
+        det_mags_max = 15.0
+        det_mags_min = 10.0
     xibin = 0.5
     xbin2 = xbin1 - xibin
     
@@ -327,7 +339,7 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
         
         if len(idx) > 0:
             
-            ybin1 = det_mags.max()
+            ybin1 = det_mags_max
             yibin = 0.5
             ybin2 = ybin1 - yibin
             
@@ -335,7 +347,7 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
             ybin_max = 0.0
             row_max = 0
             
-            while ybin2 > det_mags.min():
+            while ybin2 > det_mags_min:
                 
                 jdx1 = np.where(det_mags[idx] <= ybin1)
                 jdx2 = np.where(det_mags[idx] > ybin2)
@@ -362,11 +374,11 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
                 ybin1 -= yibin
                 ybin2 = ybin1 - yibin
             
-            if row_max > 1:
+            if row_max > 5:
                 xbins.append(xbin_max)
                 ybins.append(ybin_max)
                 peak_bin.append(row_max)
-#                print 'Local maximum: ',xbins[-1], ybins[-1], peak_bin[-1]
+#                print 'Local maximum: ',xbins[-1], ybins[-1], peak_bin[-1], row_max
             
         xbin1 -= xibin
         xbin2 = xbin1 - xibin
@@ -377,6 +389,11 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
     fit = calc_transform(fit, xbins, ybins)
     
     if diagnostics:
+        
+        f = open(os.path.join(params['red_dir'],'binned_phot.dat'),'w')
+        for i in range(0,len(xbins),1):
+            f.write(str(xbins[i])+' '+str(ybins[i])+'\n')
+        f.close()
         
         fig = plt.figure(2)
         
