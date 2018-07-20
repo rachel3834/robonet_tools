@@ -133,6 +133,7 @@ def fetch_metadata(setup,params,log):
     star_catalog['mag_err'] = reduction_metadata.star_catalog[1]['ref_mag_err']
     star_catalog['clean'] = np.zeros(len(reduction_metadata.star_catalog[1]['ref_mag']))
     star_catalog['cal_ref_mag'] = np.zeros(len(reduction_metadata.star_catalog[1]['ref_mag']))
+    star_catalog['cal_ref_mag_err'] = np.zeros(len(reduction_metadata.star_catalog[1]['ref_mag']))
     
     log.info('Extracted star catalog')
     
@@ -496,10 +497,11 @@ def apply_phot_calib(star_catalog,fit_params,log):
     
     cal_mags = phot_func(fit_params,mags)
     
-    idx = np.where(star_catalog['mag'] < 10.0)
+    idx = np.where(star_catalog['mag'] < 7.0)
     cal_mags[idx] = 0.0
     
     star_catalog['cal_ref_mag'] = cal_mags
+    star_catalog['cal_ref_mag_err'] = star_catalog['mag_err']
 
     log.info('Calculated calibrated reference magnitudes for all detected stars')
     
@@ -517,6 +519,7 @@ def output_to_metadata(star_catalog, reduction_metadata,vphas_cat,match_index,
         
         reduction_metadata.phot_calib[1]['star_index'] = star_catalog['star_index'][:]
         reduction_metadata.phot_calib[1]['cal_ref_mag'] = star_catalog['cal_ref_mag'][:]
+        reduction_metadata.phot_calib[1]['cal_ref_mag_err'] = star_catalog['cal_ref_mag_err'][:]
         reduction_metadata.phot_calib[1]['_RAJ2000'][match_index[:,0]] = vphas_cat['_RAJ2000'][match_index[:,1]]
         reduction_metadata.phot_calib[1]['_DEJ2000'][match_index[:,0]] = vphas_cat['_DEJ2000'][match_index[:,1]]
         reduction_metadata.phot_calib[1]['imag'][match_index[:,0]] = vphas_cat['imag'][match_index[:,1]]
@@ -534,6 +537,7 @@ def output_to_metadata(star_catalog, reduction_metadata,vphas_cat,match_index,
         phot_catalog = np.zeros([len(star_catalog),11])
         phot_catalog[:,0] = star_catalog['star_index'][:]
         phot_catalog[:,1] = star_catalog['cal_ref_mag'][:]
+        phot_catalog[:,1] = star_catalog['cal_ref_mag_err'][:]
         phot_catalog[match_index[:,0],2] = vphas_cat['_RAJ2000'][match_index[:,1]]
         phot_catalog[match_index[:,0],3] = vphas_cat['_DEJ2000'][match_index[:,1]]
         phot_catalog[match_index[:,0],4] = vphas_cat['imag'][match_index[:,1]]

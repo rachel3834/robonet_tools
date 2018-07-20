@@ -92,6 +92,7 @@ def extract_star_catalog(params,filter_id,log):
     star_catalog['mag'] = reduction_metadata.star_catalog[1]['ref_mag']
     star_catalog['mag_err'] = reduction_metadata.star_catalog[1]['ref_mag_err']
     star_catalog['cal_ref_mag'] = reduction_metadata.phot_calib[1]['cal_ref_mag']
+    star_catalog['cal_ref_mag_err'] = reduction_metadata.phot_calib[1]['cal_ref_mag_err']
     star_catalog['_RAJ2000'] = reduction_metadata.phot_calib[1]['_RAJ2000']
     star_catalog['_DEJ2000'] = reduction_metadata.phot_calib[1]['_DEJ2000']
     star_catalog['imag'] = reduction_metadata.phot_calib[1]['imag']
@@ -241,7 +242,7 @@ def populate_combined_catalog(combined_catalog,f1,dataset1,match_index,log,
         combined_catalog[:,3] = dataset1['mag']
         combined_catalog[:,4] = dataset1['mag_err']
         combined_catalog[:,5] = dataset1['cal_ref_mag']
-        combined_catalog[:,6] = 0.0             # cal_ref_err
+        combined_catalog[:,6] = dataset1['cal_ref_mag_err']
         combined_catalog[:,10] = 0.0            # cal_ref_err2
         combined_catalog[:,14] = 0.0             # cal_ref_err3
         combined_catalog[:,15] = dataset1['imag']
@@ -258,6 +259,7 @@ def populate_combined_catalog(combined_catalog,f1,dataset1,match_index,log,
         combined_catalog[match_index[:,0],7] = dataset2['mag'][match_index[:,1]]
         combined_catalog[match_index[:,0],8] = dataset2['mag_err'][match_index[:,1]]
         combined_catalog[match_index[:,0],9] = dataset2['cal_ref_mag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],10] = dataset2['cal_ref_mag_err'][match_index[:,1]]
         
         combined_catalog[match_index[:,0],15] = dataset2['imag'][match_index[:,1]]
         combined_catalog[match_index[:,0],16] = dataset2['e_imag'][match_index[:,1]]
@@ -274,6 +276,7 @@ def populate_combined_catalog(combined_catalog,f1,dataset1,match_index,log,
         combined_catalog[match_index[:,0],11] = dataset3['mag'][match_index[:,1]]
         combined_catalog[match_index[:,0],12] = dataset3['mag_err'][match_index[:,1]]
         combined_catalog[match_index[:,0],13] = dataset3['cal_ref_mag'][match_index[:,1]]
+        combined_catalog[match_index[:,0],14] = dataset3['cal_ref_mag_err'][match_index[:,1]]
     
         combined_catalog[match_index[:,0],15] = dataset3['imag'][match_index[:,1]]
         combined_catalog[match_index[:,0],16] = dataset3['e_imag'][match_index[:,1]]

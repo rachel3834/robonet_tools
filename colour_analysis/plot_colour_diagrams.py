@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import star_colour_data
 import spectral_type_data
+import jester_phot_transforms
 
 def plot_colour_diagrams():
     """Function to plot colour magnitude and colour-colour plots"""
@@ -38,7 +39,7 @@ def plot_colour_diagrams():
                                                  catalog_header,target,
                                                  det_idx,cat_idx,close_cat_idx)
     
-    (RC_i, sig_RC_i, RC_ri, sig_RC_ri) = localize_red_clump(star_catalog,close_cat_idx,deltas)
+    (RC_i, sig_RC_i, RC_ri, sig_RC_ri, RC_phot) = localize_red_clump(star_catalog,close_cat_idx,deltas)
     
     plot_colour_mag_diagram(params,star_catalog,deltas,catalog_header,target,
                                                  det_idx,cat_idx,close_cat_idx,
@@ -213,6 +214,14 @@ def plot_colour_mag_diagram(params,star_catalog,deltas,catalog_header,target,
         print('Target i_inst = '+str(target['ref_mag_ip'])+' +/- '+str(target['ref_mag_err_ip']))
         print('Target (r-i)_inst = '+str(target_ri)+' +/- '+str(sig_target_ri))
         
+        print('\nTarget i_inst (cal to VPHAS+) = '+str(target['ref_mag_ip']+deltas['di'])+' +/- '+str(target['ref_mag_err_ip']))
+        print('Target (r-i)_inst (cal to VPHAS+) = '+str(target_ri+deltas['dri'])+' +/- '+str(sig_target_ri))
+        
+        target_phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(ri=target_ri, sigri=sig_target_ri)
+        
+        print('\nTarget (V-R)_inst = '+str(target_phot['V-R'])+' +/- '+str(target_phot['sigVR'])+'mag')
+        print('Target (Rc-Ic)_inst = '+str(target_phot['Rc-Ic'])+' +/- '+str(target_phot['sigRI'])+'mag')
+            
     fig = plt.figure(1,(10,10))
     
     plt.rcParams.update({'font.size': 18})
@@ -248,10 +257,8 @@ def plot_colour_mag_diagram(params,star_catalog,deltas,catalog_header,target,
                  xerr = sig_target_ri,color='m',
                  marker='d',markersize=6, label='Source at baseline')
     
-    plt.errorbar(RC_ri+deltas['dri']+params['ri_offset'], 
-                 RC_i+deltas['di'], 
-                 yerr=sig_RC_i,
-                 xerr = sig_RC_ri,color='g',
+    plt.errorbar(RC_ri+params['ri_offset'], RC_i, 
+                 yerr=sig_RC_i,xerr = sig_RC_ri, color='g',
                  marker='s',markersize=6, label='Red Clump centroid')
                  
     plt.xlabel('SDSS (r-i) [mag]')
@@ -300,15 +307,14 @@ def plot_colour_colour_diagram(params,star_catalog,deltas,catalog_header,target,
     
         fig = plt.figure(1,(10,10))
     
-        plt.scatter(inst_gr+params['gr_offset'], 
-                    inst_ri+params['ri_offset'], 
-                     c='#2b8c85', 
-                     marker='.', s=1)
+        plt.scatter(inst_gr+deltas['dgr']+params['gr_offset'], 
+                    inst_ri+deltas['dri']+params['ri_offset'], 
+                     c='#2b8c85', marker='.', s=1)
         
         if len(target) > 0 and target['ref_mag_ip'] > 0.0 and \
             target['ref_mag_rp'] > 0.0 and target['ref_mag_gp']:
-            plt.plot(target_gr+params['gr_offset'], 
-                     target_ri+params['ri_offset'],
+            plt.plot(target_gr+deltas['dgr']+params['gr_offset'], 
+                     target_ri+deltas['dri']+params['ri_offset'],
                      'md',markersize=6)
         
         (spectral_type, luminosity_class, gr_colour, ri_colour) = spectral_type_data.get_spectral_class_data()
@@ -380,17 +386,21 @@ def calibrate_instrumental_colour_colour_diagram(params,star_catalog,
     
     try:
     
-        inst_i = star_catalog['ref_mag_ip'][close_cat_idx]
-        inst_r = star_catalog['ref_mag_rp'][close_cat_idx]
-        inst_g = star_catalog['ref_mag_gp'][close_cat_idx]
+        inst_i = star_catalog['ref_mag_ip'][cat_idx]
+        inst_r = star_catalog['ref_mag_rp'][cat_idx]
+        inst_g = star_catalog['ref_mag_gp'][cat_idx]
         inst_gr = inst_g - inst_r    # Catalogue column order is red -> blue
         inst_ri = inst_r - inst_i   
         
-        cal_i = star_catalog['imag'][close_cat_idx]
-        cal_r = star_catalog['rmag'][close_cat_idx]
-        cal_g = star_catalog['gmag'][close_cat_idx]
+        cal_i = star_catalog['imag'][cat_idx]
+        cal_r = star_catalog['rmag'][cat_idx]
+        cal_g = star_catalog['gmag'][cat_idx]
         cal_gr = cal_g - cal_r    # Catalogue column order is red -> blue
         cal_ri = cal_r - cal_i    
+        
+        plot_phot_transform(params, inst_i, cal_i, 'SDSS-i')
+        plot_phot_transform(params, inst_r, cal_r, 'SDSS-r')
+        plot_phot_transform(params, inst_g, cal_g, 'SDSS-g')
         
         deltas = {}
         deltas['di'] = np.median(cal_i - inst_i)
@@ -450,6 +460,30 @@ def calibrate_instrumental_colour_colour_diagram(params,star_catalog,
     
     return deltas
 
+def plot_phot_transform(params, inst_mag, cal_mag, bandpass):
+    """Function to plot the relationship between the catalogue and instrumental
+    magnitudes of a single passband"""
+    
+    fig = plt.figure(2)
+
+    plt.plot(cal_mag, inst_mag,'k.')
+
+    plt.xlabel('Catalog magnitude')
+
+    plt.ylabel('Instrumental magnitude')
+    
+    plt.title('Relation between instrumental and catalogue magnitudes in '+\
+                bandpass)
+                
+    [xmin,xmax,ymin,ymax] = plt.axis()
+    
+    plt.axis([xmax,xmin,ymax,ymin])
+    
+    plt.savefig(path.join(params['red_dir'],
+                'phot_transform_'+bandpass+'.png'))
+
+    plt.close(2)
+
 def localize_red_clump(star_catalog,close_cat_idx,deltas):
     """Function to calculate the centroid of the Red Clump stars in a 
     colour-magnitude diagram"""
@@ -488,10 +522,19 @@ def localize_red_clump(star_catalog,close_cat_idx,deltas):
     print('\nCentroid of Red Clump Stars at:')
     print('i_inst,RC= '+str(RC_i)+' +/- '+str(sig_RC_i))
     print('(r-i)_inst,RC= '+str(RC_ri)+' +/- '+str(sig_RC_ri))
-    print('i_0,RC= '+str(RC_i+deltas['di'])+' +/- '+str(sig_RC_i))
-    print('(r-i)_0,RC= '+str(RC_ri+deltas['dri'])+' +/- '+str(sig_RC_ri))
     
-    return RC_i, sig_RC_i, RC_ri, sig_RC_ri
+    RC_i = RC_i + deltas['di']
+    RC_ri = RC_ri + deltas['dri']
+    
+    print('\ni_inst,RC (cal to VPHAS+) = '+str(RC_i)+' +/- '+str(sig_RC_i))
+    print('(r-i)_inst,RC (cal to VPHAS+) = '+str(RC_ri)+' +/- '+str(sig_RC_ri))
+    
+    RC_phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(ri=RC_ri, sigri=sig_RC_ri)
+    
+    print('\n(V-R)_inst,RC = '+str(RC_phot['V-R'])+' +/- '+str(RC_phot['sigVR'])+'mag')
+    print('(Rc-Ic)_inst,RC = '+str(RC_phot['Rc-Ic'])+' +/- '+str(RC_phot['sigRI'])+'mag')
+    
+    return RC_i, sig_RC_i, RC_ri, sig_RC_ri, RC_phot
     
 if __name__ == '__main__':
     
