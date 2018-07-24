@@ -60,27 +60,23 @@ def transform_SDSS_to_JohnsonCousins(ug=None, sigug=None, gr=None, siggr=None,
     
     if ug != None:
         results['U-B'] = 0.78*ug - 0.88
-        results['sigUB'] = np.sqrt( ((results['U-B']/ug)**2 * sigug*sigug) + (0.05*0.05) )
+        results['sigUB'] = np.sqrt( (sigug*sigug) + (0.05*0.05) )
         
     if gr != None:
         results['B-V'] = 0.98*gr + 0.22
-        results['sigBV'] = np.sqrt( ((results['B-V']/gr)**2 * siggr*siggr) + (0.04*0.04) )
+        results['sigBV'] = np.sqrt( (siggr*siggr) + (0.04*0.04) )
     
     if ri != None:
         results['V-R'] = 1.09*ri + 0.22
-        results['sigVR'] = np.sqrt( ((results['V-R']/ri)**2 * sigri*sigri) + (0.03*0.03) )
+        results['sigVR'] = np.sqrt( (sigri*sigri) + (0.03*0.03) )
         results['Rc-Ic'] = 1.00*ri + 0.21
-        results['sigRI'] = np.sqrt( ((results['Rc-Ic']/ri)**2 * sigri*sigri) + (0.01*0.01) )
+        results['sigRI'] = np.sqrt( (sigri*sigri) + (0.01*0.01) )
     
     if g != None and gr != None:
         results['B'] = g + 0.39*gr + 0.21
-        results['sigB'] = np.sqrt( ((results['B']/g)**2 * sigg*sigg) + \
-                                    ((results['B']/gr)**2 * siggr*siggr) + \
-                                    (0.03*0.03) )
+        results['sigB'] = np.sqrt( (sigg*sigg) + (siggr*siggr) + (0.03*0.03) )
         results['V'] = g - 0.59*gr - 0.01
-        results['sigV'] = np.sqrt( ((results['V']/g)**2 * sigg*sigg) + \
-                                    ((results['V']/gr)**2 * siggr*siggr) + \
-                                    (0.01*0.01) )
+        results['sigV'] = np.sqrt( (sigg*sigg) + (siggr*siggr) + (0.01*0.01) )
     
     return results
     
@@ -162,6 +158,19 @@ def transform_JohnsonCousins_to_SDSS(UB=None, sigUB=None, BV=None, sigBV=None,
         results['sigr'] = np.sqrt( ((results['r']/V)**2 * sigV*sigV) + \
                                     ((results['r']/BV)**2 * sigBV*sigBV) + \
                                     (0.03*0.03) )
+
+    return results
+
+def calc_derived_colours_JohnsonCousins(results):
+    """Function to calculate derived colours, given the results of 
+    previous transformations"""
+    
+    results['R'] = results['V'] - results['V-R']
+    results['sigR'] = np.sqrt( (results['sigV']*results['sigV']) + (results['sigVR']*results['sigVR']) ) 
+    results['I'] = results['R'] - results['Rc-Ic']
+    results['sigI'] = np.sqrt( (results['sigR']*results['sigR']) + (results['sigRI']*results['sigRI']) ) 
+    results['V-I'] = results['V'] - results['I']
+    results['sigVI'] = np.sqrt( (results['sigV']*results['sigV']) + (results['sigI']*results['sigI']) ) 
 
     return results
     

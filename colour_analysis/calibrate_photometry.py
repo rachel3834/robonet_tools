@@ -311,16 +311,16 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
     det_mag_errs = star_catalog['mag_err'][match_index[:,0]]
 
     if params['filter'] == 'gp':
-        xbin1 = 20.5
-        det_mags_max = 15.0
+        xbin1 = 16.0
+        det_mags_max = 16.0
         det_mags_min = 10.0
     elif params['filter'] == 'rp':
-        xbin1 = 18.0
-        det_mags_max = 15.0
+        xbin1 = 13.5
+        det_mags_max = 13.5
         det_mags_min = 10.0
     else:
-        xbin1 = 17.5
-        det_mags_max = 15.0
+        xbin1 = 13.5
+        det_mags_max = 13.5
         det_mags_min = 10.0
     xibin = 0.5
     xbin2 = xbin1 - xibin
@@ -330,17 +330,17 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
     xbins = []
     ybins = []
     
-    while xbin2 > cat_mags.min():
+    while xbin2 > det_mags_min:
         
-        idx1 = np.where(cat_mags <= xbin1)
-        idx2 = np.where(cat_mags > xbin2)
+        idx1 = np.where(det_mags <= xbin1)
+        idx2 = np.where(det_mags > xbin2)
         idx = list(set(idx1[0].tolist()).intersection(set(idx2[0].tolist())))
         
 #        print 'X: ',xbin1,xbin2, len(idx)
         
         if len(idx) > 0:
             
-            ybin1 = det_mags_max
+            ybin1 = cat_mags.max()
             yibin = 0.5
             ybin2 = ybin1 - yibin
             
@@ -348,10 +348,10 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
             ybin_max = 0.0
             row_max = 0
             
-            while ybin2 > det_mags_min:
+            while ybin2 > cat_mags.min():
                 
-                jdx1 = np.where(det_mags[idx] <= ybin1)
-                jdx2 = np.where(det_mags[idx] > ybin2)
+                jdx1 = np.where(cat_mags[idx] <= ybin1)
+                jdx2 = np.where(cat_mags[idx] > ybin2)
                 jdx = list(set(jdx1[0].tolist()).intersection(set(jdx2[0].tolist())))
                 
                 if len(jdx) > 0:
@@ -361,7 +361,7 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
                     row = []
                     row.append( (xbin1 - (xibin/2.0)) )
                     row.append( (ybin1 - (yibin/2.0)) )
-                    row.append(np.median(det_mags[kdx]))
+                    row.append(np.median(cat_mags[kdx]))
                     row.append(len(kdx))
                     
                     binned_data.append(row)
@@ -369,7 +369,7 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
                     
                     if len(kdx) > row_max:
                         xbin_max = (xbin1 - (xibin/2.0))
-                        ybin_max = np.median(det_mags[kdx])
+                        ybin_max = np.median(cat_mags[kdx])
                         row_max = len(kdx)
                         
                 ybin1 -= yibin
@@ -398,11 +398,11 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
         
         fig = plt.figure(2)
         
-        plt.errorbar(vphas_cat[cmag][match_index[:,1]], 
-                 star_catalog['mag'][match_index[:,0]],
-                 yerr=star_catalog['mag_err'][match_index[:,0]],
-                 xerr=vphas_cat[cerr][match_index[:,1]],
-                 color='m', fmt='none')
+        plt.errorbar(star_catalog['mag'][match_index[:,0]],
+                     vphas_cat[cmag][match_index[:,1]], 
+                     xerr=star_catalog['mag_err'][match_index[:,0]],
+                     yerr=vphas_cat[cerr][match_index[:,1]],
+                     color='m', fmt='none')
         
         plt.plot(xbins,ybins,'g+',markersize=4)
 
@@ -411,10 +411,10 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
     
         plt.plot(xplot, yplot,'k-')
 
-        plt.xlabel('VPHAS+ catalog magnitude')
-    
-        plt.ylabel('Instrumental magnitude')
+        plt.xlabel('Instrumental magnitude')
         
+        plt.ylabel('VPHAS+ catalog magnitude')
+            
         [xmin,xmax,ymin,ymax] = plt.axis()
         
         plt.axis([xmax,xmin,ymax,ymin])
