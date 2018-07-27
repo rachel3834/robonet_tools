@@ -17,7 +17,9 @@ import numpy as np
 import star_colour_data
 import spectral_type_data
 import jester_phot_transforms
+import bilir_phot_transforms
 import red_clump_utilities
+import interp_Bessell_Brett
 
 def perform_colour_analysis():
     """Function to plot colour magnitude and colour-colour plots"""
@@ -51,7 +53,11 @@ def perform_colour_analysis():
     plot_colour_colour_diagram(params,star_catalog,catalog_header,target,
                                                  det_idx,cat_idx,close_cat_idx)
                                                  
-    measure_RC_offset(params,RC,target)
+    (target, RC) = measure_RC_offset(params,RC,target)
+    
+    (target['V-K'], target['sigVK']) = interp_Bessell_Brett.star_colour_conversion(target['V-I_0'], target['sigVI_0'], 
+                                                                                    params['star_class'], 'V-I', 
+                                                                                    'V-K')
     
 def get_args():
     """Function to gather the necessary commandline arguments"""
@@ -64,6 +70,7 @@ def get_args():
         params['red_dir'] = raw_input('Please enter the path to the output directory: ')
         params['target_ra'] = raw_input('Please enter the RA of target [sexigesimal]:')
         params['target_dec'] = raw_input('Please enter the Dec of target [sexigesimal]:')
+        params['star_class'] = raw_input('Please input the likely luminosity class of the source: ')
         
     else:
 
@@ -71,6 +78,7 @@ def get_args():
         params['red_dir'] = argv[2]
         params['target_ra'] = argv[3]
         params['target_dec'] = argv[4]
+        params['star_class'] = argv[5]
     
     for key, value in params.items():
         
@@ -660,10 +668,38 @@ def localize_red_clump(star_catalog,close_cat_idx):
 
 def measure_RC_offset(params,RC,target):
     """Function to calculate the offset of the Red Clump from its expected 
-    values, taken from Nataf et al. (2013), ApJ, 769, 88"""
+    values, taken from Bensby et al. (2017), 2017, A&A, 605A, 89 for V, I bands and
+    Hawkins et al. (2017) MNRAS, 471, 722 for 2MASS J,H,Ks.
+    """
     
     RC['M_I_0'] = -0.12
-    RC['V-I_0'] = 1.06
+    RC['V-I_0'] = 1.09
+    RC['M_V_0'] = 0.97
+    
+    RC['M_J_0'] = -0.93
+    RC['sig_J_0'] = 0.01
+    RC['M_H_0'] = -1.68
+    RC['sig_H_0'] = 0.02
+    RC['M_Ks_0'] = -1.61
+    RC['sig_Ks_0'] = 0.01
+    
+    RC['J-H_0'] = RC['M_J_0'] - RC['M_H_0']
+    RC['sigJH_0'] = np.sqrt( (RC['sig_J_0']*RC['sig_J_0']) + (RC['sig_H_0']*RC['sig_H_0']) )
+    RC['H-K_0'] = RC['M_H_0'] - RC['M_Ks_0']
+    RC['sigHK_0'] = np.sqrt( (RC['sig_H_0']*RC['sig_H_0']) + (RC['sig_Ks_0']*RC['sig_Ks_0']) )
+    
+    (RC['g-r_0'], RC['siggr_0'], RC['r-i_0']RC['sigri_0']) = bilir_phot_transforms.transform_2MASS_to_SDSS(JH=RC['J-H_0'], HK=RC['H-K_0'], MH=None)
+    
+    print('\n Derived Red Clump instrumental colours and magnitudes:')
+    print('(g-r)_RC,0 = '+str(RC['g-r_0'])+' +/- '+str(RC['siggr_0'])+'mag')
+    print('(r-i)_RC,0 = '+str(RC['r-i_0'])+' +/- '+str(RC['sigri_0'])+'mag')
+    
+    print('\n Red Clump NIR colours and magnitudes:')
+    print('J_RC,0 = '+str(RC['M_J_0'])+' +/- '+str(RC['sig_J_0'])+'mag')
+    print('H_RC,0 = '+str(RC['M_H_0'])+' +/- '+str(RC['sig_H_0'])+'mag')
+    print('Ks_RC,0 = '+str(RC['M_Ks_0'])+' +/- '+str(RC['sig_Ks_0'])+'mag')
+    print('(J-H)_RC,0 = '+str(RC['J-H_0'])+' +/- '+str(RC['sigJH_0'])+'mag')
+    print('(H-Ks)_RC,0 = '+str(RC['H-K_0'])+' +/- '+str(RC['sigHK_0'])+'mag')
     
     RC['distance'] = red_clump_utilities.calc_red_clump_distance(params['target_ra'],params['target_dec'])
     RC['I_app'] = red_clump_utilities.calc_I_apparent(RC['distance'])
@@ -675,13 +711,49 @@ def measure_RC_offset(params,RC,target):
     print('I_inst,RC = '+str(RC['I'])+' +/- '+str(RC['sigI'])+'mag')
     print('(V-I)_inst,RC = '+str(RC['V-I'])+' +/- '+str(RC['sigVI'])+'mag')
     
-    A = RC['I'] - RC['I_app']
-    sigA = RC['sigI']
-    EVI = RC['V-I'] - RC['V-I_0']
-    sigEVI = RC['sigVI']
+    RC['A_I'] = RC['I'] - RC['I_app']
+    RC['sigA_I'] = RC['sigI']
+    RC['EVI'] = RC['V-I'] - RC['V-I_0']
+    RC['sigEVI'] = RC['sigVI']
+    RC['Egr'] = RC['gr'] - RC['g-r_0']
+    RC['sigEgr'] = np.sqrt( (RC['sig_gr']*RC['sig_gr']) + (RC['siggr_0']*RC['siggr_0']) )
+    RC['Eri'] = RC['ri'] - RC['r-i_0']
+    RC['sigEri'] = np.sqrt( (RC['sig_ri']*RC['sig_ri']) + (RC['sigri_0']*RC['sigri_0']) )
     
-    print('\nExtinction, d(I) = '+str(A)+' +/- '+str(sigA))
-    print('Reddening, E(V-I) = '+str(EVI)+' +/- '+str(sigEVI))
+    print('\nExtinction, d(I) = '+str(RC['A_I'])+' +/- '+str(RC['sigA_I']))
+    print('Reddening, E(V-I) = '+str(RC['EVI'])+' +/- '+str(RC['sigEVI']))
+    print('Reddening, E(g-r) = '+str(RC['Egr'])+' +/- '+str(RC['sigEgr']))
+    print('Reddening, E(r-i) = '+str(RC['Eri'])+' +/- '+str(RC['sigEri']))
+    
+    target['I_0'] = target['I'] - RC['A']
+    target['sigI_0'] = np.sqrt( (target['sigI']*target['sigI']) + (RC['sigA']*RC['sigA']) )
+    target['V-I_0'] = target['V-I'] - RC['EVI']
+    target['sigVI_0'] = np.sqrt( (target['sigVI']*target['sigVI']) + (RC['sigEVI']*RC['sigEVI']) )
+    target['g-r_0'] = target['gr'] - RC['Egr']
+    target['siggr_0'] = np.sqrt( (target['sig_gr']*target['sig_gr']) + (RC['sigEgr']*RC['sigEgr']) )
+    target['r-i_0'] = target['ri'] - RC['Eri']
+    target['sigri_0'] = np.sqrt( (target['sig_ri']*target['sig_ri']) + (RC['sigEri']*RC['sigEri']) )
+
+    print('\nSource star extinction-corrected I_S,0 = '+str(target['I_0'])+' +/- '+str(target['sigI_0']))
+    print('Source star de-reddened colour (V-I)_S,0 = '+str(target['V-I_0'])+' +/- '+str(target['sigVI_0']))
+    print('Source star de-reddened colour (g-r)_S,0 = '+str(target['gr_0'])+' +/- '+str(target['siggr_0']))
+    print('Source star de-reddened colour (r-i)_S,0 = '+str(target['ri_0'])+' +/- '+str(target['sigri_0']))
+    
+    tphot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(g=
+                                                                    gr=target['gr_0'], 
+                                                                    siggr=target['siggr_0'],
+                                                                    ri=target['ri_0'],
+                                                                    sigri=target['sigri_0'])
+    
+    target['BV_0'] = tphot['B-V']
+    target['sigBV_0'] = tphot['sigBV']
+    target['VR_0'] = tphot['V-R']
+    target['sigVR_0'] = tphot['sigVR']
+    target['RI_0'] = tphot['Rc-Ic']
+    target['sigRI_0'] = tphot['sigRI']
+    
+    
+    return target, RC
     
 if __name__ == '__main__':
     
