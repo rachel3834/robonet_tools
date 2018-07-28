@@ -20,6 +20,8 @@ import jester_phot_transforms
 import bilir_phot_transforms
 import red_clump_utilities
 import interp_Bessell_Brett
+import isochrone_utilities
+import photometry_classes
 
 def perform_colour_analysis():
     """Function to plot colour magnitude and colour-colour plots"""
@@ -33,7 +35,7 @@ def perform_colour_analysis():
     
     target = find_target_data(params,star_catalog)
 
-    print target
+    (source, blend) = calc_source_blend_params(params)
     
     (det_idx, cat_idx, close_cat_idx) = index_valid_star_entries(star_catalog,
                                                                 target,tol,
@@ -46,13 +48,13 @@ def perform_colour_analysis():
 
     RC = localize_red_clump(star_catalog,close_cat_idx)
     
-    analyse_colour_mag_diagrams(params,star_catalog,catalog_header,target,
-                                                 det_idx,cat_idx,close_cat_idx,
-                                                 RC)
+    analyse_colour_mag_diagrams(params,star_catalog,catalog_header,
+                                source,blend,RC,
+                                det_idx,cat_idx,close_cat_idx)
                                                  
     RC = measure_RC_offset(params,RC,target)
     
-    target = calc_target_phot_properties(target, RC)
+    (target,source,blend) = calc_phot_properties(target, source, blend, RC)
     
     
     plot_colour_colour_diagram(params,star_catalog,catalog_header,target,RC,
@@ -71,6 +73,13 @@ def get_args():
         params['target_ra'] = raw_input('Please enter the RA of target [sexigesimal]:')
         params['target_dec'] = raw_input('Please enter the Dec of target [sexigesimal]:')
         params['star_class'] = raw_input('Please input the likely luminosity class of the source: ')
+        params['isochrone_file'] = raw_input('Please input the path to an isochrone data file or None: ')
+        params['f_s_g'] = float(raw_input('Please input the source flux (SDSS-g) or None: '))
+        params['f_b_g'] = float(raw_input('Please input the blend flux (SDSS-g) or None: '))
+        params['f_s_r'] = float(raw_input('Please input the source flux (SDSS-r) or None: '))
+        params['f_b_r'] = float(raw_input('Please input the blend flux (SDSS-r) or None: '))
+        params['f_s_i'] = float(raw_input('Please input the source flux (SDSS-i) or None: '))
+        params['f_b_i'] = float(raw_input('Please input the blend flux (SDSS-i) or None: '))
         
     else:
 
@@ -79,6 +88,13 @@ def get_args():
         params['target_ra'] = argv[3]
         params['target_dec'] = argv[4]
         params['star_class'] = argv[5]
+        params['isochrone_file'] = argv[6]
+        params['f_s_g'] = float(argv[7])
+        params['f_b_g'] = float(argv[8])
+        params['f_s_r'] = float(argv[9])
+        params['f_b_r'] = float(argv[10])
+        params['f_s_i'] = float(argv[11])
+        params['f_b_i'] = float(argv[12])
     
     for key, value in params.items():
         
@@ -107,11 +123,82 @@ def read_combined_star_catalog(params):
     
     return star_catalog, header
 
+def calc_source_blend_params(params):
+    """Function to construct a dictionary of needed parameters for the 
+    source and blend"""
+    
+    source = photometry_classes.Star()
+    
+    source.fs_g = params['f_s_g']
+    source.sig_fs_g = params['sig_f_s_g']
+    (source.g, source.sig_g) = flux_to_mag_pylima(source.fs_g,source.sig_fs_g)
+    
+    source.fs_r = params['f_s_r']
+    source.sig_fs_r = params['sig_f_s_r']
+    (source.r, source.sig_r) = flux_to_mag_pylima(source.fs_r,source.sig_fs_r)
+    
+    source.fs_i = params['f_s_i']
+    source.sig_fs_i = params['sig_f_s_i']
+    (source.i, source.sig_i) = flux_to_mag_pylima(source.fs_i,source.sig_fs_i)
+    
+    source.compute_colours(use_inst=True)
+    source.transform_to_JohnsonCousins()
+    
+    print('Source measured photometry:')
+    print(target.summary(show_mags=True))
+    print(target.summary(show_colours=True))
+    print(target.summary(johnsons=True))
+    
+    blend = photometry_classes.Star()
+    
+    blend.fs_g = params['f_s_g']
+    blend.sig_fs_g = params['sig_f_s_g']
+    (blend.g, blend.sig_g) = flux_to_mag_pylima(blend.fs_g,blend.sig_fs_g)
+    
+    blend.fs_r = params['f_s_r']
+    blend.sig_fs_r = params['sig_f_s_r']
+    (blend.r, blend.sig_r) = flux_to_mag_pylima(blend.fs_r,blend.sig_fs_r)
+    
+    blend.fs_i = params['f_s_i']
+    blend.sig_fs_i = params['sig_f_s_i']
+    (blend.i, blend.sig_i) = flux_to_mag_pylima(blend.fs_i,blend.sig_fs_i)
+    
+    blend.compute_colours(use_inst=True)
+    blend.transform_to_JohnsonCousins()
+    
+    return source, blend
+    
+def flux_to_mag_pylima(flux,flux_err):
+    """Function to convert the flux and flux uncertainty measured by 
+    modeling in pyLIMA to magnitudes
+
+    Uses default pyLIMA zeropoint = 27.4 mag    
+    """
+    
+    def flux2mag(ZP, flux):
+        
+        return ZP - 2.5 * np.log10(flux)
+    
+    ZP = 27.40
+    
+    if flux < 0.0 or flux_err < 0.0:
+        
+        mag = 0.0
+        mag_err = 0.0
+
+    else:        
+
+        mag = flux2mag(ZP, flux)
+        
+        mag_err = (2.5/np.log(10.0))*flux_err/flux
+        
+    return mag, mag_err
+
 def find_target_data(params,star_catalog):
     """Function to identify the photometry for a given target, if present
     in the star catalogue"""
     
-    target = {}
+    target = photometry_classes.Star()
     
     if params['target_ra'] != None:
         
@@ -127,80 +214,39 @@ def find_target_data(params,star_catalog):
         idx = np.argsort(match_data[2].value)
     
         if len(match_data[0]) > 0:
-            target['star_index'] = star_catalog['star_index'][match_data[1][idx[0]]]
-            target['ra'] = star_catalog['RA'][match_data[1][idx[0]]]
-            target['dec'] = star_catalog['DEC'][match_data[1][idx[0]]]
-            target['cal_ref_mag_ip'] = star_catalog['cal_ref_mag_ip'][match_data[1][idx[0]]]
-            target['cal_ref_mag_err_ip'] = star_catalog['cal_ref_mag_err_ip'][match_data[1][idx[0]]]
-            target['cal_ref_mag_rp'] = star_catalog['cal_ref_mag_rp'][match_data[1][idx[0]]]
-            target['cal_ref_mag_err_rp'] = star_catalog['cal_ref_mag_err_rp'][match_data[1][idx[0]]]
-            target['ref_mag_ip'] = star_catalog['ref_mag_ip'][match_data[1][idx[0]]]
-            target['ref_mag_err_ip'] = star_catalog['ref_mag_err_ip'][match_data[1][idx[0]]]
-            target['ref_mag_rp'] = star_catalog['ref_mag_rp'][match_data[1][idx[0]]]
-            target['ref_mag_err_rp'] = star_catalog['ref_mag_err_rp'][match_data[1][idx[0]]]
-            target['separation'] = match_data[2][idx[0]].to_string(unit=u.arcsec)
+            target.star_index = star_catalog['star_index'][match_data[1][idx[0]]]
+            target.ra = star_catalog['RA'][match_data[1][idx[0]]]
+            target.dec = star_catalog['DEC'][match_data[1][idx[0]]]
+            target.i = star_catalog['cal_ref_mag_ip'][match_data[1][idx[0]]]
+            target.sig_i = star_catalog['cal_ref_mag_err_ip'][match_data[1][idx[0]]]
+            target.r = star_catalog['cal_ref_mag_rp'][match_data[1][idx[0]]]
+            target.sig_r = star_catalog['cal_ref_mag_err_rp'][match_data[1][idx[0]]]
+            target.i_inst = star_catalog['ref_mag_ip'][match_data[1][idx[0]]]
+            target.sig_i_inst = star_catalog['ref_mag_err_ip'][match_data[1][idx[0]]]
+            target.r_inst = star_catalog['ref_mag_rp'][match_data[1][idx[0]]]
+            target.sig_r_inst = star_catalog['ref_mag_err_rp'][match_data[1][idx[0]]]
+            target.separation = match_data[2][idx[0]].to_string(unit=u.arcsec)
             try:
-                target['cal_ref_mag_gp'] = star_catalog['cal_ref_mag_gp'][match_data[1][idx[0]]]
-                target['cal_ref_mag_err_gp'] = star_catalog['cal_ref_mag_err_gp'][match_data[1][idx[0]]]
-                target['ref_mag_gp'] = star_catalog['ref_mag_gp'][match_data[1][idx[0]]]
-                target['ref_mag_err_gp'] = star_catalog['ref_mag_err_gp'][match_data[1][idx[0]]]
+                target.g = star_catalog['cal_ref_mag_gp'][match_data[1][idx[0]]]
+                target.sig_g = star_catalog['cal_ref_mag_err_gp'][match_data[1][idx[0]]]
+                target.g_inst = star_catalog['ref_mag_gp'][match_data[1][idx[0]]]
+                target.sig_g_inst = star_catalog['ref_mag_err_gp'][match_data[1][idx[0]]]
             except AttributeError:
                 pass
-            print 'Target identified as '+repr(target)
+            
+            print('Target measured photometry:')
+            print(target.summary(show_mags=True))
+            
+        if target.i != None and target.r != None:
+            
+            target.compute_colours(use_inst=True)
+            
+            print(target.summary(show_colours=True))
+            
+        target.transform_to_JohnsonCousins()
+        
+        print(target.summary(johnsons=True))
     
-        if len(target) > 0 and target['cal_ref_mag_ip'] > 0.0 and \
-                                target['cal_ref_mag_rp'] > 0.0:
-                                    
-            target['ri'] = target['cal_ref_mag_rp'] - target['cal_ref_mag_ip']
-            target['sig_ri'] = np.sqrt( (target['cal_ref_mag_err_rp']*target['cal_ref_mag_err_rp']) + \
-                            (target['cal_ref_mag_err_ip']*target['cal_ref_mag_err_ip']) ) 
-            
-            print('Target i_inst = '+str(target['cal_ref_mag_ip'])+' +/- '+str(target['cal_ref_mag_err_ip']))
-            print('Target (r-i)_inst = '+str(target['ri'])+' +/- '+str(target['sig_ri']))
-            
-            target_phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(ri=target['ri'], 
-                                                                                  sigri=target['sig_ri'])
-            target['V-R'] = target_phot['V-R']
-            target['sigVR'] = target_phot['sigVR']
-            target['Rc-Ic'] = target_phot['Rc-Ic']
-            target['sigRI'] = target_phot['sigRI']
-            
-            print('\nTarget (V-R)_inst = '+str(target_phot['V-R'])+' +/- '+str(target_phot['sigVR'])+'mag')
-            print('Target (Rc-Ic)_inst = '+str(target_phot['Rc-Ic'])+' +/- '+str(target_phot['sigRI'])+'mag')
-    
-        if len(target) > 0 and target['cal_ref_mag_rp'] > 0.0 and \
-                                target['cal_ref_mag_gp'] > 0.0:
-                    
-            target['gr'] = target['cal_ref_mag_gp'] - target['cal_ref_mag_rp']
-            target['sig_gr'] = np.sqrt( (target['cal_ref_mag_err_gp']*target['cal_ref_mag_err_gp']) + \
-                                        (target['cal_ref_mag_err_rp']*target['cal_ref_mag_err_rp']) ) 
-            
-            print('Target g_inst = '+str(target['cal_ref_mag_gp'])+' +/- '+str(target['cal_ref_mag_err_gp']))
-            print('Target (g-r)_inst = '+str(target['gr'])+' +/- '+str(target['sig_gr']))
-            
-            target_phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(g=target['cal_ref_mag_gp'],
-                                                                                  sigg=target['cal_ref_mag_err_gp'],
-                                                                                  gr=target['gr'], 
-                                                                                  siggr=target['sig_gr'])
-            
-            target['V'] = target_phot['V']
-            target['sigV'] = target_phot['sigV']
-            target['B-V'] = target_phot['B-V']
-            target['sigBV'] = target_phot['sigBV']
-            
-            print('\nTarget V_inst = '+str(target_phot['V'])+' +/- '+str(target_phot['sigV'])+'mag')
-            print('Target (B-V)_inst = '+str(target_phot['B-V'])+' +/- '+str(target_phot['sigBV'])+'mag')
-    
-        if 'V' in target.keys() and 'V-R' in target.keys():
-            
-            target = jester_phot_transforms.calc_derived_colours_JohnsonCousins(target)
-    
-            print('\n Derived target instrumental colours and magnitudes:')
-            print('R_inst = '+str(target['R'])+' +/- '+str(target['sigR'])+'mag')
-            print('I_inst = '+str(target['I'])+' +/- '+str(target['sigI'])+'mag')
-            print('(V-I)_inst = '+str(target['V-I'])+' +/- '+str(target['sigVI'])+'mag')
-    
-
     return target
 
 
@@ -257,9 +303,9 @@ def find_stars_close_to_target(star_catalog, target, tol):
     
     return jdx
     
-def analyse_colour_mag_diagrams(params,star_catalog,catalog_header,target,
-                                                 det_idx,cat_idx,close_cat_idx,
-                                                 RC):
+def analyse_colour_mag_diagrams(params,star_catalog,catalog_header,
+                                source,blend,RC,
+                                det_idx,cat_idx,close_cat_idx):
     """Function to plot a colour-magnitude diagram"""
     
     tol = 2.0
@@ -289,17 +335,17 @@ def analyse_colour_mag_diagrams(params,star_catalog,catalog_header,target,
     lcal_gr = lcal_g - lcal_r
     
     plot_colour_mag_diagram(params,inst_i, inst_ri, linst_i, linst_ri, 
-                            target, RC, 'r', 'i', 'i', tol)
+                            source, blend, RC, 'r', 'i', 'i', tol)
                             
     plot_colour_mag_diagram(params,inst_r, inst_ri, linst_r, linst_ri, 
-                            target, RC, 'r', 'i', 'r', tol)
+                            source, blend, RC, 'r', 'i', 'r', tol)
                             
     plot_colour_mag_diagram(params,inst_g, inst_gr, linst_g, linst_gr, 
-                            target, RC, 'g', 'r', 'g', tol)
+                            source, blend, RC, 'g', 'r', 'g', tol)
     
     
 def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours, 
-                            target, RC, blue_filter, red_filter, 
+                            source, blend, RC, blue_filter, red_filter, 
                             yaxis_filter, tol):
     """Function to plot a colour-magnitude diagram, highlighting the data for 
     local stars close to the target in a different colour from the rest, 
@@ -317,26 +363,25 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
                  c='#8c6931', marker='*', s=4, 
                  label='Stars < '+str(round(tol,1))+'arcmin of target')
     
-    blue_key = 'cal_ref_mag_'+blue_filter+'p'
-    red_key = 'cal_ref_mag_'+red_filter+'p'
     col_key = blue_filter+red_filter
-    col_err_key = 'sig_'+blue_filter+red_filter
-    mag_key = 'cal_ref_mag_'+yaxis_filter+'p'
-    mag_err_key = 'cal_ref_mag_err_'+yaxis_filter+'p'
     
-    if len(target) > 0 and target[blue_key] > 0.0 and \
-            target[red_key] > 0.0:
-                
-        plt.errorbar(target[col_key], target[mag_key], 
-                 yerr = target[mag_err_key],
-                 xerr = target[col_err_key], color='m',
-                 marker='d',markersize=6, label='Source at baseline')
+    if getattr(source,blue_filter) != None and getattr(source,red_filter) != None:
+        
+        plt.errorbar(getattr(source,col_key), getattr(source,yaxis_filter), 
+                 yerr = getattr(source,'sig_'+yaxis_filter),
+                 xerr = getattr(source,'sig_'+col_key), color='m',
+                 marker='d',markersize=6, label='Source')
     
-    col_key = blue_filter+red_filter
-    col_err_key = 'sig_'+blue_filter+red_filter
-    mag_err_key = 'sig_'+yaxis_filter
-    plt.errorbar(RC[col_key], RC[yaxis_filter], 
-                 yerr=RC[mag_err_key], xerr=RC[col_err_key],
+    if getattr(blend,blue_filter) != None and getattr(blend,red_filter) != None:
+        
+        plt.errorbar(getattr(blend,col_key), getattr(blend,yaxis_filter), 
+                 yerr = getattr(blend,'sig_'+yaxis_filter),
+                 xerr = getattr(blend,'sig_'+col_key), color='b',
+                 marker='d',markersize=6, label='Blend')
+    
+    plt.errorbar(getattr(RC,col_key), getattr(RC,yaxis_filter), 
+                 yerr=getattr(RC,'sig_'+yaxis_filter), 
+                 xerr=getattr(RC,'sig_'+col_key),
                  color='g', marker='s',markersize=6, label='Red Clump centroid')
                  
     plt.xlabel('SDSS ('+blue_filter+'-'+red_filter+') [mag]')
@@ -371,7 +416,8 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
     print 'Colour-magnitude diagram output to '+plot_file
     
 def plot_colour_colour_diagram(params,star_catalog,catalog_header,target,RC,
-                                                 det_idx,cat_idx,close_cat_idx):
+                                                 det_idx,cat_idx,close_cat_idx,
+                                                 use_isochrones=True):
     """Function to plot a colour-colour diagram, if sufficient data are
     available within the given star catalog"""
     
@@ -397,53 +443,56 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,target,RC,
         linst_ri = linst_r - linst_i - RC['Eri']
         
         fig = plt.figure(1,(10,10))
-    
-        plt.scatter(inst_gr, inst_ri, 
+        
+        ax = plt.axes()
+        
+        ax.scatter(inst_gr, inst_ri, 
                      c='#E1AE13', marker='.', s=1, label=None)
         
-        plt.scatter(linst_gr, linst_ri, marker='*', s=4, c='#8c6931',
+        ax.scatter(linst_gr, linst_ri, marker='*', s=4, c='#8c6931',
                  label='Stars < '+str(round(tol,1))+'arcmin of target')
                      
         if len(target) > 0 and 'gr_0' in target.keys() and 'ri_0' in target.keys():
             plt.plot(target['gr_0'], target['ri_0'],'md',markersize=6)
         
-        #(spectral_type, luminosity_class, gr_colour, ri_colour) = spectral_type_data.get_spectral_class_data()
         
-        #(dwarf_stars, dwarf_labels) = star_colour_data.get_dwarf_star_colours()
-        #(giant_stars, giant_labels) = star_colour_data.get_giant_star_colours()
+        use_isochrones=False
+        if use_isochrones and 'none' not in str(params['isochrone_file']).lower():
+            
+            isochrone_data = isochrone_utilities.read_PARSEC_table(params['isochrone_file'])
+
+            fig = isochrone_utilities.overlay_isochrones(fig,isochrone_data,n_steps=6,label_plot=False)
         
-        #plt.plot(dwarf_stars[:,1],dwarf_stars[:,2], 'b.')
-        #plt.plot(giant_stars[:,1],giant_stars[:,2], 'r.')
+        (spectral_type, luminosity_class, gr_colour, ri_colour) = spectral_type_data.get_spectral_class_data()
         
-        plot_dwarfs = False
-        plot_giants = False
-        spectral_type = []
-        for i in np.arange(len(spectral_type)):
+        plot_dwarfs = True
+        plot_giants = True
+        for i in range(0,len(spectral_type),1):
             
             spt = spectral_type[i]+luminosity_class[i]
             
             if luminosity_class[i] == 'V':
-                c = 'b'
+                c = 'g'
             else:
                 c = 'k'
                         
             if luminosity_class[i] == 'III' and plot_giants:
                 
-                plt.plot(gr_colour[i], ri_colour[i], c+'.', alpha=0.5)
+                plt.plot(gr_colour[i], ri_colour[i], marker='s', color=c, alpha=0.5)
 
                 plt.annotate(spt, (gr_colour[i], 
                                ri_colour[i]-0.1), 
                                  color=c, size=10, 
-                                 rotation=-30.0, alpha=0.5)
+                                 rotation=-30.0, alpha=1.0)
 
             if luminosity_class[i] == 'V' and plot_dwarfs:
                 
-                plt.plot(gr_colour[i], ri_colour[i], c+'.', alpha=0.5)
+                plt.plot(gr_colour[i], ri_colour[i], marker='v', color=c, alpha=0.5)
 
                 plt.annotate(spt, (gr_colour[i], 
                                ri_colour[i]+0.1), 
                                  color=c, size=10, 
-                                 rotation=-30.0, alpha=0.5)
+                                 rotation=-30.0, alpha=1.0)
 
         plt.xlabel('SDSS (g-r) [mag]')
     
@@ -604,7 +653,7 @@ def localize_red_clump(star_catalog,close_cat_idx):
         
         return idx
     
-    RC = {}
+    RC = photometry_classes.Star()
     
     inst_i = star_catalog['cal_ref_mag_ip'][close_cat_idx]
     inst_r = star_catalog['cal_ref_mag_rp'][close_cat_idx]
@@ -635,57 +684,37 @@ def localize_red_clump(star_catalog,close_cat_idx):
     
     print('Selected Red Clump giants between:')
     print('i = '+str(i_min)+' to '+str(i_max))
+    print('r = '+str(r_min)+' to '+str(r_max))
     print('(r-i) = '+str(ri_min)+' to '+str(ri_max))
     print('g = '+str(g_min)+' to '+str(g_max))
     print('(g-r) = '+str(gr_min)+' to '+str(gr_max))
     
     idx = select_within_range(inst_i, inst_ri, i_min, i_max, ri_min, ri_max)
     
-    RC['ri'] = np.median(inst_ri[idx])
-    RC['sig_ri'] = np.sqrt( ((inst_ri[idx] - RC['ri'])**2).sum() / float(len(idx)) )
-    RC['i'] = np.median(inst_i[idx])
-    RC['sig_i'] = np.sqrt( ((inst_i[idx] - RC['i'])**2).sum() / float(len(idx)) )
+    RC.ri = np.median(inst_ri[idx])
+    RC.sig_ri = np.sqrt( ((inst_ri[idx] - RC.ri)**2).sum() / float(len(idx)) )
+    RC.i = np.median(inst_i[idx])
+    RC.sig_i = np.sqrt( ((inst_i[idx] - RC.i)**2).sum() / float(len(idx)) )
     
     idx = select_within_range(inst_r, inst_ri, r_min, r_max, ri_min, ri_max)
     
-    RC['r'] = np.median(inst_r[idx])
-    RC['sig_r'] = np.sqrt( ((inst_r[idx] - RC['r'])**2).sum() / float(len(idx)) )
+    RC.r = np.median(inst_r[idx])
+    RC.sig_r = np.sqrt( ((inst_r[idx] - RC.r)**2).sum() / float(len(idx)) )
     
     idx = select_within_range(inst_g, inst_gr, g_min, g_max, gr_min, gr_max)
     
-    RC['gr'] = np.median(inst_gr[idx])
-    RC['sig_gr'] = np.sqrt( ((inst_gr[idx] - RC['gr'])**2).sum() / float(len(idx)) )
-    RC['g'] = np.median(inst_g[idx])
-    RC['sig_g'] = np.sqrt( ((inst_g[idx] - RC['g'])**2).sum() / float(len(idx)) )
+    RC.gr = np.median(inst_gr[idx])
+    RC.sig_gr = np.sqrt( ((inst_gr[idx] - RC.gr)**2).sum() / float(len(idx)) )
+    RC.g = np.median(inst_g[idx])
+    RC.sig_g = np.sqrt( ((inst_g[idx] - RC.g)**2).sum() / float(len(idx)) )
     
     print('\nCentroid of Red Clump Stars at:')
-    print('i_inst,RC= '+str(RC['i'])+' +/- '+str(RC['sig_i']))
-    print('r_inst,RC= '+str(RC['r'])+' +/- '+str(RC['sig_r']))
-    print('(r-i)_inst,RC= '+str(RC['ri'])+' +/- '+str(RC['sig_ri']))
-    print('g_inst,RC= '+str(RC['g'])+' +/- '+str(RC['sig_g']))
-    print('(g-r)_inst,RC= '+str(RC['gr'])+' +/- '+str(RC['sig_gr']))
+    print(RC.summary(show_mags=True))
+    print(RC.summary(show_colours=True))
     
-    RC_phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(ri=RC['ri'], 
-                                                                      sigri=RC['sig_ri'])
-    RC['V-R'] = RC_phot['V-R']
-    RC['sigVR'] = RC_phot['sigVR']
-    RC['Rc-Ic'] = RC_phot['Rc-Ic']
-    RC['sigRI'] = RC_phot['sigRI']
-
-    print('\n(V-R)_inst,RC = '+str(RC_phot['V-R'])+' +/- '+str(RC_phot['sigVR'])+'mag')
-    print('(Rc-Ic)_inst,RC = '+str(RC_phot['Rc-Ic'])+' +/- '+str(RC_phot['sigRI'])+'mag')
+    RC.transform_to_JohnsonCousins()
     
-    RC_phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(g=RC['g'],
-                                                                      sigg=RC['sig_g'],
-                                                                      gr=RC['gr'], 
-                                                                      siggr=RC['sig_gr'])
-    RC['V'] = RC_phot['V']
-    RC['sigV'] = RC_phot['sigV']
-    RC['B-V'] = RC_phot['B-V']
-    RC['sigBV'] = RC_phot['sigBV']
-
-    print('\n(B-V)_inst,RC = '+str(RC_phot['B-V'])+' +/- '+str(RC_phot['sigBV'])+'mag')
-    print('V_inst,RC = '+str(RC_phot['V'])+' +/- '+str(RC_phot['sigV'])+'mag')
+    print(RC.summary(johnsons=True))
     
     return RC
 
@@ -697,10 +726,10 @@ def measure_RC_offset(params,RC,target):
     
     in_use = False
     
-    RC = red_clump_utilities.get_essential_parameters(data=RC)
+    RC = red_clump_utilities.get_essential_parameters(RC=RC)
     
     if in_use:
-        (RC['g-r_0'], RC['siggr_0'], RC['r-i_0'], RC['sigri_0']) = bilir_phot_transforms.transform_2MASS_to_SDSS(JH=RC['J-H_0'], HK=RC['H-K_0'], MH=None)
+        RC.transform_2MASS_to_SDSS()
     
     print('\n Red Clump colours and absolute SDSS magnitudes:')
     print('Mg_RC,0 = '+str(RC['M_g_0'])+' +/- '+str(RC['sigMg_0'])+'mag')
@@ -717,7 +746,7 @@ def measure_RC_offset(params,RC,target):
         print('(J-H)_RC,0 = '+str(RC['J-H_0'])+' +/- '+str(RC['sigJH_0'])+'mag')
         print('(H-Ks)_RC,0 = '+str(RC['H-K_0'])+' +/- '+str(RC['sigHK_0'])+'mag')
     
-    RC['D_RC'] = red_clump_utilities.calc_red_clump_distance(params['target_ra'],params['target_dec'])
+    RC.D = red_clump_utilities.calc_red_clump_distance(params['target_ra'],params['target_dec'])
     RC = red_clump_utilities.calc_apparent_magnitudes(RC)
     
     print('\n Red Clump apparent SDSS magnitudes at distance '+str(RC['D_RC'])+'Kpc')
@@ -726,88 +755,57 @@ def measure_RC_offset(params,RC,target):
     print('i_RC,app = '+str(RC['m_i_0'])+' +/- '+str(RC['sigmi_0'])+'mag')
     
     if in_use:
-        RC = jester_phot_transforms.calc_derived_colours_JohnsonCousins(RC)
-    
+        RC.transform_to_JohnsonCousins()
+        
         print('\n Derived Red Clump instrumental colours and magnitudes:')
-        print('R_inst,RC = '+str(RC['R'])+' +/- '+str(RC['sigR'])+'mag')
-        print('I_inst,RC = '+str(RC['I'])+' +/- '+str(RC['sigI'])+'mag')
-        print('(V-I)_inst,RC = '+str(RC['V-I'])+' +/- '+str(RC['sigVI'])+'mag')
+        print(RC.summary(johnsons=True))
     
     if in_use:
-        RC['A_I'] = RC['I'] - RC['I_app']
-        RC['sigA_I'] = RC['sigI']
-        RC['EVI'] = RC['V-I'] - RC['V-I_0']
-        RC['sigEVI'] = RC['sigVI']
+        RC.A_I = RC.I - RC.I_app
+        RC.sig_A_I = RC.sig_I
+        RC.EVI = RC.VI - RC.VI_0
+        RC.sig_EVI = RC.sig_VI
     
     
-    RC['A_g'] = RC['g'] - RC['m_g_0']
-    RC['sigA_g'] = np.sqrt(RC['sig_g']*RC['sig_g'] + RC['sigmg_0']*RC['sigmg_0'])
-    RC['A_r'] = RC['r'] - RC['m_r_0']
-    RC['sigA_r'] = np.sqrt(RC['sig_r']*RC['sig_r'] + RC['sigmr_0']*RC['sigmr_0'])
-    RC['A_i'] = RC['i'] - RC['m_i_0']
-    RC['sigA_i'] = np.sqrt(RC['sig_i']*RC['sig_i'] + RC['sigmi_0']*RC['sigmi_0'])
+    RC.A_g = RC.g - RC.m_g_0
+    RC.sig_A_g = np.sqrt(RC.sig_g*RC.sig_g + RC.sig_mg_0*RC.sig_mg_0)
+    RC.A_r = RC.r - RC.m_r_0
+    RC.sig_A_r = np.sqrt(RC.sig_r*RC.sig_r + RC.sig_mr_0*RC.sig_mr_0)
+    RC.A_i = RC.i - RC.m_i_0
+    RC.sig_A_i = np.sqrt(RC.sig_i*RC.sig_i + RC.sig_mi_0*RC.sig_mi_0)
     
-    RC['Egr'] = RC['gr'] - RC['g-r_0']
-    RC['sigEgr'] = np.sqrt( (RC['sig_gr']*RC['sig_gr']) + (RC['siggr_0']*RC['siggr_0']) )
-    RC['Eri'] = RC['ri'] - RC['r-i_0']
-    RC['sigEri'] = np.sqrt( (RC['sig_ri']*RC['sig_ri']) + (RC['sigri_0']*RC['sigri_0']) )
+    RC.Egr = RC.gr - RC.gr_0
+    RC.sig_Egr = np.sqrt( (RC.sig_gr*RC.sig_gr) + (RC.sig_gr_0*RC.sig_gr_0) )
+    RC.Eri = RC.ri - RC.ri_0
+    RC.sig_Eri = np.sqrt( (RC.sig_ri*RC.sig_ri) + (RC.sig_ri_0*RC.sig_ri_0) )
 
-    print('\nExtinction, d(g) = '+str(RC['A_g'])+' +/- '+str(RC['sigA_g'])+'mag')
-    print('Extinction, d(r) = '+str(RC['A_r'])+' +/- '+str(RC['sigA_r'])+'mag')
-    print('Extinction, d(i) = '+str(RC['A_i'])+' +/- '+str(RC['sigA_i'])+'mag')
-    print('Reddening, E(g-r) = '+str(RC['Egr'])+' +/- '+str(RC['sigEgr'])+'mag')
-    print('Reddening, E(r-i) = '+str(RC['Eri'])+' +/- '+str(RC['sigEri'])+'mag')
+    print('\nExtinction, d(g) = '+str(RC.A_g)+' +/- '+str(RC.sig_A_g)+'mag')
+    print('Extinction, d(r) = '+str(RC.A_r)+' +/- '+str(RC.sig_A_r)+'mag')
+    print('Extinction, d(i) = '+str(RC.A_i)+' +/- '+str(RC.sig_A_i)+'mag')
+    print('Reddening, E(g-r) = '+str(RC.Egr)+' +/- '+str(RC.sig_Egr)+'mag')
+    print('Reddening, E(r-i) = '+str(RC.Eri)+' +/- '+str(RC.sig_Eri)+'mag')
     
     return RC
     
-def calc_target_phot_properties(target, RC):
+def calc_phot_properties(target, source, blend, RC):
     """Function to calculate the de-reddened and extinction-corrected 
     photometric properties of the target
     """
     in_use = False
     
-    target['g_0'] = target['cal_ref_mag_gp'] - RC['A_g']
-    target['sigg_0'] = np.sqrt( (target['cal_ref_mag_err_gp']*target['cal_ref_mag_err_gp']) + (RC['sigA_g']*RC['sigA_g']) )
-    target['r_0'] = target['cal_ref_mag_rp'] - RC['A_r']
-    target['sigr_0'] = np.sqrt( (target['cal_ref_mag_err_rp']*target['cal_ref_mag_err_rp']) + (RC['sigA_r']*RC['sigA_r']) )
-    target['i_0'] = target['cal_ref_mag_ip'] - RC['A_i']
-    target['sigi_0'] = np.sqrt( (target['cal_ref_mag_err_ip']*target['cal_ref_mag_err_ip']) + (RC['sigA_i']*RC['sigA_i']) )
-    target['gr_0'] = target['gr'] - RC['Egr']
-    target['siggr_0'] = np.sqrt( (target['sig_gr']*target['sig_gr']) + (RC['sigEgr']*RC['sigEgr']) )
-    target['ri_0'] = target['ri'] - RC['Eri']
-    target['sigri_0'] = np.sqrt( (target['sig_ri']*target['sig_ri']) + (RC['sigEri']*RC['sigEri']) )
+    target.calibrate_phot_properties(RC)
+    source.calibrate_phot_properties(RC)
+    blend.calibrate_phot_properties(RC)
 
     print('\nSource star extinction-corrected magnitudes and de-reddened colours:')
-    print('g_S,0 = '+str(target['g_0'])+' +/- '+str(target['sigg_0']))
-    print('r_S,0 = '+str(target['r_0'])+' +/- '+str(target['sigr_0']))
-    print('i_S,0 = '+str(target['i_0'])+' +/- '+str(target['sigi_0']))
-    print('(g-r)_S,0 = '+str(target['gr_0'])+' +/- '+str(target['siggr_0']))
-    print('(r-i)_S,0 = '+str(target['ri_0'])+' +/- '+str(target['sigri_0']))
+    print(source.summary(show_cal=True))
+    print(source.summary(show_cal=True,show_colours=True))
     
-    phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(ri=target['ri_0'], 
-                                                                      sigri=target['sigri_0'])
+    print('\nBlend extinction-corrected magnitudes and de-reddened colours:')
+    print(blend.summary(show_cal=True))
+    print(blend.summary(show_cal=True,show_colours=True))
     
-    target['V-R_0'] = phot['V-R']
-    target['sigVR_0'] = phot['sigVR']
-    target['R-I_0'] = phot['Rc-Ic']
-    target['sigRI_0'] = phot['sigRI']
-
-    print('\n(V-R)_S,0 = '+str(target['V-R_0'])+' +/- '+str(target['sigVR_0'])+'mag')
-    print('(R-I)_S,0 = '+str(target['R-I_0'])+' +/- '+str(target['sigRI_0'])+'mag')
-    
-    phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(g=target['g_0'],
-                                                                      sigg=target['sigg_0'],
-                                                                      gr=target['gr_0'], 
-                                                                      siggr=target['siggr_0'])
-    target['V_0'] = phot['V']
-    target['sigV_0'] = phot['sigV']
-    target['B-V_0'] = phot['B-V']
-    target['sigBV_0'] = phot['sigBV']
-
-    print('\n(B-V)_S,0 = '+str(target['B-V_0'])+' +/- '+str(target['sigBV_0'])+'mag')
-    print('V_S,0 = '+str(target['V_0'])+' +/- '+str(target['sigV_0'])+'mag')
-    
-    return target
+    return target,source,blend
     
 if __name__ == '__main__':
     
