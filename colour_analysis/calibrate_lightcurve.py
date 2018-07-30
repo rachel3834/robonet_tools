@@ -103,10 +103,12 @@ def calc_mag_offset(params,lc_data,reduction_metadata,star_catalog):
     
     params['delta_m'] = cal_ref_mag - lc_mag - float(params['dmag'])
     params['sig_delta_m'] = np.sqrt( (cal_ref_mag_err*cal_ref_mag_err) + \
-                            (lc_mag_err*lc_mag_err) + \
-                            (float(params['sig_dmag'])*float(params['sig_dmag'])) )
+                            (lc_mag_err*lc_mag_err))
     
     print('Photometric offset, delta_m: '+str(params['delta_m'])+' +/- '+str(params['sig_delta_m']))
+    print('Uncertainties in offset calculation:')
+    print('Error on calibrated reference magnitude: '+str(cal_ref_mag_err))
+    print('Error on lightcurve magnitude: '+str(lc_mag_err))
     
     return params
     

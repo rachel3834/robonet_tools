@@ -755,22 +755,15 @@ def localize_red_clump(star_catalog,close_cat_idx,log):
     
     idx = select_within_range(inst_i, inst_ri, i_min, i_max, ri_min, ri_max)
     
-    RC.ri = np.median(inst_ri[idx])
-    RC.sig_ri = np.sqrt( ((inst_ri[idx] - RC.ri)**2).sum() / float(len(idx)) )
-    RC.i = np.median(inst_i[idx])
-    RC.sig_i = np.sqrt( ((inst_i[idx] - RC.i)**2).sum() / float(len(idx)) )
+    (RC.ri, RC.sig_ri, RC.i, RC.sig_i) = calc_distribution_centroid_and_spread_2d(inst_ri[idx], inst_i[idx], use_iqr=True)
     
     idx = select_within_range(inst_r, inst_ri, r_min, r_max, ri_min, ri_max)
     
-    RC.r = np.median(inst_r[idx])
-    RC.sig_r = np.sqrt( ((inst_r[idx] - RC.r)**2).sum() / float(len(idx)) )
+    (RC.r, RC.sig_r) = calc_distribution_centre_and_spread(inst_r[idx], use_iqr=True)
     
     idx = select_within_range(inst_g, inst_gr, g_min, g_max, gr_min, gr_max)
     
-    RC.gr = np.median(inst_gr[idx])
-    RC.sig_gr = np.sqrt( ((inst_gr[idx] - RC.gr)**2).sum() / float(len(idx)) )
-    RC.g = np.median(inst_g[idx])
-    RC.sig_g = np.sqrt( ((inst_g[idx] - RC.g)**2).sum() / float(len(idx)) )
+    (RC.gr, RC.sig_gr, RC.g, RC.sig_g) = calc_distribution_centroid_and_spread_2d(inst_gr[idx], inst_g[idx], use_iqr=True)
     
     log.info('\nCentroid of Red Clump Stars at:')
     log.info(RC.summary(show_mags=True))
@@ -782,6 +775,34 @@ def localize_red_clump(star_catalog,close_cat_idx,log):
     
     return RC
 
+def calc_distribution_centroid_and_spread_2d(xdata, ydata, use_iqr=False):
+    """Function to calculate the centroid of a 2D distribution and
+    estimate the uncertainty on those values by different statistics"""
+    
+    (xcentre, sig_x) = calc_distribution_centre_and_spread(xdata, use_iqr=use_iqr)
+    (ycentre, sig_y) = calc_distribution_centre_and_spread(ydata, use_iqr=use_iqr)
+    
+    return xcentre, sig_x, ycentre, sig_y
+
+def calc_distribution_centre_and_spread(xdata, use_iqr=False):
+    """Function to calculate the centroid of a 1D distribution and
+    estimate the uncertainty on those values by different statistics"""
+    
+    xcentre = np.median(xdata)
+    
+    xmad = np.median(abs(xdata - xcentre))
+    
+    xiq_min = np.percentile(xdata,25.0)
+    xiq_max = np.percentile(xdata,75.0)
+    xiqr = (xiq_max - xiq_min)/2.0
+    
+    if use_iqr:
+        sig_x = xiqr
+    else:
+        sig_x = xmad
+    
+    return xcentre, sig_x
+    
 def measure_RC_offset(params,RC,target,log):
     """Function to calculate the offset of the Red Clump from its expected 
     values, taken from Bensby et al. (2017), 2017, A&A, 605A, 89 for V, I bands and
