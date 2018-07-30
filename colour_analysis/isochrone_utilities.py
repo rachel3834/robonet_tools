@@ -9,20 +9,22 @@ from os import path
 import numpy as np
 import matplotlib.pyplot as plt
 
-def analyze_isochrones(gr, ri, isochrone_file):
+def analyze_isochrones(gr, ri, isochrone_file, log=None):
     """Function to identify the properties of a star with the given 
     (g-r), (r-i) colour data from PARSEC isochrone models. 
     """
     
     data = read_PARSEC_table(isochrone_file)
     
-    find_isochrone_nearest_entries(data, gr, ri)
+    (star_data, teff, sig_teff) = find_isochrone_nearest_entries(data, gr, ri, log=log)
 
-    plot_isochrones(data)
+    #plot_isochrones(data)
     
     #overlay_isochrones(None,data)
     
-def find_isochrone_nearest_entries(data, gr, ri):
+    return star_data, teff, sig_teff
+    
+def find_isochrone_nearest_entries(data, gr, ri, log=None):
     """Function to interpolate over the isochrone data, and return the 
     absolute g, r, i magnitudes closest to the target values."""
     
@@ -42,23 +44,35 @@ def find_isochrone_nearest_entries(data, gr, ri):
     sort_idx = dcol[idx].argsort()
     sort_idx = np.array(idx)[sort_idx]
     
-    print('Closest entries matching target colours: (g-r)='+str(gr)+\
-                                                ' and (r-i)='+str(ri))
-    print('Age[Gyr]  Teff[K]  log(g) (g-r)_iso  (r-i)_iso  (g-r)_t  (r-i)_t  dist  gmag   rmag   imag')
+    output = '\nAnalysing isochrones\n'
+    output += 'Closest entries matching target colours: (g-r)='+str(gr)+\
+                                                ' and (r-i)='+str(ri)+'\n'
+    output += 'Age[Gyr]  Teff[K]  log(g) (g-r)_iso  (r-i)_iso  (g-r)_t  (r-i)_t  dist  gmag   rmag   imag\n'
     for i in sort_idx:
-        print round(data[i,0]/1e9,4), round(10**(data[i,2]),1), data[i,3], \
-            round(iso_gr[i],3), round(iso_ri[i],3), round(dcol[i],4), \
-            round(data[i,4],3), round(data[i,5],3), round(data[i,6],3)
+        output += str(round(data[i,0]/1e9,4))+' '+str(round(10**(data[i,2]),1))+\
+                    ' '+str(data[i,3])+' '+str(round(iso_gr[i],3))+' '+\
+                    str(round(iso_ri[i],3))+' '+str(round(dcol[i],4))+' '+\
+                    str(round(data[i,4],3))+' '+str(round(data[i,5],3))+' '+\
+                    str(round(data[i,6],3))+'\n'
     
     teff = (10**data[sort_idx,2]).mean()
     teff_min = (10**data[sort_idx,2]).min()
     teff_max = (10**data[sort_idx,2]).max()
     sig_teff = (teff_max - teff_min)/2.0
     
-    print('Range of Teff = '+str(round((10**data[sort_idx,2]).min(),1))+' to '+\
-                            str(round((10**data[sort_idx,2]).max(),1)))
+    output += 'Range of Teff = '+str(round((10**data[sort_idx,2]).min(),1))+\
+                                ' to '+\
+                                str(round((10**data[sort_idx,2]).max(),1))+'\n'
     
-    print('Teff of target = '+str(round(teff,1))+' +/- '+str(round(sig_teff,1)))
+    output += 'Teff of target = '+str(round(teff,1))+' +/- '+\
+                                str(round(sig_teff,1))+'\n'
+    
+    if log != None:
+        log.info(output)
+    else:
+        print(output)
+    
+    return data[sort_idx], teff, sig_teff
     
 def read_PARSEC_table(table_file):
     """Function to read the relevant data from an isochrone PARSEC table, 
@@ -158,5 +172,5 @@ if __name__ == '__main__':
     gr = 0.88
     ri = 0.33
     
-    analyze_isochrones(gr,ri,isochrone_file)
+    (star_data, teff, sig_teff) = analyze_isochrones(gr,ri,isochrone_file)
     

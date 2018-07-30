@@ -24,49 +24,49 @@ def get_essential_parameters(RC=None):
         RC = photometry_classes.Star()
         
     RC.M_I_0 = -0.12
-    RC.V-I_0 = 1.09
+    RC.VI_0 = 1.09
     RC.M_V_0 = 0.97
     
     RC.M_G_0 = 0.495
-    RC.sigMG_0 = 0.009
+    RC.sig_MG_0 = 0.009
     RC.M_J_0 = -0.945
-    RC.sigMJ_0 = 0.01
+    RC.sig_MJ_0 = 0.01
     RC.M_H_0 = -1.450
-    RC.sigMH_0 = 0.017
+    RC.sig_MH_0 = 0.017
     RC.M_Ks_0 = -1.606
-    RC.sigMKs_0 = 0.009
+    RC.sig_MKs_0 = 0.009
     RC.M_g_0 = 1.331
-    RC.sigMg_0 = 0.056
+    RC.sig_Mg_0 = 0.056
     RC.M_r_0 = 0.552
-    RC.sigMr_0 = 0.026
+    RC.sig_Mr_0 = 0.026
     RC.M_i_0 = 0.262
-    RC.sigMi_0 = 0.032
+    RC.sig_Mi_0 = 0.032
     RC.M_W1_0 = -1.711
-    RC.sigMW1_0 = 0.017
+    RC.sig_MW1_0 = 0.017
     RC.M_W2_0 = -1.585
-    RC.sigMW2_0 = 0.016
+    RC.sig_MW2_0 = 0.016
     RC.M_W3_0 = -1.638
-    RC.sigMW3_0 = 0.011
+    RC.sig_MW3_0 = 0.011
     RC.M_W4_0 = -1.704
-    RC.sigMW4_0 = 0.012
+    RC.sig_MW4_0 = 0.012
 
     RC.JH_0 = RC.M_J_0 - RC.M_H_0
-    RC.sig_JH_0 = np.sqrt( (RC.sigMJ_0*RC.sigMJ_0) + \
-                                (RC.sigMH_0*RC.sigMH_0) )
+    RC.sig_JH_0 = np.sqrt( (RC.sig_MJ_0*RC.sig_MJ_0) + \
+                                (RC.sig_MH_0*RC.sig_MH_0) )
     RC.HK_0 = RC.M_H_0 - RC.M_Ks_0
-    RC.sig_HK_0 = np.sqrt( (RC.sigMH_0*RC.sigMH_0) + \
-                                (RC.sigMKs_0*RC.sigMKs_0) )
+    RC.sig_HK_0 = np.sqrt( (RC.sig_MH_0*RC.sig_MH_0) + \
+                                (RC.sig_MKs_0*RC.sig_MKs_0) )
     
     RC.gr_0 = RC.M_g_0 - RC.M_r_0
-    RC.sig_gr_0 = np.sqrt( (RC.sigMg_0*RC.sigMg_0) + \
-                                (RC.sigMr_0*RC.sigMr_0) )
+    RC.sig_gr_0 = np.sqrt( (RC.sig_Mg_0*RC.sig_Mg_0) + \
+                                (RC.sig_Mr_0*RC.sig_Mr_0) )
     RC.ri_0 = RC.M_r_0 - RC.M_i_0
-    RC.sig_ri_0 = np.sqrt( (RC.sigMr_0*RC.sigMr_0) + \
-                                (RC.sigMi_0*RC.sigMi_0) )
+    RC.sig_ri_0 = np.sqrt( (RC.sig_Mr_0*RC.sig_Mr_0) + \
+                                (RC.sig_Mi_0*RC.sig_Mi_0) )
     
-    return data
+    return RC
     
-def calc_red_clump_distance(ra,dec):
+def calc_red_clump_distance(ra,dec,log=None):
     """Function to estimate the distance of the Red Clump stars in the
     Galactic Bulge from the observer on Earth, taking into account the 
     bar structure, using the relations from 
@@ -75,18 +75,22 @@ def calc_red_clump_distance(ra,dec):
     
     c = SkyCoord(ra, dec, unit=(u.hourangle,u.degree), frame='icrs')
     
-    print('Galactic coordinates for '+ra+', '+dec+' (l,b) [deg]: '+\
-            str(c.galactic.l.deg)+', '+str(c.galactic.b.deg))
+    output = 'Galactic coordinates for '+ra+', '+dec+' (l,b) [deg]: '+\
+            str(c.galactic.l.deg)+', '+str(c.galactic.b.deg)+'\n'
     
     R_0 = 8.16 # Kpc
     phi = 40.0 * (np.pi/180.0)
     
     D_RC = R_0 / (np.cos(c.galactic.l.radian) + np.sin(c.galactic.l.radian)*(1.0/np.tan(phi)))
     
-    print('Red Clump distance for ('+str(c.galactic.l.deg)+', '+\
+    output += 'Red Clump distance for ('+str(c.galactic.l.deg)+', '+\
                                     str(c.galactic.b.deg)+') = '+\
-                                    str(D_RC)+' Kpc')
-    
+                                    str(D_RC)+' Kpc'
+    if log != None:
+        log.info(output)
+    else:
+        print(output)
+        
     return D_RC
 
 def calc_I_apparent(D_RC):
@@ -123,9 +127,9 @@ def calc_apparent_magnitudes(RC):
     for f in passbands:
         
         abs_mag = 'M_'+f+'_0'
-        abs_mag_err = 'sigM'+f+'_0'
+        abs_mag_err = 'sig_M'+f+'_0'
         app_mag = 'm_'+f+'_0'
-        app_mag_err = 'sigm'+f+'_0'
+        app_mag_err = 'sig_m'+f+'_0'
         
         if abs_mag in dir(RC):
             
