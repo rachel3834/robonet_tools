@@ -40,6 +40,8 @@ class Star:
         self.sig_RI = None
         self.VI = None
         self.sig_VI = None
+        self.VR = None
+        self.sig_VR = None
     
     def compute_colours(self,use_inst=True,use_cal=False):
         """Method to calculate the star's colours and colour uncertainties, 
@@ -75,36 +77,56 @@ class Star:
                 ' r_meas = '+str(round(self.r,3))+' +/- '+str(round(self.sig_r,3))+\
                 ' i_meas = '+str(round(self.i,3))+' +/- '+str(round(self.sig_i,3))
         
-        elif show_cal and show_mags == False and show_colours == False:
+        elif show_cal and show_mags == False and show_colours == False and johnsons == False:
             output = 'g_0 = '+str(round(self.g_0,3))+' +/- '+str(round(self.sig_g_0,3))+\
                 ' r_0 = '+str(round(self.r_0,3))+' +/- '+str(round(self.sig_r_0,3))+\
                 ' i_0 = '+str(round(self.i_0,3))+' +/- '+str(round(self.sig_i_0,3))
             
-        elif show_colours and show_cal == False and show_mags == False:
+        elif show_colours and show_cal == False and show_mags == False and johnsons == False:
             output = '(g-r)_meas = '+str(round(self.gr,3))+' +/- '+str(round(self.sig_gr,3))+\
                 ' (r-i)_meas = '+str(round(self.ri,3))+' +/- '+str(round(self.sig_ri,3))
                 
-        elif show_colours and show_cal and show_mags == False:
+        elif show_colours and show_cal and show_mags == False and johnsons == False:
             output = '(g-r)_0 = '+str(round(self.gr_0,3))+' +/- '+str(round(self.sig_gr_0,3))+\
                 ' (r-i)_0 = '+str(round(self.ri_0,3))+' +/- '+str(round(self.sig_ri_0,3))
         
-        elif johnsons and show_mags == False:
+        elif johnsons and show_mags == False and show_cal == False:
             
             if self.VR != None and self.RI != None:
-                output = '(V-R)_inst = '+str(self.VR)+' +/- '+str(self.sig_VR)+'mag '+\
-                         '(Rc-Ic)_inst = '+str(self.RI)+' +/- '+str(self.sig_RI)+'mag'
+                output += '(V-R)_meas = '+str(self.VR)+' +/- '+str(self.sig_VR)+'mag '+\
+                         '(Rc-Ic)_meas = '+str(self.RI)+' +/- '+str(self.sig_RI)+'mag'
     
             if self.V != None and self.BV != None:
             
-                output = 'V_inst = '+str(self.V)+' +/- '+str(self.sig_V)+'mag '+\
-                         '(B-V)_inst = '+str(self.BV)+' +/- '+str(self.sig_BV)+'mag'
+                output += 'V_meas = '+str(self.V)+' +/- '+str(self.sig_V)+'mag '+\
+                         '(B-V)_meas = '+str(self.BV)+' +/- '+str(self.sig_BV)+'mag'
     
             if self.V != None and self.VR != None:
                     
-                output = 'Derived target instrumental colours and magnitudes:\n'+\
-                         'R_inst = '+str(self.R)+' +/- '+str(self.sig_R)+'mag'+\
-                         ' I_inst = '+str(self.I)+' +/- '+str(self.sig_I)+'mag'+\
-                         ' (V-I)_inst = '+str(self.VI)+' +/- '+str(self.sig_VI)+'mag'
+                output += 'V_meas = '+str(self.V)+' +/- '+str(self.sig_V)+'mag'+\
+                         ' I_meas = '+str(self.I)+' +/- '+str(self.sig_I)+'mag'+\
+                         ' (V-I)_meas = '+str(self.VI)+' +/- '+str(self.sig_VI)+'mag'
+            
+        elif johnsons and show_mags == False and show_cal:
+            
+            try:
+                output += '(V-R)_0 = '+str(self.VR_0)+' +/- '+str(self.sig_VR_0)+'mag '+\
+                         '(Rc-Ic)_0 = '+str(self.RI_0)+' +/- '+str(self.sig_RI_0)+'mag'
+            except AttributeError:
+                pass
+                        
+            try:
+                output += 'V_0 = '+str(self.V_0)+' +/- '+str(self.sig_V_0)+'mag '+\
+                         '(B-V)_0 = '+str(self.BV_0)+' +/- '+str(self.sig_BV_0)+'mag'
+            except AttributeError:
+                pass
+            
+            try:    
+                output += 'V_0 = '+str(self.V_0)+' +/- '+str(self.sig_V_0)+'mag'+\
+                         ' I_0 = '+str(self.I_0)+' +/- '+str(self.sig_I_0)+'mag'+\
+                         ' (V-I)_0 = '+str(self.VI_0)+' +/- '+str(self.sig_VI_0)+'mag'
+            except AttributeError:
+                pass
             
         return output
     
@@ -160,6 +182,13 @@ class Star:
         self.sig_ri_0 = np.sqrt( (self.sig_ri*self.sig_ri) + (RC.sig_Eri*RC.sig_Eri) )
 
         
+        self.I_0 = self.I - RC.A_I
+        self.sig_I_0 = np.sqrt( (self.sig_I*self.sig_I) + (RC.sig_A_I*RC.sig_A_I) )
+        self.V_0 = self.V - RC.A_V
+        self.sig_V_0 = np.sqrt( (self.sig_V*self.sig_V) + (RC.sig_A_V*RC.sig_A_V) )
+        self.VI_0 = self.VI - RC.EVI
+        self.sig_VI_0 = np.sqrt( (self.sig_VI*self.sig_VI) + (RC.sig_EVI*RC.sig_EVI) )
+        
         if verbose:
             output = '\nExtinction-corrected magnitudes and de-reddened colours:\n'
             output += 'g_S,0 = '+str(self.g_0)+' +/- '+str(self.sig_g_0)+'\n'
@@ -172,35 +201,37 @@ class Star:
                 log.info(output)
             else:
                 print(output)
+        
+        in_use = False
+        if in_use:
+            phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(ri=self.ri_0, 
+                                                                           sigri=self.sig_ri_0)
             
-        phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(ri=self.ri_0, 
-                                                                       sigri=self.sig_ri_0)
+            self.VR_0 = phot['V-R']
+            self.sig_VR_0 = phot['sigVR']
+            self.RI_0 = phot['Rc-Ic']
+            self.sig_RI_0 = phot['sigRI']
         
-        self.VR_0 = phot['V-R']
-        self.sig_VR_0 = phot['sigVR']
-        self.RI_0 = phot['Rc-Ic']
-        self.sig_RI_0 = phot['sigRI']
-    
-        if verbose:
-            output = '\n(V-R)_S,0 = '+str(self.VR_0)+' +/- '+str(self.sig_VR_0)+'mag\n'
-            output += '(R-I)_S,0 = '+str(self.RI_0)+' +/- '+str(self.sig_RI_0)+'mag\n'
+            if verbose:
+                output = '\n(V-R)_S,0 = '+str(self.VR_0)+' +/- '+str(self.sig_VR_0)+'mag\n'
+                output += '(R-I)_S,0 = '+str(self.RI_0)+' +/- '+str(self.sig_RI_0)+'mag\n'
+            
+            phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(g=self.g_0,
+                                                                           sigg=self.sig_g_0,
+                                                                           gr=self.gr_0, 
+                                                                           siggr=self.sig_gr_0)
+            self.V_0 = phot['V']
+            self.sig_V_0 = phot['sigV']
+            self.BV_0 = phot['B-V']
+            self.sig_BV_0 = phot['sigBV']
         
-        phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(g=self.g_0,
-                                                                       sigg=self.sig_g_0,
-                                                                       gr=self.gr_0, 
-                                                                       siggr=self.sig_gr_0)
-        self.V_0 = phot['V']
-        self.sig_V_0 = phot['sigV']
-        self.BV_0 = phot['B-V']
-        self.sig_BV_0 = phot['sigBV']
-    
-        
-        if verbose:
-            output += '\n(B-V)_S,0 = '+str(self.BV_0)+' +/- '+str(self.sig_BV_0)+'mag\n'
-            output += 'V_S,0 = '+str(self.V_0)+' +/- '+str(self.sig_V_0)+'mag'
-        
-            if log != None:
-                log.info(output)
-            else:
-                print(output)
+            
+            if verbose:
+                output += '\n(B-V)_S,0 = '+str(self.BV_0)+' +/- '+str(self.sig_BV_0)+'mag\n'
+                output += 'V_S,0 = '+str(self.V_0)+' +/- '+str(self.sig_V_0)+'mag'
+            
+                if log != None:
+                    log.info(output)
+                else:
+                    print(output)
                 

@@ -24,8 +24,11 @@ def get_essential_parameters(RC=None):
         RC = photometry_classes.Star()
         
     RC.M_I_0 = -0.12
+    RC.sig_MI_0 = 0.0
     RC.VI_0 = 1.09
+    RC.sig_VI_0 = 0.0
     RC.M_V_0 = 0.97
+    RC.sig_MV_0 = 0.0
     
     RC.M_G_0 = 0.495
     RC.sig_MG_0 = 0.009
@@ -122,7 +125,7 @@ def calc_apparent_magnitudes(RC):
     
     delta_m = 5.0 * np.log10(RC.D*1000.0) - 5.0
     
-    passbands = [ 'G', 'J', 'H', 'Ks', 'g', 'r', 'i', 'W1', 'W2', 'W3', 'W4' ]
+    passbands = [ 'B', 'V', 'I', 'G', 'J', 'H', 'Ks', 'g', 'r', 'i', 'W1', 'W2', 'W3', 'W4' ]
     
     for f in passbands:
         

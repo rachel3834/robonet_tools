@@ -23,6 +23,8 @@ import interp_Bessell_Brett
 import isochrone_utilities
 import photometry_classes
 import logging
+import stellar_radius_relations
+from astropy import constants
 
 def perform_colour_analysis():
     """Function to plot colour magnitude and colour-colour plots"""
@@ -65,10 +67,25 @@ def perform_colour_analysis():
                                target, source, blend, RC,
                                det_idx,cat_idx,close_cat_idx, log)
     
-    (star_data, teff, sig_teff) = isochrone_utilities.analyze_isochrones(source.gr_0, 
-                                                                         source.ri_0, 
-                                                                         params['isochrone_file'],
-                                                                         log=log)
+    star_data = isochrone_utilities.analyze_isochrones(source.gr_0,source.ri_0, 
+                                                       params['isochrone_file'],
+                                                       log=log)
+    source.mass = star_data[0]
+    source.sig_mass = star_data[1]
+    source.teff = star_data[2]
+    source.sig_teff = star_data[3]
+    source.logg = star_data[4]
+    source.sig_logg = star_data[5]
+    
+    source = calc_source_ang_radius(source, log)
+    
+    source = calc_source_radius(source, log)
+    
+    source = calc_source_distance(source,log)
+    
+    output_red_clump_data_latex(params,RC,log)
+    
+    output_source_blend_data_latex(params,source,blend,log)
     
 def start_log(params, console=False):
     """Function to initialise a log file"""
@@ -537,8 +554,8 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
         
         (spectral_type, luminosity_class, gr_colour, ri_colour) = spectral_type_data.get_spectral_class_data()
         
-        plot_dwarfs = False
-        plot_giants = True
+        plot_dwarfs = True
+        plot_giants = False
         for i in range(0,len(spectral_type),1):
             
             spt = spectral_type[i]+luminosity_class[i]
@@ -822,26 +839,29 @@ def measure_RC_offset(params,RC,target,log):
     """
     
     in_use = False
+    use_2mass = False
     
     RC = red_clump_utilities.get_essential_parameters(RC=RC)
-    
-    if in_use:
-        RC.transform_2MASS_to_SDSS()
     
     log.info('\n Red Clump colours and absolute SDSS magnitudes:')
     log.info('Mg_RC,0 = '+str(RC.M_g_0)+' +/- '+str(RC.sig_Mg_0)+'mag')
     log.info('Mr_RC,0 = '+str(RC.M_r_0)+' +/- '+str(RC.sig_Mr_0)+'mag')
     log.info('Mi_RC,0 = '+str(RC.M_i_0)+' +/- '+str(RC.sig_Mi_0)+'mag')
+    log.info('MI_RC,0 = '+str(RC.M_I_0)+' +/- '+str(RC.sig_MI_0)+'mag')
+    log.info('MV_RC,0 = '+str(RC.M_V_0)+' +/- '+str(RC.sig_MV_0)+'mag')
     log.info('(g-r)_RC,0 = '+str(RC.gr_0)+' +/- '+str(RC.sig_gr_0)+'mag')
     log.info('(r-i)_RC,0 = '+str(RC.ri_0)+' +/- '+str(RC.sig_ri_0)+'mag')
+    log.info('(V-I)_RC,0 = '+str(RC.VI_0)+' +/- '+str(RC.sig_VI_0)+'mag')
     
-    if in_use:
+    if use_2mass:
+        RC.transform_2MASS_to_SDSS()
+        
         log.info('\n Red Clump NIR colours and magnitudes:')
-        log.info('J_RC,0 = '+str(RC.M_J_0)+' +/- '+str(RC.sig_J_0)+'mag')
-        log.info('H_RC,0 = '+str(RC.M_H_0)+' +/- '+str(RC.sig_H_0)+'mag')
-        log.info('Ks_RC,0 = '+str(RC.M_Ks_0)+' +/- '+str(RC.sig_Ks_0)+'mag')
+        log.info('J_RC,0 = '+str(RC.M_J_0)+' +/- '+str(RC.sig_MJ_0)+'mag')
+        log.info('H_RC,0 = '+str(RC.M_H_0)+' +/- '+str(RC.sig_MH_0)+'mag')
+        log.info('Ks_RC,0 = '+str(RC.M_Ks_0)+' +/- '+str(RC.sig_MKs_0)+'mag')
         log.info('(J-H)_RC,0 = '+str(RC.JH_0)+' +/- '+str(RC.sig_JH_0)+'mag')
-        log.info('(H-Ks)_RC,0 = '+str(RC.HK_0)+' +/- '+str(RCsig_HK_0)+'mag')
+        log.info('(H-Ks)_RC,0 = '+str(RC.HK_0)+' +/- '+str(RC.sig_HK_0)+'mag')
     
     RC.D = red_clump_utilities.calc_red_clump_distance(params['target_ra'],params['target_dec'],log=log)
     RC = red_clump_utilities.calc_apparent_magnitudes(RC)
@@ -850,19 +870,14 @@ def measure_RC_offset(params,RC,target,log):
     log.info('g_RC,app = '+str(RC.m_g_0)+' +/- '+str(RC.sig_mg_0)+'mag')
     log.info('r_RC,app = '+str(RC.m_r_0)+' +/- '+str(RC.sig_mr_0)+'mag')
     log.info('i_RC,app = '+str(RC.m_i_0)+' +/- '+str(RC.sig_mi_0)+'mag')
+    log.info('V_RC,app = '+str(RC.m_V_0)+' +/- '+str(RC.sig_mV_0)+'mag')
+    log.info('I_RC,app = '+str(RC.m_I_0)+' +/- '+str(RC.sig_mI_0)+'mag')
     
     if in_use:
         RC.transform_to_JohnsonCousins()
         
         log.info('\n Derived Red Clump instrumental colours and magnitudes:')
-        log.info(RC.summary(johnsons=True))
-    
-    if in_use:
-        RC.A_I = RC.I - RC.I_app
-        RC.sig_A_I = RC.sig_I
-        RC.EVI = RC.VI - RC.VI_0
-        RC.sig_EVI = RC.sig_VI
-    
+        log.info(RC.summary(show_mags=False,johnsons=True))
     
     RC.A_g = RC.g - RC.m_g_0
     RC.sig_A_g = np.sqrt(RC.sig_mg_0*RC.sig_mg_0)
@@ -871,17 +886,30 @@ def measure_RC_offset(params,RC,target,log):
     RC.A_i = RC.i - RC.m_i_0
     RC.sig_A_i = np.sqrt(RC.sig_mi_0*RC.sig_mi_0)
     
+    RC.A_I = RC.I - RC.m_I_0
+    RC.sig_A_I = RC.sig_mI_0
+    RC.A_V = RC.V - RC.m_V_0
+    RC.sig_A_V = RC.sig_mV_0
+        
     RC.Egr = RC.gr - RC.gr_0
     RC.sig_Egr = np.sqrt( (RC.sig_gr_0*RC.sig_gr_0) )
     RC.Eri = RC.ri - RC.ri_0
     RC.sig_Eri = np.sqrt( (RC.sig_ri_0*RC.sig_ri_0) )
 
+    RC.EVI = RC.VI - RC.VI_0
+    RC.sig_EVI = RC.sig_VI_0
+    
     log.info('\n')
     log.info('Extinction, d(g) = '+str(RC.A_g)+' +/- '+str(RC.sig_A_g)+'mag')
     log.info('Extinction, d(r) = '+str(RC.A_r)+' +/- '+str(RC.sig_A_r)+'mag')
     log.info('Extinction, d(i) = '+str(RC.A_i)+' +/- '+str(RC.sig_A_i)+'mag')
     log.info('Reddening, E(g-r) = '+str(RC.Egr)+' +/- '+str(RC.sig_Egr)+'mag')
     log.info('Reddening, E(r-i) = '+str(RC.Eri)+' +/- '+str(RC.sig_Eri)+'mag')
+    
+    log.info('\n')
+    log.info('Extinction, d(V) = '+str(RC.A_V)+' +/- '+str(RC.sig_A_V)+'mag')
+    log.info('Extinction, d(I) = '+str(RC.A_I)+' +/- '+str(RC.sig_A_I)+'mag')
+    log.info('Reddening, E(V-I) = '+str(RC.EVI)+' +/- '+str(RC.sig_EVI)+'mag')
     
     return RC
     
@@ -898,12 +926,163 @@ def calc_phot_properties(target, source, blend, RC, log):
     log.info('\nSource star extinction-corrected magnitudes and de-reddened colours:\n')
     log.info(source.summary(show_mags=False,show_cal=True))
     log.info(source.summary(show_mags=False,show_cal=True,show_colours=True))
+    log.info(source.summary(show_mags=False,johnsons=True,show_cal=True))
     
     log.info('\nBlend extinction-corrected magnitudes and de-reddened colours:\n')
     log.info(blend.summary(show_mags=False,show_cal=True))
     log.info(blend.summary(show_mags=False,show_cal=True,show_colours=True))
+    log.info(blend.summary(show_mags=False,johnsons=True,show_cal=True))
     
     return target,source,blend
+
+def calc_source_ang_radius(source, log):
+    """Function to calculate the angular radius of the source star"""
+    
+    def calc_theta(log_theta_LD,sig_log_theta_LD):
+        
+        theta_LD = 10**(log_theta_LD) * 1000.0
+        sig_theta_LD = (sig_log_theta_LD/abs(log_theta_LD)) * theta_LD
+        
+        return theta_LD, sig_theta_LD
+        
+    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius(source.V_0,source.sig_V_0,source.VI_0,source.sig_VI_0,'V-I',Lclass='dwarfs')
+    
+    (theta_LD,sig_theta_LD) = calc_theta(log_theta_LD,sig_log_theta_LD)
+    
+    log.info('Assuming the source is a dwarf:')
+    log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
+    log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+    
+    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius(source.V_0,source.sig_V_0,source.VI_0,source.sig_VI_0,'V-I',Lclass='giants')
+    
+    (theta_LD,sig_theta_LD) = calc_theta(log_theta_LD,sig_log_theta_LD)
+    
+    log.info('Assuming the source is a giant:')
+    log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
+    log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+    
+    source.theta = theta_LD
+    source.sig_theta = sig_theta_LD
+    
+    return source
+    
+def calc_source_radius(source, log):
+    """Function to infer the physical radius of the source star from the 
+    Torres mass-radius relation based on Teff, logg, and Fe/H
+    
+    Assumes a solar metallicity of Zsol = 0.0152.    
+    """
+    
+    (source.R, source.sig_R) = stellar_radius_relations.star_mass_radius_relation(source.teff,source.logg,0.0152,log=log)
+
+    return source
+    
+def convert_ndp(value,ndp):
+    """Function to convert a given floating point value to a string, 
+    rounded to the given number of decimal places, and suffix with zero
+    if the value rounds to fewer decimal places than expected"""
+    
+    value = str(round(value,ndp))
+    
+    dp = value.split('.')[-1]
+    
+    while len(dp) < ndp:
+        
+        value = value + '0'
+        
+        dp = value.split('.')[-1]
+    
+    return value
+
+def calc_source_distance(source,log):
+    """Function to calculate the distance to the source star, given the
+    angular and physical radius estimates"""
+    
+    theta_S = ((source.theta / 1e6)/3600.0)*(np.pi/180.0)  # radians
+    sig_theta_S = ((source.sig_theta / 1e6)/3600.0)*(np.pi/180.0)
+    
+    R_S = source.R * constants.R_sun.value  # units of m
+    sig_RS = source.sig_R * constants.R_sun.value
+    
+    source.D = (R_S/np.tan(theta_S)) / constants.pc.value
+    
+    source.sig_D = np.sqrt((sig_RS/R_S)**2 + ((1.0/sig_theta_S)/(1.0/theta_S)**2))*source.D
+    
+    log.info('\n')
+    log.info('Inferred source distance: '+str(source.D)+' +/- '+str(source.sig_D)+' pc')
+    
+    return source
+
+def output_red_clump_data_latex(params,RC,log):
+    """Function to output a LaTeX format table with the data for the Red Clump"""
+    
+    file_path = path.join(params['red_dir'],'red_clump_data_table.tex')
+    
+    t = open(file_path, 'w')
+    
+    t.write('\\begin{table}[h!]\n')
+    t.write('\\centering\n')
+    t.write('\\caption{Photometric properties of the Red Clump, with absolute magnitudes (M) taken from \cite{Ruiz-Dern2018}, and the measured properties from ROME data.} \label{tab:RCproperties}\n')
+    t.write('\\begin{tabular}{ll}\n')
+    t.write('\\hline\n')
+    t.write('\\hline\n')
+    t.write('$M_{g,RC,0}$ & '+convert_ndp(RC.M_g_0,3)+' $\pm$ '+convert_ndp(RC.sig_Mg_0,3)+'\,mag\\\\\n')
+    t.write('$M_{r,RC,0}$ & '+convert_ndp(RC.M_r_0,3)+' $\pm$ '+convert_ndp(RC.sig_Mr_0,3)+'\,mag\\\\\n')
+    t.write('$M_{i,RC,0}$ & '+convert_ndp(RC.M_i_0,3)+' $\pm$ '+convert_ndp(RC.sig_Mi_0,3)+'\,mag\\\\\n')
+    t.write('$(g-r)_{RC,0}$ & '+convert_ndp(RC.gr_0,3)+' $\pm$ '+convert_ndp(RC.sig_gr_0,3)+'\,mag\\\\\n')
+    t.write('$(r-i)_{RC,0}$ & '+convert_ndp(RC.ri_0,3)+' $\pm$ '+convert_ndp(RC.sig_ri_0,3)+'\,mag\\\\\n')
+    t.write('$m_{g,RC,0}$ & '+convert_ndp(RC.m_g_0,3)+' $\pm$ '+convert_ndp(RC.sig_mg_0,3)+'\,mag\\\\\n')
+    t.write('$m_{r,RC,0}$ & '+convert_ndp(RC.m_r_0,3)+' $\pm$ '+convert_ndp(RC.sig_mr_0,3)+'\,mag\\\\\n')
+    t.write('$m_{i,RC,0}$ & '+convert_ndp(RC.m_i_0,3)+' $\pm$ '+convert_ndp(RC.sig_mi_0,3)+'\,mag\\\\\n')
+    t.write('$m_{g,RC,\\rm{centroid}}$  & '+convert_ndp(RC.g,2)+' $\pm$ '+convert_ndp(RC.sig_g,2)+'\,mag\\\\\n')
+    t.write('$m_{r,RC,\\rm{centroid}}$  & '+convert_ndp(RC.r,2)+' $\pm$ '+convert_ndp(RC.sig_r,2)+'\,mag\\\\\n')
+    t.write('$m_{i,RC,\\rm{centroid}}$  & '+convert_ndp(RC.i,2)+' $\pm$ '+convert_ndp(RC.sig_i,2)+'\,mag\\\\\n')
+    t.write('$(g-r)_{RC,\\rm{centroid}}$ & '+convert_ndp(RC.gr,2)+'  $\pm$ '+convert_ndp(RC.sig_gr,2)+'\,mag\\\\\n')
+    t.write('$(r-i)_{RC,\\rm{centroid}}$ & '+convert_ndp(RC.ri,2)+' $\pm$ '+convert_ndp(RC.sig_ri,2)+'\,mag\\\\\n')
+    t.write('$A_{g}$ & '+convert_ndp(RC.A_g,3)+' $\pm$ '+convert_ndp(RC.sig_A_g,3)+'\,mag\\\\\n')
+    t.write('$A_{r}$ & '+convert_ndp(RC.A_r,3)+' $\pm$ '+convert_ndp(RC.sig_A_r,3)+'\,mag\\\\\n')
+    t.write('$A_{i}$ & '+convert_ndp(RC.A_i,3)+' $\pm$ '+convert_ndp(RC.sig_A_i,3)+'\,mag\\\\\n')
+    t.write('$E(g-r)$ & '+convert_ndp(RC.Egr,3)+' $\pm$ '+convert_ndp(RC.sig_Egr,3)+'\,mag\\\\\n')
+    t.write('$E(r-i)$ & '+convert_ndp(RC.Eri,3)+' $\pm$ '+convert_ndp(RC.sig_Eri,3)+'\,mag\\\\\n')
+    t.write('\\hline\n')
+    t.write('\\end{tabular}\n')
+    t.write('\\end{table}\n')
+
+    t.close()
+    
+    log.info('\n')
+    log.info('Output red clump data in laTex table to '+file_path)
+    
+def output_source_blend_data_latex(params,source,blend,log):
+    """Function to output a LaTex format table with the source and blend data"""
+
+    file_path = path.join(params['red_dir'],'source_blend_data_table.tex')
+    
+    t = open(file_path, 'w')
+
+    t.write('\\begin{table}[h!]\n')
+    t.write('\\centering\n')
+    t.write('\\caption{Photometric properties of the source star (s) and blend (b).} \label{tab:targetphot}\n')
+    t.write('\\begin{tabular}{llll}\n')
+    t.write('\\hline\n')
+    t.write('\\hline\n')
+    t.write('$m_{g,s}$ & '+convert_ndp(source.g,3)+' $\pm$ '+convert_ndp(source.sig_g,3)+'\,mag & $m_{g,b}$ & '+convert_ndp(blend.g,3)+' $\pm$ '+convert_ndp(blend.sig_g,3)+'\,mag\\\\\n')
+    t.write('$m_{r,s}$ & '+convert_ndp(source.r,3)+' $\pm$ '+convert_ndp(source.sig_r,3)+'\,mag & $m_{r,b}$ & '+convert_ndp(blend.r,3)+' $\pm$ '+convert_ndp(blend.sig_r,3)+'\,mag\\\\\n')
+    t.write('$m_{i,s}$ & '+convert_ndp(source.i,3)+' $\pm$ '+convert_ndp(source.sig_i,3)+'\,mag & $m_{i,b}$ & '+convert_ndp(blend.i,3)+' $\pm$ '+convert_ndp(blend.sig_i,3)+'\,mag\\\\\n')
+    t.write('$(g-r)_{s}$ & '+convert_ndp(source.gr,3)+' $\pm$ '+convert_ndp(source.sig_gr,3)+'\,mag & $(g-r)_{b}$ & '+convert_ndp(blend.gr,3)+' $\pm$ '+convert_ndp(blend.sig_gr,3)+'\,mag\\\\\n')
+    t.write('$(r-i)_{s}$ & '+convert_ndp(source.ri,3)+' $\pm$ '+convert_ndp(source.sig_ri,3)+'\,mag & $(r-i)_{b}$ & '+convert_ndp(blend.ri,3)+' $\pm$ '+convert_ndp(blend.sig_ri,3)+'\,mag\\\\\n')
+    t.write('$m_{g,s,0}$ & '+convert_ndp(source.g_0,3)+' $\pm$ '+convert_ndp(source.sig_g_0,3)+'\,mag & $m_{g,b,0}$ & '+convert_ndp(blend.g_0,3)+' $\pm$ '+convert_ndp(blend.sig_g_0,3)+'\,mag\\\\\n')
+    t.write('$m_{r,s,0}$ & '+convert_ndp(source.r_0,3)+' $\pm$ '+convert_ndp(source.sig_r_0,3)+'\,mag & $m_{r,b,0}$ & '+convert_ndp(blend.r_0,3)+' $\pm$ '+convert_ndp(blend.sig_r_0,3)+'\,mag\\\\\n')
+    t.write('$m_{i,s,0}$ & '+convert_ndp(source.i_0,3)+' $\pm$ '+convert_ndp(source.sig_i_0,3)+'\,mag & $m_{i,b,0}$ & '+convert_ndp(blend.i_0,3)+' $\pm$ '+convert_ndp(blend.sig_i_0,3)+'\,mag\\\\\n')
+    t.write('$(g-r)_{s,0}$ & '+convert_ndp(source.gr_0,3)+' $\pm$ '+convert_ndp(source.sig_gr_0,3)+'\,mag & $(g-r)_{b,0}$ & '+convert_ndp(blend.gr_0,3)+' $\pm$ '+convert_ndp(blend.sig_gr_0,3)+'\,mag\\\\\n')
+    t.write('$(r-i)_{s,0}$ & '+convert_ndp(source.ri_0,3)+' $\pm$ '+convert_ndp(source.sig_ri_0,3)+'\,mag & $(r-i)_{b,0}$ & '+convert_ndp(blend.ri_0,3)+' $\pm$ '+convert_ndp(blend.sig_ri_0,3)+'\,mag\\\\\n')
+    t.write('\\hline\n')
+    t.write('\\end{tabular}\n')
+    t.write('\\end{table}\n')
+
+    t.close()
+
+    log.info('Output source and blend data in laTex table to '+file_path)
     
 if __name__ == '__main__':
     

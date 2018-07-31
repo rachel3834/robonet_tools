@@ -22,7 +22,8 @@ def calc_star_ang_radius(Q,sigQ,PQ,sigPQ,pqcolour,Lclass=None):
     (P-Q) = the measured colour
     theta_LD = angular diameter, corrected for limb-darkening
     
-    from Adams et al. (2018), MNRAS, 473, 3608.
+    from Adams et al. (2018), MNRAS, 473, 3608. 
+    Returned units are log10(micro-arcsec).
     """
     
     coeffs = fetch_coefficients(pqcolour,Lclass=Lclass)
@@ -121,7 +122,82 @@ def fetch_coefficients(pqcolour,Lclass=None):
         
     return coeffs[pqcolour]
 
+def scale_source_distance(Mv, theta_deg, err_theta_deg, DS):
+    """Function to calculate the apparent angular size of the source at the 
+    inferred source distance.
+    M
+    """
+    
+    Rsol = 6.96e10   # cm
+    pc = 3.086e18   # cm
+    
+    # Calculating the distance at which a star of the given absolute V mag given
+    # would have an apparent V mag of zero:
+    DMv0 = 10**( ( -1.0 * Mv + 5.0 ) / 5.0 )
+    print 'Distance mV=0: '+str(DMv0)+'pc.  Zero uncertainty as model value for Mv.'
+    
+    # Based on the distance, calculating the physical radius of the star:
+    Rstar = DMv0 * math.sin(theta_deg*math.pi/180.0 / 2.0)
+    Rstar_min = DMv0 * math.sin((theta_deg-err_theta_deg)*math.pi/180.0 / 2.0)
+    Rstar_max = DMv0 * math.sin((theta_deg+err_theta_deg)*math.pi/180.0 / 2.0)
+    sig_Rstar = ( ( Rstar_max - Rstar_min ) / 2.0 ) * pc / Rsol
+    print 'Stellar radius '+str(Rstar * pc / Rsol)+'+/-'+str(sig_Rstar)+'Rsolar'
+    
+    # Calculating the apparent angular radius this star would have if
+    # it were at the distance of the source as given:
+    # Note no error is included for the distance since this value is expected
+    # to be an estimate. 
+    def calc_theta_S(Rstar, DS):
+        sin_theta_S = Rstar / DS
+        theta_S = math.asin( sin_theta_S ) * 180.0 / math.pi * 3600.0 * 1e6
+        return sin_theta_S, theta_S
+    (sin_theta_S, theta_S) = calc_theta_S(Rstar, DS)
+    (sin_theta_S_min, theta_S_min) = calc_theta_S(Rstar_min, DS)
+    (sin_theta_S_max, theta_S_max) = calc_theta_S(Rstar_max, DS)
+    sig_theta_S = ( theta_S_max - theta_S_min ) / 2.0
+    
+    print 'Apparent angular source radius at D_S:'+str(theta_S)+'+/-'+str(sig_theta_S)+'mu-as'
 
+
+def star_mass_radius_relation(teff, logg, FeH, log=None):
+    """The relationship between mass and radius for dwarf and giant stars, 
+    as derived by Torres et al. (2010), A&ARv, 18, 67."""
+    
+    b1 = 2.4427
+    sig_b1 = 0.038
+    b2 = 0.6679
+    sig_b2 = 0.016
+    b3 = 0.1771
+    sig_b3 = 0.027
+    b4 = 0.705 
+    sig_b4 = 0.13
+    b5 = -0.21415
+    sig_b5 = 0.0075
+    b6 = 0.02306
+    sig_b6 = 0.0013
+    b7 = 0.04173
+    sig_b7 = 0.0082
+    
+    X = np.log10(teff) - 4.1
+    
+    log_R = b1 + b2*X + b3*X*X + b4*X*X*X + \
+                                        b5*logg*logg + \
+                                                b6*logg*logg*logg + b7*FeH
+    
+    sig_log_R = 0.014
+    
+    starR = 10**(log_R)
+    sig_starR = (sig_log_R/log_R) * starR
+    
+    if log != None:
+        log.info('\n')
+        log.info('Stellar radius from Torres relation: log R = '+\
+                    str(log_R)+' +/- '+str(sig_log_R))
+        log.info('Stellar radius from Torres relation: '+\
+                    str(round(starR,2))+' +/- '+str(round(sig_starR,2))+' Rsol')
+    
+    return starR, sig_starR
+    
 if __name__ == '__main__':
     
     VI_Sun = 0.702
@@ -132,5 +208,5 @@ if __name__ == '__main__':
     theta_LD = 10**(log_theta_LD)
     
     print('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
-    print('Theta_LD = '+str(theta_LD)+'rads = '+str(theta_LD*(180.0/np.pi))+'deg')
+    print('Theta_LD = '+str(theta_LD)+'mas')
     
