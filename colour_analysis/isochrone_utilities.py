@@ -48,6 +48,7 @@ def find_isochrone_nearest_entries(data, gr, ri, log=None):
     output += 'Closest entries matching target colours: (g-r)='+str(gr)+\
                                                 ' and (r-i)='+str(ri)+'\n'
     output += 'Age[Gyr]  Teff[K]  log(g) (g-r)_iso  (r-i)_iso  (g-r)_t  (r-i)_t  dist  gmag   rmag   imag\n'
+    
     for i in sort_idx:
         output += str(round(data[i,0]/1e9,4))+' '+str(round(10**(data[i,2]),1))+\
                     ' '+str(data[i,3])+' '+str(round(iso_gr[i],3))+' '+\
@@ -60,13 +61,27 @@ def find_isochrone_nearest_entries(data, gr, ri, log=None):
     teff_max = (10**data[sort_idx,2]).max()
     sig_teff = (teff_max - teff_min)/2.0
     
-    output += 'Range of Teff = '+str(round((10**data[sort_idx,2]).min(),1))+\
+    output += 'Range of Teff = '+str(round(teff_min,1))+\
                                 ' to '+\
-                                str(round((10**data[sort_idx,2]).max(),1))+'\n'
+                                str(round(teff_max,1))+'\n'
     
     output += 'Teff of target = '+str(round(teff,1))+' +/- '+\
                                 str(round(sig_teff,1))+'\n'
     
+    logg = data[sort_idx,3].mean()
+    logg_min = data[sort_idx,3].min()
+    logg_max = data[sort_idx,3].max()
+    sig_logg = (teff_max - teff_min)/2.0
+    
+    print data[:,3]
+    
+    output += 'Range of log(g) = '+str(round(logg_min,1))+\
+                                ' to '+\
+                                str(round(logg_max,1))+'\n'
+    
+    output += 'log(g) of target = '+str(round(logg,1))+' +/- '+\
+                                str(round(sig_logg,1))+'\n'
+               
     if log != None:
         log.info(output)
     else:

@@ -5,7 +5,7 @@ Created on Tue May 15 20:48:12 2018
 @author: rstreet
 """
 
-from os import path
+from os import path, remove
 from sys import argv
 from astropy.io import fits
 from astropy.coordinates import SkyCoord
@@ -65,19 +65,24 @@ def perform_colour_analysis():
                                target, source, blend, RC,
                                det_idx,cat_idx,close_cat_idx, log)
     
-    (star_data, teff, sig_teff) = isochrone_utilities.analyze_isochrones(source.gr, 
-                                                                         source.ri, 
+    (star_data, teff, sig_teff) = isochrone_utilities.analyze_isochrones(source.gr_0, 
+                                                                         source.ri_0, 
                                                                          params['isochrone_file'],
                                                                          log=log)
     
 def start_log(params, console=False):
     """Function to initialise a log file"""
     
+    log_file = path.join(params['red_dir'],'colour_analysis.log')
+    
+    if path.isfile(log_file):
+        remove(log_file)
+        
     log = logging.getLogger( 'colour_analysis' )
     
     if len(log.handlers) == 0:
         log.setLevel( logging.INFO )
-        file_handler = logging.FileHandler( path.join(params['red_dir'],'colour_analysis.log') )
+        file_handler = logging.FileHandler( log_file )
         file_handler.setLevel( logging.INFO )
         
         if console == True:
@@ -199,10 +204,11 @@ def calc_source_blend_params(params,log):
     source.compute_colours(use_inst=True)
     source.transform_to_JohnsonCousins()
     
+    log.info('\n')
     log.info('Source measured photometry:')
     log.info(source.summary(show_mags=True))
-    log.info(source.summary(show_colours=True))
-    log.info(source.summary(johnsons=True))
+    log.info(source.summary(show_mags=False,show_colours=True))
+    log.info(source.summary(show_mags=False,johnsons=True))
     
     blend = photometry_classes.Star()
     
@@ -221,10 +227,11 @@ def calc_source_blend_params(params,log):
     blend.compute_colours(use_inst=True)
     blend.transform_to_JohnsonCousins()
     
+    log.info('\n')
     log.info('Blend measured photometry:')
     log.info(blend.summary(show_mags=True))
-    log.info(blend.summary(show_colours=True))
-    log.info(blend.summary(johnsons=True))
+    log.info(blend.summary(show_mags=False,show_colours=True))
+    log.info(blend.summary(show_mags=False,johnsons=True))
     
     return source, blend
     
@@ -294,6 +301,7 @@ def find_target_data(params,star_catalog,log):
             except AttributeError:
                 pass
             
+            log.info('\n')
             log.info('Target measured photometry:')
             log.info(target.summary(show_mags=True))
             
@@ -301,11 +309,11 @@ def find_target_data(params,star_catalog,log):
             
             target.compute_colours(use_inst=True)
             
-            log.info(target.summary(show_colours=True))
+            log.info(target.summary(show_mags=False,show_colours=True))
             
         target.transform_to_JohnsonCousins()
         
-        log.info(target.summary(johnsons=True))
+        log.info(target.summary(show_mags=False,johnsons=True))
     
     return target
 
@@ -446,7 +454,7 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
                  yerr = getattr(blend,'sig_'+yaxis_filter),
                  xerr = getattr(blend,'sig_'+col_key), color='b',
                  marker='+',markersize=6, label='Blend')
-    
+                
     plt.errorbar(getattr(RC,col_key), getattr(RC,yaxis_filter), 
                  yerr=getattr(RC,'sig_'+yaxis_filter), 
                  xerr=getattr(RC,'sig_'+col_key),
@@ -465,17 +473,18 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
                                             +'.png')
 
     plt.grid()
-    
-    plt.legend()
-    
+        
     if red_filter == 'i' and blue_filter == 'r' and yaxis_filter == 'i':
-        plt.axis([0.0,2.0,22.0,13.5])
+        plt.axis([-1.0,2.0,20.2,13.5])
+        plt.legend(loc=4)  # Lower right
     
     if red_filter == 'i' and blue_filter == 'r' and yaxis_filter == 'r':
-        plt.axis([0.0,2.0,22.0,13.5])
+        plt.axis([-1.0,2.0,21.0,13.5])
+        plt.legend(loc=4)  # Lower right
         
     if red_filter == 'r' and blue_filter == 'g':
-        plt.axis([0.0,3.0,22.0,13.5])
+        plt.axis([-1.0,3.0,21.0,13.5])
+        plt.legend(loc=2)  # Upper left
         
     plt.savefig(plot_file)
 
@@ -521,14 +530,14 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
                    label='Stars < '+str(round(tol,1))+'arcmin of target')
                      
         if source.gr_0 != None and source.ri_0 != None:
-            plt.plot(source.gr_0, source.ri_0,'md',markersize=6)
+            plt.plot(source.gr_0, source.ri_0,'md',markersize=6, label='Source')
             
         if blend.gr_0 != None and blend.ri_0 != None:
-            plt.plot(blend.gr_0, blend.ri_0,'bp',markersize=6)
+            plt.plot(blend.gr_0, blend.ri_0,'bp',markersize=6, label='Blend')
         
         (spectral_type, luminosity_class, gr_colour, ri_colour) = spectral_type_data.get_spectral_class_data()
         
-        plot_dwarfs = True
+        plot_dwarfs = False
         plot_giants = True
         for i in range(0,len(spectral_type),1):
             
@@ -561,11 +570,11 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
         
         plot_file = path.join(params['red_dir'],'colour_colour_diagram.png')
         
-        plt.axis([-1.0,2.0,-0.5,1.0])
+        plt.axis([-1.2,2.0,-1.5,1.0])
     
         plt.grid()
         
-        plt.legend()
+        plt.legend(loc=4) # Lower right
     
         plt.savefig(plot_file)
     
@@ -730,6 +739,8 @@ def localize_red_clump(star_catalog,close_cat_idx,log):
     cal_ri = cal_r - cal_i 
     cal_gr = cal_g - cal_r
     
+    log.info('\n')
+    log.info('Localizing the Red Clump')
     log.info('Median (r-i), i: '+str(np.median(inst_ri))+', '+str(np.median(inst_i)))
     log.info('Median (g-r), g: '+str(np.median(inst_gr))+', '+str(np.median(inst_g)))
     
@@ -765,13 +776,14 @@ def localize_red_clump(star_catalog,close_cat_idx,log):
     
     (RC.gr, RC.sig_gr, RC.g, RC.sig_g) = calc_distribution_centroid_and_spread_2d(inst_gr[idx], inst_g[idx], use_iqr=True)
     
-    log.info('\nCentroid of Red Clump Stars at:')
+    log.info('\n')
+    log.info('Centroid of Red Clump Stars at:')
     log.info(RC.summary(show_mags=True))
-    log.info(RC.summary(show_colours=True))
+    log.info(RC.summary(show_mags=False,show_colours=True))
     
     RC.transform_to_JohnsonCousins()
     
-    log.info(RC.summary(johnsons=True))
+    log.info(RC.summary(show_mags=False,johnsons=True))
     
     return RC
 
@@ -853,18 +865,19 @@ def measure_RC_offset(params,RC,target,log):
     
     
     RC.A_g = RC.g - RC.m_g_0
-    RC.sig_A_g = np.sqrt(RC.sig_g*RC.sig_g + RC.sig_mg_0*RC.sig_mg_0)
+    RC.sig_A_g = np.sqrt(RC.sig_mg_0*RC.sig_mg_0)
     RC.A_r = RC.r - RC.m_r_0
-    RC.sig_A_r = np.sqrt(RC.sig_r*RC.sig_r + RC.sig_mr_0*RC.sig_mr_0)
+    RC.sig_A_r = np.sqrt(RC.sig_mr_0*RC.sig_mr_0)
     RC.A_i = RC.i - RC.m_i_0
-    RC.sig_A_i = np.sqrt(RC.sig_i*RC.sig_i + RC.sig_mi_0*RC.sig_mi_0)
+    RC.sig_A_i = np.sqrt(RC.sig_mi_0*RC.sig_mi_0)
     
     RC.Egr = RC.gr - RC.gr_0
-    RC.sig_Egr = np.sqrt( (RC.sig_gr*RC.sig_gr) + (RC.sig_gr_0*RC.sig_gr_0) )
+    RC.sig_Egr = np.sqrt( (RC.sig_gr_0*RC.sig_gr_0) )
     RC.Eri = RC.ri - RC.ri_0
-    RC.sig_Eri = np.sqrt( (RC.sig_ri*RC.sig_ri) + (RC.sig_ri_0*RC.sig_ri_0) )
+    RC.sig_Eri = np.sqrt( (RC.sig_ri_0*RC.sig_ri_0) )
 
-    log.info('\nExtinction, d(g) = '+str(RC.A_g)+' +/- '+str(RC.sig_A_g)+'mag')
+    log.info('\n')
+    log.info('Extinction, d(g) = '+str(RC.A_g)+' +/- '+str(RC.sig_A_g)+'mag')
     log.info('Extinction, d(r) = '+str(RC.A_r)+' +/- '+str(RC.sig_A_r)+'mag')
     log.info('Extinction, d(i) = '+str(RC.A_i)+' +/- '+str(RC.sig_A_i)+'mag')
     log.info('Reddening, E(g-r) = '+str(RC.Egr)+' +/- '+str(RC.sig_Egr)+'mag')
@@ -882,13 +895,13 @@ def calc_phot_properties(target, source, blend, RC, log):
     source.calibrate_phot_properties(RC,log=log)
     blend.calibrate_phot_properties(RC,log=log)
 
-    log.info('\nSource star extinction-corrected magnitudes and de-reddened colours:')
-    log.info(source.summary(show_cal=True))
-    log.info(source.summary(show_cal=True,show_colours=True))
+    log.info('\nSource star extinction-corrected magnitudes and de-reddened colours:\n')
+    log.info(source.summary(show_mags=False,show_cal=True))
+    log.info(source.summary(show_mags=False,show_cal=True,show_colours=True))
     
-    log.info('\nBlend extinction-corrected magnitudes and de-reddened colours:')
-    log.info(blend.summary(show_cal=True))
-    log.info(blend.summary(show_cal=True,show_colours=True))
+    log.info('\nBlend extinction-corrected magnitudes and de-reddened colours:\n')
+    log.info(blend.summary(show_mags=False,show_cal=True))
+    log.info(blend.summary(show_mags=False,show_cal=True,show_colours=True))
     
     return target,source,blend
     

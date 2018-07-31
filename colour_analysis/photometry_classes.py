@@ -75,36 +75,36 @@ class Star:
                 ' r_meas = '+str(round(self.r,3))+' +/- '+str(round(self.sig_r,3))+\
                 ' i_meas = '+str(round(self.i,3))+' +/- '+str(round(self.sig_i,3))
         
-        elif show_cal:
+        elif show_cal and show_mags == False and show_colours == False:
             output = 'g_0 = '+str(round(self.g_0,3))+' +/- '+str(round(self.sig_g_0,3))+\
                 ' r_0 = '+str(round(self.r_0,3))+' +/- '+str(round(self.sig_r_0,3))+\
                 ' i_0 = '+str(round(self.i_0,3))+' +/- '+str(round(self.sig_i_0,3))
             
-        elif show_colours:
+        elif show_colours and show_cal == False and show_mags == False:
             output = '(g-r)_meas = '+str(round(self.gr,3))+' +/- '+str(round(self.sig_gr,3))+\
-                '\n(r-i)_meas = '+str(round(self.ri,3))+' +/- '+str(round(self.sig_ri,3))
+                ' (r-i)_meas = '+str(round(self.ri,3))+' +/- '+str(round(self.sig_ri,3))
                 
-        elif show_colours and show_cal:
+        elif show_colours and show_cal and show_mags == False:
             output = '(g-r)_0 = '+str(round(self.gr_0,3))+' +/- '+str(round(self.sig_gr_0,3))+\
-                '\n(r-i)_0 = '+str(round(self.ri_0,3))+' +/- '+str(round(self.sig_ri_0,3))
+                ' (r-i)_0 = '+str(round(self.ri_0,3))+' +/- '+str(round(self.sig_ri_0,3))
         
-        elif johnsons:
+        elif johnsons and show_mags == False:
             
             if self.VR != None and self.RI != None:
-                output = '(V-R)_inst = '+str(self.VR)+' +/- '+str(self.sig_VR)+'mag\n'+\
+                output = '(V-R)_inst = '+str(self.VR)+' +/- '+str(self.sig_VR)+'mag '+\
                          '(Rc-Ic)_inst = '+str(self.RI)+' +/- '+str(self.sig_RI)+'mag'
     
             if self.V != None and self.BV != None:
             
-                output = 'V_inst = '+str(self.V)+' +/- '+str(self.sig_V)+'mag\n'+\
+                output = 'V_inst = '+str(self.V)+' +/- '+str(self.sig_V)+'mag '+\
                          '(B-V)_inst = '+str(self.BV)+' +/- '+str(self.sig_BV)+'mag'
     
             if self.V != None and self.VR != None:
                     
                 output = 'Derived target instrumental colours and magnitudes:\n'+\
                          'R_inst = '+str(self.R)+' +/- '+str(self.sig_R)+'mag'+\
-                         'I_inst = '+str(self.I)+' +/- '+str(self.sig_I)+'mag'+\
-                         '(V-I)_inst = '+str(self.VI)+' +/- '+str(self.sig_VI)+'mag'
+                         ' I_inst = '+str(self.I)+' +/- '+str(self.sig_I)+'mag'+\
+                         ' (V-I)_inst = '+str(self.VI)+' +/- '+str(self.sig_VI)+'mag'
             
         return output
     
@@ -143,7 +143,7 @@ class Star:
         
         (self.gr_0, self.sig_gr_0, self.ri_0, self.sig_ri_0) = bilir_phot_transforms.transform_2MASS_to_SDSS(JH=self.JH_0, HK=self.HK_0, MH=None)
     
-    def calibrate_phot_properties(self, RC, log=None):
+    def calibrate_phot_properties(self, RC, log=None, verbose=False):
         """Function to calculate the de-reddened and extinction-corrected 
         photometric properties of the Star
         """
@@ -160,17 +160,18 @@ class Star:
         self.sig_ri_0 = np.sqrt( (self.sig_ri*self.sig_ri) + (RC.sig_Eri*RC.sig_Eri) )
 
         
-        output = '\nSource star extinction-corrected magnitudes and de-reddened colours:'
-        output += 'g_S,0 = '+str(self.g_0)+' +/- '+str(self.sig_g_0)+'\n'
-        output += 'r_S,0 = '+str(self.r_0)+' +/- '+str(self.sig_r_0)+'\n'
-        output += 'i_S,0 = '+str(self.i_0)+' +/- '+str(self.sig_i_0)+'\n'
-        output += '(g-r)_S,0 = '+str(self.gr_0)+' +/- '+str(self.sig_gr_0)+'\n'
-        output += '(r-i)_S,0 = '+str(self.ri_0)+' +/- '+str(self.sig_ri_0)
-        
-        if log != None:
-            log.info(output)
-        else:
-            print(output)
+        if verbose:
+            output = '\nExtinction-corrected magnitudes and de-reddened colours:\n'
+            output += 'g_S,0 = '+str(self.g_0)+' +/- '+str(self.sig_g_0)+'\n'
+            output += 'r_S,0 = '+str(self.r_0)+' +/- '+str(self.sig_r_0)+'\n'
+            output += 'i_S,0 = '+str(self.i_0)+' +/- '+str(self.sig_i_0)+'\n'
+            output += '(g-r)_S,0 = '+str(self.gr_0)+' +/- '+str(self.sig_gr_0)+'\n'
+            output += '(r-i)_S,0 = '+str(self.ri_0)+' +/- '+str(self.sig_ri_0)
+            
+            if log != None:
+                log.info(output)
+            else:
+                print(output)
             
         phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(ri=self.ri_0, 
                                                                        sigri=self.sig_ri_0)
@@ -180,8 +181,9 @@ class Star:
         self.RI_0 = phot['Rc-Ic']
         self.sig_RI_0 = phot['sigRI']
     
-        output = '\n(V-R)_S,0 = '+str(self.VR_0)+' +/- '+str(self.sig_VR_0)+'mag\n'
-        output += '(R-I)_S,0 = '+str(self.RI_0)+' +/- '+str(self.sig_RI_0)+'mag\n'
+        if verbose:
+            output = '\n(V-R)_S,0 = '+str(self.VR_0)+' +/- '+str(self.sig_VR_0)+'mag\n'
+            output += '(R-I)_S,0 = '+str(self.RI_0)+' +/- '+str(self.sig_RI_0)+'mag\n'
         
         phot = jester_phot_transforms.transform_SDSS_to_JohnsonCousins(g=self.g_0,
                                                                        sigg=self.sig_g_0,
@@ -192,11 +194,13 @@ class Star:
         self.BV_0 = phot['B-V']
         self.sig_BV_0 = phot['sigBV']
     
-        output += '\n(B-V)_S,0 = '+str(self.BV_0)+' +/- '+str(self.sig_BV_0)+'mag\n'
-        output += 'V_S,0 = '+str(self.V_0)+' +/- '+str(self.sig_V_0)+'mag'
-    
-        if log != None:
-            log.info(output)
-        else:
-            print(output)
-            
+        
+        if verbose:
+            output += '\n(B-V)_S,0 = '+str(self.BV_0)+' +/- '+str(self.sig_BV_0)+'mag\n'
+            output += 'V_S,0 = '+str(self.V_0)+' +/- '+str(self.sig_V_0)+'mag'
+        
+            if log != None:
+                log.info(output)
+            else:
+                print(output)
+                
