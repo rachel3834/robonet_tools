@@ -965,7 +965,10 @@ def calc_source_ang_radius(source, log):
         theta_LD = 10**(log_theta_LD) * 1000.0
         sig_theta_LD = (sig_log_theta_LD/abs(log_theta_LD)) * theta_LD
         
-        return theta_LD, sig_theta_LD
+        ang_radius = theta_LD / 2.0
+        sig_ang_radius = (sig_theta_LD / theta_LD) * ang_radius
+        
+        return theta_LD, sig_theta_LD, ang_radius, sig_ang_radius
         
     (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Adams2018(source.V_0,source.sig_V_0,source.VI_0,source.sig_VI_0,'V-I',Lclass='dwarfs')
     
@@ -978,37 +981,40 @@ def calc_source_ang_radius(source, log):
     
     (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Adams2018(source.V_0,source.sig_V_0,source.VI_0,source.sig_VI_0,'V-I',Lclass='giants')
     
-    (theta_LD,sig_theta_LD) = calc_theta(log_theta_LD,sig_log_theta_LD)
+    (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
     
     log.info('Assuming the source is a giant:')
     log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
     log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+    log.info('Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
     
     (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(source.gr_0,source.sig_gr_0,source.g_0,source.sig_g_0,'g-r',0.0)
     
-    (theta_LD,sig_theta_LD) = calc_theta(log_theta_LD,sig_log_theta_LD)
+    (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
     
     log.info('Based on Boyajian et al. 2014 relations for SDSS/Johnsons passbands:')
     log.info('Applies to main-sequence stars only.')
     log.info('Using the (g-r) colour index:')
     log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
     log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+    log.info('Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
     
     
     (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(source.gi_0,source.sig_gi_0,source.g_0,source.sig_g_0,'g-i',0.0)
     
-    (theta_LD,sig_theta_LD) = calc_theta(log_theta_LD,sig_log_theta_LD)
+    (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
     
     log.info('Based on Boyajian et al. 2014 relations for SDSS/Johnsons passbands:')
     log.info('Applies to main-sequence stars only.')
     log.info('Using the (g-i) colour index:')
     log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
     log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+    log.info('Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
     
     source.theta = theta_LD
     source.sig_theta = sig_theta_LD
-    source.ang_radius = theta_LD / 2.0
-    source.sig_ang_radius = (sig_theta_LD / theta_LD) * source.ang_radius
+    source.ang_radius = ang_radius
+    source.sig_ang_radius = sig_ang_radius
     
     log.info('\n')
     log.info('Source angular radius (from SDSS (g-i), Boyajian+ 2014 relations) = '+str(source.ang_radius)+' '+str(source.sig_ang_radius))
