@@ -55,7 +55,7 @@ def perform_colour_analysis():
     RC = localize_red_clump(star_catalog,close_cat_idx,log)
     
     analyse_colour_mag_diagrams(params,star_catalog,catalog_header,
-                                source,blend,RC,
+                                target, source,blend,RC,
                                 det_idx,cat_idx,close_cat_idx,log)
                                                  
     RC = measure_RC_offset(params,RC,target,log)
@@ -77,11 +77,21 @@ def perform_colour_analysis():
     source.logg = star_data[4]
     source.sig_logg = star_data[5]
     
-    source = calc_source_ang_radius(source, log)
+    star_data = isochrone_utilities.analyze_isochrones(blend.gr_0,blend.ri_0, 
+                                                       params['isochrone_file'],
+                                                       log=log)
+    blend.mass = star_data[0]
+    blend.sig_mass = star_data[1]
+    blend.teff = star_data[2]
+    blend.sig_teff = star_data[3]
+    blend.logg = star_data[4]
+    blend.sig_logg = star_data[5]
     
-    source = calc_source_radius(source, log)
+    (source, blend) = calc_source_blend_ang_radii(source, blend, log)
     
-    source = calc_source_distance(source,log)
+    (source, blend) = calc_source_blend_physical_radii(source, blend, log)
+    
+    (source,blend) = calc_source_blend_distance(source, blend, log)
     
     output_red_clump_data_latex(params,RC,log)
     
@@ -319,7 +329,10 @@ def find_target_data(params,star_catalog,log):
                 pass
             
             log.info('\n')
-            log.info('Target measured photometry:')
+            log.info('Target identified as star '+str(target.star_index)+\
+                        ' in the combined ROME catalog, with parameters:')
+            log.info('RA = '+str(target.ra)+' Dec = '+str(target.dec))
+            log.info('Measured ROME photometry, calibrated to the VPHAS+ scale:')
             log.info(target.summary(show_mags=True))
             
         if target.i != None and target.r != None:
@@ -397,7 +410,7 @@ def find_stars_close_to_target(star_catalog, target, tol, log):
     return jdx
     
 def analyse_colour_mag_diagrams(params,star_catalog,catalog_header,
-                                source,blend,RC,
+                                target,source,blend,RC,
                                 det_idx,cat_idx,close_cat_idx,log):
     """Function to plot a colour-magnitude diagram"""
     
@@ -431,21 +444,21 @@ def analyse_colour_mag_diagrams(params,star_catalog,catalog_header,
     lcal_gr = lcal_g - lcal_r
     lcal_gi = lcal_g - lcal_i
     
-    plot_colour_mag_diagram(params,inst_i, inst_ri, linst_i, linst_ri, 
+    plot_colour_mag_diagram(params,inst_i, inst_ri, linst_i, linst_ri, target, 
                             source, blend, RC, 'r', 'i', 'i', tol, log)
                             
-    plot_colour_mag_diagram(params,inst_r, inst_ri, linst_r, linst_ri, 
+    plot_colour_mag_diagram(params,inst_r, inst_ri, linst_r, linst_ri, target, 
                             source, blend, RC, 'r', 'i', 'r', tol, log)
                             
-    plot_colour_mag_diagram(params,inst_g, inst_gr, linst_g, linst_gr, 
+    plot_colour_mag_diagram(params,inst_g, inst_gr, linst_g, linst_gr, target, 
                             source, blend, RC, 'g', 'r', 'g', tol, log)
                             
-    plot_colour_mag_diagram(params,inst_g, inst_gi, linst_g, linst_gi, 
+    plot_colour_mag_diagram(params,inst_g, inst_gi, linst_g, linst_gi, target, 
                             source, blend, RC, 'g', 'i', 'g', tol, log)
     
     
 def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours, 
-                            source, blend, RC, blue_filter, red_filter, 
+                            target, source, blend, RC, blue_filter, red_filter, 
                             yaxis_filter, tol, log):
     """Function to plot a colour-magnitude diagram, highlighting the data for 
     local stars close to the target in a different colour from the rest, 
@@ -479,6 +492,13 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
                  xerr = getattr(blend,'sig_'+col_key), color='b',
                  marker='+',markersize=6, label='Blend')
                 
+    if getattr(target,blue_filter) != None and getattr(target,red_filter) != None:
+        
+        plt.errorbar(getattr(target,col_key), getattr(target,yaxis_filter), 
+                 yerr = getattr(target,'sig_'+yaxis_filter),
+                 xerr = getattr(target,'sig_'+col_key), color='k',
+                 marker='x',markersize=6, label='Target at baseline')
+                 
     plt.errorbar(getattr(RC,col_key), getattr(RC,yaxis_filter), 
                  yerr=getattr(RC,'sig_'+yaxis_filter), 
                  xerr=getattr(RC,'sig_'+col_key),
@@ -957,80 +977,39 @@ def calc_phot_properties(target, source, blend, RC, log):
     
     return target,source,blend
 
-def calc_source_ang_radius(source, log):
+def calc_source_blend_ang_radii(source, blend, log):
     """Function to calculate the angular radius of the source star"""
     
-    def calc_theta(log_theta_LD,sig_log_theta_LD):
-        
-        theta_LD = 10**(log_theta_LD) * 1000.0
-        sig_theta_LD = (sig_log_theta_LD/abs(log_theta_LD)) * theta_LD
-        
-        ang_radius = theta_LD / 2.0
-        sig_ang_radius = (sig_theta_LD / theta_LD) * ang_radius
-        
-        return theta_LD, sig_theta_LD, ang_radius, sig_ang_radius
-        
-    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Adams2018(source.V_0,source.sig_V_0,source.VI_0,source.sig_VI_0,'V-I',Lclass='dwarfs')
-    
-    (theta_LD,sig_theta_LD) = calc_theta(log_theta_LD,sig_log_theta_LD)
-    
-    log.info('Based on Adams et al.(2018) relations for Johnsons passbands:')
-    log.info('Assuming the source is a dwarf:')
-    log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
-    log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
-    
-    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Adams2018(source.V_0,source.sig_V_0,source.VI_0,source.sig_VI_0,'V-I',Lclass='giants')
-    
-    (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
-    
-    log.info('Assuming the source is a giant:')
-    log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
-    log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
-    log.info('Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
-    
-    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(source.gr_0,source.sig_gr_0,source.g_0,source.sig_g_0,'g-r',0.0)
-    
-    (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
-    
-    log.info('Based on Boyajian et al. 2014 relations for SDSS/Johnsons passbands:')
-    log.info('Applies to main-sequence stars only.')
-    log.info('Using the (g-r) colour index:')
-    log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
-    log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
-    log.info('Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
-    
-    
-    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(source.gi_0,source.sig_gi_0,source.g_0,source.sig_g_0,'g-i',0.0)
-    
-    (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
-    
-    log.info('Based on Boyajian et al. 2014 relations for SDSS/Johnsons passbands:')
-    log.info('Applies to main-sequence stars only.')
-    log.info('Using the (g-i) colour index:')
-    log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
-    log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
-    log.info('Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
-    
-    source.theta = theta_LD
-    source.sig_theta = sig_theta_LD
-    source.ang_radius = ang_radius
-    source.sig_ang_radius = sig_ang_radius
-    
     log.info('\n')
+    log.info('Calculating the angular radius of the source star:')
+    source.calc_stellar_ang_radius(log)
     log.info('Source angular radius (from SDSS (g-i), Boyajian+ 2014 relations) = '+str(source.ang_radius)+' '+str(source.sig_ang_radius))
     
-    return source
+    log.info('\n')
+    log.info('Calculating the angular radius of the blend:')
+    blend.calc_stellar_ang_radius(log)
+    log.info('Blend angular radius (from SDSS (g-i), Boyajian+ 2014 relations) = '+str(blend.ang_radius)+' '+str(blend.sig_ang_radius))
     
-def calc_source_radius(source, log):
+    return source, blend
+    
+def calc_source_blend_physical_radii(source, blend, log):
     """Function to infer the physical radius of the source star from the 
     Torres mass-radius relation based on Teff, logg, and Fe/H
     
     Assumes a solar metallicity of Zsol = 0.0152.    
     """
     
-    (source.R, source.sig_R) = stellar_radius_relations.star_mass_radius_relation(source.teff,source.logg,0.0152,log=log)
-
-    return source
+    source.calc_physical_radius(log)
+                    
+    blend.calc_physical_radius(log)
+    
+    log.info('\n')
+    log.info('Source radius from Torres relation: '+\
+                    str(round(source.radius,2))+' +/- '+str(round(source.sig_radius,2))+' Rsol')
+    log.info('Blend radius from Torres relation: '+\
+                    str(round(blend.radius,2))+' +/- '+str(round(blend.sig_radius,2))+' Rsol')
+                    
+    return source, blend
     
 def convert_ndp(value,ndp):
     """Function to convert a given floating point value to a string, 
@@ -1049,24 +1028,23 @@ def convert_ndp(value,ndp):
     
     return value
 
-def calc_source_distance(source,log):
+def calc_source_blend_distance(source,blend,log):
     """Function to calculate the distance to the source star, given the
     angular and physical radius estimates"""
     
-    theta_S = ((source.ang_radius / 1e6)/3600.0)*(np.pi/180.0)  # radians
-    sig_theta_S = ((source.sig_ang_radius / 1e6)/3600.0)*(np.pi/180.0)
-    
-    R_S = source.R * constants.R_sun.value  # units of m
-    sig_RS = source.sig_R * constants.R_sun.value
-    
-    source.D = (R_S/np.tan(theta_S)) / constants.pc.value
-    
-    source.sig_D = np.sqrt((sig_RS/R_S)**2 + ((1.0/sig_theta_S)/(1.0/theta_S)**2))*source.D
     
     log.info('\n')
+    
+    source.calc_distance(log)
+    
     log.info('Inferred source distance: '+str(source.D)+' +/- '+str(source.sig_D)+' pc')
     
-    return source
+    
+    blend.calc_distance(log)
+    
+    log.info('Inferred blend distance: '+str(blend.D)+' +/- '+str(blend.sig_D)+' pc')
+    
+    return source, blend
 
 def output_red_clump_data_latex(params,RC,log):
     """Function to output a LaTeX format table with the data for the Red Clump"""

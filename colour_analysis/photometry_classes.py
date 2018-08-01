@@ -8,6 +8,8 @@ Created on Fri Jul 27 16:28:17 2018
 import jester_phot_transforms
 import bilir_phot_transforms
 import numpy as np
+import stellar_radius_relations
+from astropy import constants
 
 class Star:
     """Class describing the photometric parameters of a single stellar object"""
@@ -189,6 +191,13 @@ class Star:
         self.ri_0 = self.ri - RC.Eri
         self.sig_ri_0 = np.sqrt( (self.sig_ri*self.sig_ri) + (RC.sig_Eri*RC.sig_Eri) )
 
+        self.gr_0 = self.g_0 - self.r_0
+        self.sig_gr_0 = np.sqrt( (self.sig_g*self.sig_g) + (self.sig_r*self.sig_r) )
+        self.gi_0 = self.g_0 - self.i_0
+        self.sig_gi_0 = np.sqrt( (self.sig_g*self.sig_g) + (self.sig_i*self.sig_i) )
+        self.ri_0 = self.r_0 - self.i_0
+        self.sig_ri_0 = np.sqrt( (self.sig_r*self.sig_r) + (self.sig_i*self.sig_i) )
+
         
         self.I_0 = self.I - RC.A_I
         self.sig_I_0 = np.sqrt( (self.sig_I*self.sig_I) + (RC.sig_A_I*RC.sig_A_I) )
@@ -243,4 +252,92 @@ class Star:
                     log.info(output)
                 else:
                     print(output)
-                
+    
+    def calc_stellar_ang_radius(self, log):
+        """Function to calculate the angular radius of the star"""
+    
+        def calc_theta(log_theta_LD,sig_log_theta_LD):
+            
+            theta_LD = 10**(log_theta_LD) * 1000.0
+            sig_theta_LD = (sig_log_theta_LD/abs(log_theta_LD)) * theta_LD
+            
+            ang_radius = theta_LD / 2.0
+            sig_ang_radius = (sig_theta_LD / theta_LD) * ang_radius
+            
+            return theta_LD, sig_theta_LD, ang_radius, sig_ang_radius
+            
+        (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Adams2018(self.V_0,self.sig_V_0,self.VI_0,self.sig_VI_0,'V-I',Lclass='dwarfs')
+        
+        (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
+        
+        log.info('\n')
+        log.info('Based on Adams et al.(2018) relations for Johnsons passbands:')
+        log.info(' -> Assuming the star is a dwarf:')
+        log.info(' -> Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
+        log.info(' -> Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+        log.info(' -> Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
+        
+        (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Adams2018(self.V_0,self.sig_V_0,self.VI_0,self.sig_VI_0,'V-I',Lclass='giants')
+        
+        (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
+        
+        log.info('\n')
+        log.info(' -> Assuming the star is a giant:')
+        log.info(' -> Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
+        log.info(' -> Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+        log.info(' -> Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
+        
+        (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(self.gr_0,self.sig_gr_0,self.g_0,self.sig_g_0,'g-r',0.0)
+        
+        (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
+        
+        log.info('\n')
+        log.info('Based on Boyajian et al. 2014 relations for SDSS/Johnsons passbands:')
+        log.info('Applies to main-sequence stars only.')
+        log.info(' -> Using the (g-r) colour index:')
+        log.info(' -> Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
+        log.info(' -> Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+        log.info(' -> Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
+        
+        
+        (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(self.gi_0,self.sig_gi_0,self.g_0,self.sig_g_0,'g-i',0.0)
+        
+        (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
+        
+        log.info('\n')
+        log.info(' -> Using the (g-i) colour index:')
+        log.info(' -> Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
+        log.info(' -> Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+        log.info(' -> Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
+        
+        self.theta = theta_LD
+        self.sig_theta = sig_theta_LD
+        self.ang_radius = ang_radius
+        self.sig_ang_radius = sig_ang_radius
+        
+        log.info('\n')
+
+    def calc_physical_radius(self, log):
+        """Function to infer the physical radius of the source star from the 
+        Torres mass-radius relation based on Teff, logg, and Fe/H
+        
+        Assumes a solar metallicity of Zsol = 0.0152.    
+        """
+        
+        (self.radius, self.sig_radius) = stellar_radius_relations.star_mass_radius_relation(self.teff,self.logg,0.0152,log=log)
+    
+    def calc_distance(self,log):
+        """Function to calculate the distance to the source star, given the
+        angular and physical radius estimates"""
+        
+        theta_S = ((self.ang_radius / 1e6)/3600.0)*(np.pi/180.0)  # radians
+        sig_theta_S = ((self.sig_ang_radius / 1e6)/3600.0)*(np.pi/180.0)
+        
+        R_S = self.radius * constants.R_sun.value  # units of m
+        sig_RS = self.sig_radius * constants.R_sun.value
+        
+        self.D = (R_S/np.tan(theta_S)) / constants.pc.value
+        
+        self.sig_D = np.sqrt((sig_RS/R_S)**2 + ((1.0/sig_theta_S)/(1.0/theta_S)**2))*self.D
+        
+        

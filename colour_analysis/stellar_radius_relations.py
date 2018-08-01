@@ -244,13 +244,6 @@ def star_mass_radius_relation(teff, logg, FeH, log=None):
     starR = 10**(log_R)
     sig_starR = (sig_log_R/log_R) * starR
     
-    if log != None:
-        log.info('\n')
-        log.info('Stellar radius from Torres relation: log R = '+\
-                    str(log_R)+' +/- '+str(sig_log_R))
-        log.info('Stellar radius from Torres relation: '+\
-                    str(round(starR,2))+' +/- '+str(round(sig_starR,2))+' Rsol')
-    
     return starR, sig_starR
     
 if __name__ == '__main__':
