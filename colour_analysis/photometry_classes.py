@@ -23,6 +23,8 @@ class Star:
         
         self.gr = None
         self.sig_gr = None
+        self.gi = None
+        self.sig_gi = None
         self.ri = None
         self.sig_ri = None
         
@@ -53,11 +55,13 @@ class Star:
         if use_inst:
             
             (self.gr,self.sig_gr) = self.calc_colour(self.g,self.sig_g,self.r,self.sig_r)
+            (self.gi,self.sig_gi) = self.calc_colour(self.g,self.sig_g,self.i,self.sig_i)
             (self.ri,self.sig_ri) = self.calc_colour(self.r,self.sig_r,self.i,self.sig_i)
         
         if use_cal:
             
             (self.gr_0,self.sig_gr_0) = self.calc_colour(self.g_0,self.sig_g_0,self.r_0,self.sig_r_0)
+            (self.gi_0,self.sig_gi_0) = self.calc_colour(self.g_0,self.sig_g_0,self.i_0,self.sig_i_0)
             (self.ri_0,self.sig_ri_0) = self.calc_colour(self.r_0,self.sig_r_0,self.i_0,self.sig_i_0)
                                     
     def calc_colour(self,col1, sig_col1, col2, sig_col2):
@@ -84,10 +88,12 @@ class Star:
             
         elif show_colours and show_cal == False and show_mags == False and johnsons == False:
             output = '(g-r)_meas = '+str(round(self.gr,3))+' +/- '+str(round(self.sig_gr,3))+\
+                ' (g-i)_meas = '+str(round(self.gi,3))+' +/- '+str(round(self.sig_gi,3))+\
                 ' (r-i)_meas = '+str(round(self.ri,3))+' +/- '+str(round(self.sig_ri,3))
                 
         elif show_colours and show_cal and show_mags == False and johnsons == False:
             output = '(g-r)_0 = '+str(round(self.gr_0,3))+' +/- '+str(round(self.sig_gr_0,3))+\
+                ' (g-i)_0 = '+str(round(self.gi_0,3))+' +/- '+str(round(self.sig_gi_0,3))+\
                 ' (r-i)_0 = '+str(round(self.ri_0,3))+' +/- '+str(round(self.sig_ri_0,3))
         
         elif johnsons and show_mags == False and show_cal == False:
@@ -178,6 +184,8 @@ class Star:
         self.sig_i_0 = np.sqrt( (self.sig_i*self.sig_i) + (RC.sig_A_i*RC.sig_A_i) )
         self.gr_0 = self.gr - RC.Egr
         self.sig_gr_0 = np.sqrt( (self.sig_gr*self.sig_gr) + (RC.sig_Egr*RC.sig_Egr) )
+        self.gi_0 = self.gi - RC.Egi
+        self.sig_gi_0 = np.sqrt( (self.sig_gi*self.sig_gi) + (RC.sig_Egi*RC.sig_Egi) )
         self.ri_0 = self.ri - RC.Eri
         self.sig_ri_0 = np.sqrt( (self.sig_ri*self.sig_ri) + (RC.sig_Eri*RC.sig_Eri) )
 
@@ -195,6 +203,7 @@ class Star:
             output += 'r_S,0 = '+str(self.r_0)+' +/- '+str(self.sig_r_0)+'\n'
             output += 'i_S,0 = '+str(self.i_0)+' +/- '+str(self.sig_i_0)+'\n'
             output += '(g-r)_S,0 = '+str(self.gr_0)+' +/- '+str(self.sig_gr_0)+'\n'
+            output += '(g-i)_S,0 = '+str(self.gi_0)+' +/- '+str(self.sig_gi_0)+'\n'
             output += '(r-i)_S,0 = '+str(self.ri_0)+' +/- '+str(self.sig_ri_0)
             
             if log != None:

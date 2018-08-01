@@ -413,8 +413,10 @@ def analyse_colour_mag_diagrams(params,star_catalog,catalog_header,
     cal_g = star_catalog['gmag'][cat_idx]
     inst_ri = inst_r - inst_i    # Catalogue column order is red -> blue
     inst_gr = inst_g - inst_r    
+    inst_gi = inst_g - inst_i    
     cal_ri = cal_r - cal_i 
     cal_gr = cal_g - cal_r
+    cal_gi = cal_g - cal_i
     
     linst_i = star_catalog['cal_ref_mag_ip'][close_cat_idx]
     linst_r = star_catalog['cal_ref_mag_rp'][close_cat_idx]
@@ -424,8 +426,10 @@ def analyse_colour_mag_diagrams(params,star_catalog,catalog_header,
     lcal_g = star_catalog['gmag'][close_cat_idx]
     linst_ri = linst_r - linst_i    # Catalogue column order is red -> blue
     linst_gr = linst_g - linst_r
+    linst_gi = linst_g - linst_i
     lcal_ri = lcal_r - lcal_i
     lcal_gr = lcal_g - lcal_r
+    lcal_gi = lcal_g - lcal_i
     
     plot_colour_mag_diagram(params,inst_i, inst_ri, linst_i, linst_ri, 
                             source, blend, RC, 'r', 'i', 'i', tol, log)
@@ -435,6 +439,9 @@ def analyse_colour_mag_diagrams(params,star_catalog,catalog_header,
                             
     plot_colour_mag_diagram(params,inst_g, inst_gr, linst_g, linst_gr, 
                             source, blend, RC, 'g', 'r', 'g', tol, log)
+                            
+    plot_colour_mag_diagram(params,inst_g, inst_gi, linst_g, linst_gi, 
+                            source, blend, RC, 'g', 'i', 'g', tol, log)
     
     
 def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours, 
@@ -752,13 +759,16 @@ def localize_red_clump(star_catalog,close_cat_idx,log):
     cal_r = star_catalog['rmag'][close_cat_idx]
     cal_g = star_catalog['gmag'][close_cat_idx]
     inst_ri = inst_r - inst_i    # Catalogue column order is red -> blue
+    inst_gi = inst_g - inst_i 
     inst_gr = inst_g - inst_r  
     cal_ri = cal_r - cal_i 
+    cal_gi = cal_g - cal_i
     cal_gr = cal_g - cal_r
     
     log.info('\n')
     log.info('Localizing the Red Clump')
     log.info('Median (r-i), i: '+str(np.median(inst_ri))+', '+str(np.median(inst_i)))
+    log.info('Median (g-i), i: '+str(np.median(inst_gi))+', '+str(np.median(inst_i)))
     log.info('Median (g-r), g: '+str(np.median(inst_gr))+', '+str(np.median(inst_g)))
     
     ri_min = 0.8 
@@ -768,6 +778,9 @@ def localize_red_clump(star_catalog,close_cat_idx,log):
     
     r_min = 16.2
     r_max = 17.5
+    
+    gi_min = 2.0 
+    gi_max = 4.0
     
     gr_min = 1.5 
     gr_max = 2.2 
@@ -780,6 +793,7 @@ def localize_red_clump(star_catalog,close_cat_idx,log):
     log.info('(r-i) = '+str(ri_min)+' to '+str(ri_max))
     log.info('g = '+str(g_min)+' to '+str(g_max))
     log.info('(g-r) = '+str(gr_min)+' to '+str(gr_max))
+    log.info('(g-i) = '+str(gi_min)+' to '+str(gi_max))
     
     idx = select_within_range(inst_i, inst_ri, i_min, i_max, ri_min, ri_max)
     
@@ -792,6 +806,10 @@ def localize_red_clump(star_catalog,close_cat_idx,log):
     idx = select_within_range(inst_g, inst_gr, g_min, g_max, gr_min, gr_max)
     
     (RC.gr, RC.sig_gr, RC.g, RC.sig_g) = calc_distribution_centroid_and_spread_2d(inst_gr[idx], inst_g[idx], use_iqr=True)
+    
+    idx = select_within_range(inst_g, inst_gi, g_min, g_max, gi_min, gi_max)
+    
+    (RC.gi, RC.sig_gi, RC.g, RC.sig_g) = calc_distribution_centroid_and_spread_2d(inst_gi[idx], inst_g[idx], use_iqr=True)
     
     log.info('\n')
     log.info('Centroid of Red Clump Stars at:')
@@ -850,6 +868,7 @@ def measure_RC_offset(params,RC,target,log):
     log.info('MI_RC,0 = '+str(RC.M_I_0)+' +/- '+str(RC.sig_MI_0)+'mag')
     log.info('MV_RC,0 = '+str(RC.M_V_0)+' +/- '+str(RC.sig_MV_0)+'mag')
     log.info('(g-r)_RC,0 = '+str(RC.gr_0)+' +/- '+str(RC.sig_gr_0)+'mag')
+    log.info('(g-i)_RC,0 = '+str(RC.gi_0)+' +/- '+str(RC.sig_gi_0)+'mag')
     log.info('(r-i)_RC,0 = '+str(RC.ri_0)+' +/- '+str(RC.sig_ri_0)+'mag')
     log.info('(V-I)_RC,0 = '+str(RC.VI_0)+' +/- '+str(RC.sig_VI_0)+'mag')
     
@@ -893,6 +912,8 @@ def measure_RC_offset(params,RC,target,log):
         
     RC.Egr = RC.gr - RC.gr_0
     RC.sig_Egr = np.sqrt( (RC.sig_gr_0*RC.sig_gr_0) )
+    RC.Egi = RC.gi - RC.gi_0
+    RC.sig_Egi = np.sqrt( (RC.sig_gi_0*RC.sig_gi_0) )
     RC.Eri = RC.ri - RC.ri_0
     RC.sig_Eri = np.sqrt( (RC.sig_ri_0*RC.sig_ri_0) )
 
@@ -904,6 +925,7 @@ def measure_RC_offset(params,RC,target,log):
     log.info('Extinction, d(r) = '+str(RC.A_r)+' +/- '+str(RC.sig_A_r)+'mag')
     log.info('Extinction, d(i) = '+str(RC.A_i)+' +/- '+str(RC.sig_A_i)+'mag')
     log.info('Reddening, E(g-r) = '+str(RC.Egr)+' +/- '+str(RC.sig_Egr)+'mag')
+    log.info('Reddening, E(g-i) = '+str(RC.Egi)+' +/- '+str(RC.sig_Egi)+'mag')
     log.info('Reddening, E(r-i) = '+str(RC.Eri)+' +/- '+str(RC.sig_Eri)+'mag')
     
     log.info('\n')
@@ -945,15 +967,16 @@ def calc_source_ang_radius(source, log):
         
         return theta_LD, sig_theta_LD
         
-    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius(source.V_0,source.sig_V_0,source.VI_0,source.sig_VI_0,'V-I',Lclass='dwarfs')
+    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Adams2018(source.V_0,source.sig_V_0,source.VI_0,source.sig_VI_0,'V-I',Lclass='dwarfs')
     
     (theta_LD,sig_theta_LD) = calc_theta(log_theta_LD,sig_log_theta_LD)
     
+    log.info('Based on Adams et al.(2018) relations for Johnsons passbands:')
     log.info('Assuming the source is a dwarf:')
     log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
     log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
     
-    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius(source.V_0,source.sig_V_0,source.VI_0,source.sig_VI_0,'V-I',Lclass='giants')
+    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Adams2018(source.V_0,source.sig_V_0,source.VI_0,source.sig_VI_0,'V-I',Lclass='giants')
     
     (theta_LD,sig_theta_LD) = calc_theta(log_theta_LD,sig_log_theta_LD)
     
@@ -961,8 +984,34 @@ def calc_source_ang_radius(source, log):
     log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
     log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
     
+    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(source.gr_0,source.sig_gr_0,source.g_0,source.sig_g_0,'g-r',0.0)
+    
+    (theta_LD,sig_theta_LD) = calc_theta(log_theta_LD,sig_log_theta_LD)
+    
+    log.info('Based on Boyajian et al. 2014 relations for SDSS/Johnsons passbands:')
+    log.info('Applies to main-sequence stars only.')
+    log.info('Using the (g-r) colour index:')
+    log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
+    log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+    
+    
+    (log_theta_LD, sig_log_theta_LD) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(source.gi_0,source.sig_gi_0,source.g_0,source.sig_g_0,'g-i',0.0)
+    
+    (theta_LD,sig_theta_LD) = calc_theta(log_theta_LD,sig_log_theta_LD)
+    
+    log.info('Based on Boyajian et al. 2014 relations for SDSS/Johnsons passbands:')
+    log.info('Applies to main-sequence stars only.')
+    log.info('Using the (g-i) colour index:')
+    log.info('Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
+    log.info('Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
+    
     source.theta = theta_LD
     source.sig_theta = sig_theta_LD
+    source.ang_radius = theta_LD / 2.0
+    source.sig_ang_radius = (sig_theta_LD / theta_LD) * source.ang_radius
+    
+    log.info('\n')
+    log.info('Source angular radius (from SDSS (g-i), Boyajian+ 2014 relations) = '+str(source.ang_radius)+' '+str(source.sig_ang_radius))
     
     return source
     
@@ -998,8 +1047,8 @@ def calc_source_distance(source,log):
     """Function to calculate the distance to the source star, given the
     angular and physical radius estimates"""
     
-    theta_S = ((source.theta / 1e6)/3600.0)*(np.pi/180.0)  # radians
-    sig_theta_S = ((source.sig_theta / 1e6)/3600.0)*(np.pi/180.0)
+    theta_S = ((source.ang_radius / 1e6)/3600.0)*(np.pi/180.0)  # radians
+    sig_theta_S = ((source.sig_ang_radius / 1e6)/3600.0)*(np.pi/180.0)
     
     R_S = source.R * constants.R_sun.value  # units of m
     sig_RS = source.sig_R * constants.R_sun.value
@@ -1030,6 +1079,7 @@ def output_red_clump_data_latex(params,RC,log):
     t.write('$M_{r,RC,0}$ & '+convert_ndp(RC.M_r_0,3)+' $\pm$ '+convert_ndp(RC.sig_Mr_0,3)+'\,mag\\\\\n')
     t.write('$M_{i,RC,0}$ & '+convert_ndp(RC.M_i_0,3)+' $\pm$ '+convert_ndp(RC.sig_Mi_0,3)+'\,mag\\\\\n')
     t.write('$(g-r)_{RC,0}$ & '+convert_ndp(RC.gr_0,3)+' $\pm$ '+convert_ndp(RC.sig_gr_0,3)+'\,mag\\\\\n')
+    t.write('$(g-i)_{RC,0}$ & '+convert_ndp(RC.gi_0,3)+' $\pm$ '+convert_ndp(RC.sig_gi_0,3)+'\,mag\\\\\n')
     t.write('$(r-i)_{RC,0}$ & '+convert_ndp(RC.ri_0,3)+' $\pm$ '+convert_ndp(RC.sig_ri_0,3)+'\,mag\\\\\n')
     t.write('$m_{g,RC,0}$ & '+convert_ndp(RC.m_g_0,3)+' $\pm$ '+convert_ndp(RC.sig_mg_0,3)+'\,mag\\\\\n')
     t.write('$m_{r,RC,0}$ & '+convert_ndp(RC.m_r_0,3)+' $\pm$ '+convert_ndp(RC.sig_mr_0,3)+'\,mag\\\\\n')

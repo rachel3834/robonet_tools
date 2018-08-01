@@ -6,8 +6,8 @@ Created on Thu Jul 26 13:56:20 2018
 """
 import numpy as np
 
-def calc_star_ang_radius(Q,sigQ,PQ,sigPQ,pqcolour,Lclass=None):
-    """Function to calculate the limb-darkened angular radius of a star, 
+def calc_star_ang_radius_Adams2018(Q,sigQ,PQ,sigPQ,pqcolour,Lclass=None):
+    """Function to calculate the limb-darkened angular diameter of a star, 
     given one of the photometric colours:
     (I-H), (I-K), (V-I), (V-H), (V-K), 
     
@@ -26,7 +26,7 @@ def calc_star_ang_radius(Q,sigQ,PQ,sigPQ,pqcolour,Lclass=None):
     Returned units are log10(micro-arcsec).
     """
     
-    coeffs = fetch_coefficients(pqcolour,Lclass=Lclass)
+    coeffs = fetch_coefficients_Adams2018(pqcolour,Lclass=Lclass)
     
     log_theta_Q0 = 0.0
     var_log_theta_Q0 = sigPQ * sigPQ
@@ -42,9 +42,9 @@ def calc_star_ang_radius(Q,sigQ,PQ,sigPQ,pqcolour,Lclass=None):
     return log_theta_LD, sig_log_theta_LD
 
 
-def fetch_coefficients(pqcolour,Lclass=None):
+def fetch_coefficients_Adams2018(pqcolour,Lclass=None):
     """Function to return the correct set of co-efficients for the
-    stellar angular radius calculation.
+    stellar angular diameter calculation.
     pqcolour        str    one of {I-H, I-K, V-I, V-H, V-K}
     spectral_type   str    one of {None, dwarfs, subgiants, giants}
     """
@@ -122,10 +122,65 @@ def fetch_coefficients(pqcolour,Lclass=None):
         
     return coeffs[pqcolour]
 
+def calc_star_ang_radius_Boyajian2014(colour,sig_colour,mag,sig_mag,pqcolour,FeH):
+    """Function to calculate the angular diameter of a star from its (g-r) colour
+    and metallicity.  
+        using the expression:
+    
+    log(theta_mV=0) = log(theta_LD) + 0.2mV, 
+    
+    where:
+    
+    log(theta_m=0) = Sum_n=0->N [ a_n (X)**n ]
+    
+    where
+    
+    mV = star apparent magnitude in V
+    (X) = star colour in SDSS passbands, one of {g-r, g-i}
+    [Fe/H] = star metallicity
+    
+    and the RMS uncertainty on log(theta_mV) = 5.8%
+    
+    taken from Boyajian et al (2014) AJ, 147, 47.
+    """
+    
+    coeffs = fetch_coefficients_Boyajian2014(pqcolour)
+    
+    log_theta_m0 = 0.0
+    var_log_theta_m0 = sig_colour * sig_colour
+    
+    for n in range(0,5,1):
+        log_theta_m0 += coeffs['a'][n] * colour**n
+        var_log_theta_m0 += coeffs['sig_a'][n]*coeffs['sig_a'][n]
+    
+
+    log_theta_LD = log_theta_m0 - 0.2*mag
+    
+    sig_log_theta_LD = np.sqrt( var_log_theta_m0 + (sig_mag*sig_mag) )
+    
+    return log_theta_LD, sig_log_theta_LD
+
+def fetch_coefficients_Boyajian2014(pqcolour):
+    """Function to return the correct set of co-efficients for the
+    stellar angular diameter calculation.
+    pqcolour        str    one of {g-r, g-i}
+    """
+    
+    coeffs = {'g-r': {'a': [0.66728, 0.58135, 0.88293, -1.41005, 0.67248],
+                      'sig_a': [0.00203, 0.01180, 0.03470, 0.04331, 0.01736],
+                      'rms': 0.097,
+                      'valid_range': [-0.23,-1.40]},
+              'g-i': {'a': [0.69174, 0.54346, -0.02149, 0.0, 0.0], 
+                      'sig_a': [0.00125, 0.00266, 0.00097, 0.0, 0.0],
+                      'rms': 0.092,
+                      'valid_range': [-0.43,-2.78]}
+             }
+             
+    return coeffs[pqcolour]
+  
 def scale_source_distance(Mv, theta_deg, err_theta_deg, DS):
     """Function to calculate the apparent angular size of the source at the 
-    inferred source distance.
-    M
+    inferred source distance.  
     """
     
     Rsol = 6.96e10   # cm

@@ -63,6 +63,9 @@ def get_essential_parameters(RC=None):
     RC.gr_0 = RC.M_g_0 - RC.M_r_0
     RC.sig_gr_0 = np.sqrt( (RC.sig_Mg_0*RC.sig_Mg_0) + \
                                 (RC.sig_Mr_0*RC.sig_Mr_0) )
+    RC.gi_0 = RC.M_g_0 - RC.M_i_0
+    RC.sig_gi_0 = np.sqrt( (RC.sig_Mg_0*RC.sig_Mg_0) + \
+                                (RC.sig_Mi_0*RC.sig_Mi_0) )
     RC.ri_0 = RC.M_r_0 - RC.M_i_0
     RC.sig_ri_0 = np.sqrt( (RC.sig_Mr_0*RC.sig_Mr_0) + \
                                 (RC.sig_Mi_0*RC.sig_Mi_0) )
