@@ -6,7 +6,7 @@ Created on Thu Jul 26 13:56:20 2018
 """
 import numpy as np
 
-def calc_star_ang_radius_Adams2018(Q,sigQ,PQ,sigPQ,pqcolour,Lclass=None):
+def calc_star_ang_radius_Adams2018(Q,sigQ,PQ,sigPQ,pqcolour,Lclass=None,log=None):
     """Function to calculate the limb-darkened angular diameter of a star, 
     given one of the photometric colours:
     (I-H), (I-K), (V-I), (V-H), (V-K), 
@@ -26,7 +26,7 @@ def calc_star_ang_radius_Adams2018(Q,sigQ,PQ,sigPQ,pqcolour,Lclass=None):
     Returned units are log10(micro-arcsec).
     """
     
-    coeffs = fetch_coefficients_Adams2018(pqcolour,Lclass=Lclass)
+    (coeffs,flag) = fetch_coefficients_Adams2018(pqcolour,PQ,Lclass=Lclass,log=log)
     
     log_theta_Q0 = 0.0
     var_log_theta_Q0 = sigPQ * sigPQ
@@ -39,15 +39,18 @@ def calc_star_ang_radius_Adams2018(Q,sigQ,PQ,sigPQ,pqcolour,Lclass=None):
     
     sig_log_theta_LD = np.sqrt( var_log_theta_Q0 + ( sigQ*sigQ ) )
     
-    return log_theta_LD, sig_log_theta_LD
+    return log_theta_LD, sig_log_theta_LD, flag
 
 
-def fetch_coefficients_Adams2018(pqcolour,Lclass=None):
+def fetch_coefficients_Adams2018(pqcolour,PQ,Lclass=None,log=None):
     """Function to return the correct set of co-efficients for the
     stellar angular diameter calculation.
     pqcolour        str    one of {I-H, I-K, V-I, V-H, V-K}
+    PQ              float  measured colour
     spectral_type   str    one of {None, dwarfs, subgiants, giants}
     """
+    
+    flag = True
     
     if Lclass == None:
         coeffs = {'I-H': {'c': [0.541, 0.133, 0.0],
@@ -119,10 +122,32 @@ def fetch_coefficients_Adams2018(pqcolour,Lclass=None):
                   }
     else:
         print('ERROR: unrecognised spectral type class '+Lclass)
+    
+    selected_coeffs = coeffs[pqcolour]
+    
+    (cmin,cmax) = selected_coeffs['valid_range']
+    
+    if PQ < cmin or PQ > cmax:
         
-    return coeffs[pqcolour]
+        flag = False
+        
+        log.info('WARNING: star colour '+pqcolour+' = '+str(round(PQ,4))+\
+                 ' is outside the valid range ('+\
+                 str(cmin)+', '+str(cmax)+\
+                 ') for the Adams 2018 coefficients for '+Lclass+\
+                 ' stars in this passband')
+        
+    else:
+        
+        log.info('Star colour '+pqcolour+' = '+str(round(PQ,4))+\
+                 ' is within the valid range ('+\
+                 str(cmin)+', '+str(cmax)+\
+                 ') for the Adams 2018 coefficients for '+Lclass+\
+                 ' stars in this passband')
+                 
+    return selected_coeffs, flag
 
-def calc_star_ang_radius_Boyajian2014(colour,sig_colour,mag,sig_mag,pqcolour,FeH):
+def calc_star_ang_radius_Boyajian2014(colour,sig_colour,mag,sig_mag,pqcolour,FeH,log=None):
     """Function to calculate the angular diameter of a star from its (g-r) colour
     and metallicity.  
         using the expression:
@@ -144,7 +169,7 @@ def calc_star_ang_radius_Boyajian2014(colour,sig_colour,mag,sig_mag,pqcolour,FeH
     taken from Boyajian et al (2014) AJ, 147, 47.
     """
     
-    coeffs = fetch_coefficients_Boyajian2014(pqcolour)
+    (coeffs, flag) = fetch_coefficients_Boyajian2014(pqcolour,colour,log=log)
     
     log_theta_m0 = 0.0
     var_log_theta_m0 = sig_colour * sig_colour
@@ -158,25 +183,52 @@ def calc_star_ang_radius_Boyajian2014(colour,sig_colour,mag,sig_mag,pqcolour,FeH
     
     sig_log_theta_LD = np.sqrt( var_log_theta_m0 + (sig_mag*sig_mag) )
     
-    return log_theta_LD, sig_log_theta_LD
+    return log_theta_LD, sig_log_theta_LD, flag
 
-def fetch_coefficients_Boyajian2014(pqcolour):
+def fetch_coefficients_Boyajian2014(pqcolour,colour,log=None):
     """Function to return the correct set of co-efficients for the
     stellar angular diameter calculation.
     pqcolour        str    one of {g-r, g-i}
     """
     
+    flag = True
+    
     coeffs = {'g-r': {'a': [0.66728, 0.58135, 0.88293, -1.41005, 0.67248],
                       'sig_a': [0.00203, 0.01180, 0.03470, 0.04331, 0.01736],
                       'rms': 0.097,
-                      'valid_range': [-0.23,-1.40]},
+                      'valid_range': [-0.23, 1.40]},
               'g-i': {'a': [0.69174, 0.54346, -0.02149, 0.0, 0.0], 
                       'sig_a': [0.00125, 0.00266, 0.00097, 0.0, 0.0],
                       'rms': 0.092,
-                      'valid_range': [-0.43,-2.78]}
+                      'valid_range': [-0.43, 2.78]},
+              'V-I': {'a': [0.50659, 0.56448, 0.17460, -0.16268, 0.03292], 
+                      'sig_a': [0.00103, 0.00793, 0.01647, 0.01002, 0.00184],
+                      'rms': 0.051,
+                      'valid_range': [-0.02, 2.77]}
              }
-             
-    return coeffs[pqcolour]
+    
+    
+    selected_coeffs = coeffs[pqcolour]
+    
+    (cmin,cmax) = selected_coeffs['valid_range']
+    
+    if colour < cmin or colour > cmax:
+        
+        flag = False
+        
+        log.info('WARNING: star colour '+pqcolour+' = '+str(round(colour,3))+\
+                 ' is outside the valid range ('+\
+                 str(cmin)+', '+str(cmax)+\
+                 ') for the Boyajian 2014 coefficients for this passband')
+        
+    else:
+        
+        log.info('Star colour '+pqcolour+' = '+str(round(colour,3))+\
+                 ' is with the valid range ('+\
+                 str(cmin)+', '+str(cmax)+\
+                 ') for the Boyajian 2014 coefficients for this passband')
+                 
+    return selected_coeffs, flag
   
 def scale_source_distance(Mv, theta_deg, err_theta_deg, DS):
     """Function to calculate the apparent angular size of the source at the 

@@ -13,6 +13,7 @@ from pyDANDIA import logs
 from pyDANDIA import metadata
 from pyDANDIA import catalog_utils
 from astropy.table import Table
+import logging
 
 def calc_calibrated_lightcurve():
     """Function to apply a measured photometric offset to calibrate the 
@@ -23,16 +24,22 @@ def calc_calibrated_lightcurve():
     setup = pipeline_setup.pipeline_setup(params)
     
     log = logs.start_stage_log( setup.red_dir, 'lc_calib' )
-    
+
+    log.info('Calibrating lightcurve.  Initial parameters:')    
+    for key, value in params.items():
+        log.info(key+': '+str(value))
+        
     (reduction_metadata, params, star_catalog) = fetch_metadata(setup,params,log)
     
-    lc_data = read_rbn_lc(params['lc_file'])
+    lc_data = read_rbn_lc(params['lc_file'],log)
     
-    params = calc_mag_offset(params,lc_data,reduction_metadata,star_catalog)
+    params = calc_mag_offset(params,lc_data,reduction_metadata,star_catalog,log)
     
-    apply_mag_offset_to_lc(params,lc_data)
+    apply_mag_offset_to_lc(params,lc_data,log)
     
-def apply_mag_offset_to_lc(params,lc_data):
+    logging.shutdown()
+    
+def apply_mag_offset_to_lc(params,lc_data,log):
     """Function to apply the calculated magnitude offset to the lightcurve data
     and output"""
     
@@ -61,20 +68,20 @@ def apply_mag_offset_to_lc(params,lc_data):
     
     f.close()
     
-def calc_mag_offset(params,lc_data,reduction_metadata,star_catalog):
+    log.info('Applied magnitude correction to lightcurve data, output to '+params['cal_lc_file'])
+    
+def calc_mag_offset(params,lc_data,reduction_metadata,star_catalog,log):
     """When comparing the magnitudes measured from DanDIA in the lightcurve
     with those from pyDANDIA in the calibration data, the total correction 
     to the magnitude consists of:
     
     corr_mag = lc_mag + delta_m
     
-    where delta_m = lc_mag[ref_frame] - cal_ref_mag[star_catalog] + dmag[RC offset]
+    where delta_m = lc_mag[ref_frame] - cal_ref_mag[star_catalog]
     
     and:
     lc_mag[ref_frame] = magnitude of star in lightcurve entry for reference frame
     cal_ref_mag[star_catalog] = magnitude of star from metadatas star_catalog
-    dmag[RC offset] = the correction for local extinction calculated from the 
-                        Red Clump offset
     
     Note: The reference frame used to produce both the lightcurve and the
     metadata must be the same.  
@@ -87,10 +94,12 @@ def calc_mag_offset(params,lc_data,reduction_metadata,star_catalog):
     
     refidx = images.index(params['refimage'].replace('.fits','_crop'))
     
+    log.info('Reference image at index '+str(refidx)+' in lightcurve')
+    
     lc_mag = float(lc_data[refidx,6])
     lc_mag_err = float(lc_data[refidx,7])
     
-    print('Stars measured lightcurve mag in ref frame: '+\
+    log.info('Stars measured lightcurve mag in ref frame: '+\
             str(lc_mag)+' +/- '+str(lc_mag_err))
             
     sidx = int(params['staridx'])
@@ -98,17 +107,17 @@ def calc_mag_offset(params,lc_data,reduction_metadata,star_catalog):
     cal_ref_mag = star_catalog['cal_ref_mag'][sidx-1]
     cal_ref_mag_err = star_catalog['cal_ref_mag_err'][sidx-1]
     
-    print('Stars calibrated pyDANDIA mag in ref frame: '+\
+    log.info('Stars calibrated pyDANDIA mag in ref frame: '+\
             str(cal_ref_mag)+' +/- '+str(cal_ref_mag_err))
     
-    params['delta_m'] = cal_ref_mag - lc_mag - float(params['dmag'])
+    params['delta_m'] = cal_ref_mag - lc_mag
     params['sig_delta_m'] = np.sqrt( (cal_ref_mag_err*cal_ref_mag_err) + \
                             (lc_mag_err*lc_mag_err))
     
-    print('Photometric offset, delta_m: '+str(params['delta_m'])+' +/- '+str(params['sig_delta_m']))
-    print('Uncertainties in offset calculation:')
-    print('Error on calibrated reference magnitude: '+str(cal_ref_mag_err))
-    print('Error on lightcurve magnitude: '+str(lc_mag_err))
+    log.info('Photometric offset, delta_m: '+str(params['delta_m'])+' +/- '+str(params['sig_delta_m']))
+    log.info('Uncertainties in offset calculation:')
+    log.info('Error on calibrated reference magnitude: '+str(cal_ref_mag_err))
+    log.info('Error on lightcurve magnitude: '+str(lc_mag_err))
     
     return params
     
@@ -131,6 +140,8 @@ def fetch_metadata(setup,params,log):
                                               
     params['refimage'] = reduction_metadata.data_architecture[1]['REF_IMAGE'][0]
     
+    log.info('Using data for reference image: '+params['refimage'])
+    
     star_catalog = Table()
     star_catalog['star_index'] = reduction_metadata.star_catalog[1]['star_index']
     star_catalog['mag'] = reduction_metadata.star_catalog[1]['ref_mag']
@@ -142,11 +153,16 @@ def fetch_metadata(setup,params,log):
     
     return reduction_metadata, params, star_catalog
     
-def read_rbn_lc(lc_file):
+def read_rbn_lc(lc_file,log):
     """Function to read in the lightcurve data in RoboNet standard format"""
     
     if path.isfile(lc_file) == False:
+        
         print('ERROR: Cannot find lightcurve file '+lc_file)
+        log.info('ERROR: Cannot find lightcurve file '+lc_file)
+        
+        logging.shutdown()
+
         exit()
         
     f = open(lc_file,'r').readlines()
@@ -159,6 +175,8 @@ def read_rbn_lc(lc_file):
         data.append(entries)
     
     data = np.array(data)
+    
+    log.info('Read in lightcurve file')
     
     return data
     
@@ -174,8 +192,6 @@ def get_args():
         params['log_dir'] = argv[3]
         params['metadata'] = argv[4]
         params['staridx'] = argv[5]
-        params['dmag'] = argv[6]
-        params['sig_dmag'] = argv[7]
         params['cal_lc_file'] = argv[8]
         
     else:
@@ -185,8 +201,6 @@ def get_args():
         params['log_dir'] = raw_input('Please enter the path to the log directory: ')
         params['metadata'] = raw_input('Please enter the path to the metadata file: ')
         params['staridx'] = raw_input('Please enter the index number of the star in the metadatas starcatalog table: ')
-        params['dmag'] = float(raw_input('Please enter the magnitude offset measured for this passband: '))
-        params['sig_dmag'] = float(raw_input('Please enter the uncertainty on the magnitude offset measured for this passband: '))
         params['cal_lc_file'] = raw_input('Please enter the output file for the calibrated lightcurve: ')
     
     return params

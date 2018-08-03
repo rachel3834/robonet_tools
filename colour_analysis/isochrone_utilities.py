@@ -24,11 +24,11 @@ def analyze_isochrones(gr, ri, isochrone_file, log=None):
     
     return star_data
     
-def find_isochrone_nearest_entries(data, gr, ri, log=None):
+def find_isochrone_nearest_entries(data, gr, ri, log=None, use_age_cut=False):
     """Function to interpolate over the isochrone data, and return the 
     absolute g, r, i magnitudes closest to the target values."""
     
-    tol = 0.005
+    tol = 0.01
     
     iso_gr = data[:,5] - data[:,6]
     iso_ri = data[:,6] - data[:,7]
@@ -39,15 +39,20 @@ def find_isochrone_nearest_entries(data, gr, ri, log=None):
     
     idx1 = np.where(dcol >= dcol.min()-tol)[0]
     idx2 = np.where(dcol <= dcol.min()+tol)[0]
-#    idx3 = np.where(data[:,0] > 1e8)   [0]         # Select stars older than 0.1Gyr
+    if use_age_cut:
+        idx3 = np.where(data[:,0] > 1e8)   [0]         # Select stars older than 0.1Gyr
     idx = set(idx1).intersection(set(idx2))
-#    idx = idx.intersection(set(idx3))
+    if use_age_cut:
+        idx = idx.intersection(set(idx3))
     idx = list(idx)
         
     sort_idx = dcol[idx].argsort()
     sort_idx = np.array(idx)[sort_idx]
     
-    output = '\nAnalysing isochrones for stars older than 1Gyr \n'
+    output = ''
+    if use_age_cut:
+        output += 'Selecting for stars older than 1Gyr \n'
+        
     output += 'Closest entries matching target colours: (g-r)='+str(gr)+\
                                                 ' and (r-i)='+str(ri)+'\n'
     output += 'Index Age[Gyr]  Mass[Msol]  Teff[K]  log(g) (g-r)_iso  (r-i)_iso  dist  gmag   rmag   imag\n'
@@ -67,17 +72,22 @@ def find_isochrone_nearest_entries(data, gr, ri, log=None):
                                 ' to '+\
                                 str(round(mass_max,2))+'\n'
     
-    output += 'Mass of source = '+str(round(starM,2))+' +/- '+\
+    output += 'Mass = '+str(round(starM,2))+' +/- '+\
                                 str(round(sig_starM,2))+'\n'
                                 
     (teff,sig_teff,teff_min,teff_max) = calc_mean_and_range(10**data[sort_idx,3])
     (teff,sig_teff) = calc_median_and_percentile(10**data[sort_idx,3])
     
+    if sig_teff < 50.0:
+        output += 'Formal uncertainty on teff unfeasibly low ('+str(round(sig_teff,1))+'), setting to minimum\n'
+        
+        sig_teff = 50.0
+    
     output += 'Range of Teff = '+str(round(teff_min,1))+\
                                 ' to '+\
                                 str(round(teff_max,1))+'\n'
     
-    output += 'Teff of source = '+str(round(teff,1))+' +/- '+\
+    output += 'Teff = '+str(round(teff,1))+' +/- '+\
                                 str(round(sig_teff,1))+'\n'
     
     (logg,sig_logg,logg_min,logg_max) = calc_mean_and_range(data[sort_idx,4])
@@ -87,7 +97,7 @@ def find_isochrone_nearest_entries(data, gr, ri, log=None):
                                 ' to '+\
                                 str(round(logg_max,1))+'\n'
     
-    output += 'log(g) of source = '+str(round(logg,1))+' +/- '+\
+    output += 'log(g) = '+str(round(logg,1))+' +/- '+\
                                 str(round(sig_logg,1))+'\n'
                
     if log != None:

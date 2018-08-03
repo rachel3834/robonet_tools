@@ -67,25 +67,7 @@ def perform_colour_analysis():
                                target, source, blend, RC,
                                det_idx,cat_idx,close_cat_idx, log)
     
-    star_data = isochrone_utilities.analyze_isochrones(source.gr_0,source.ri_0, 
-                                                       params['isochrone_file'],
-                                                       log=log)
-    source.mass = star_data[0]
-    source.sig_mass = star_data[1]
-    source.teff = star_data[2]
-    source.sig_teff = star_data[3]
-    source.logg = star_data[4]
-    source.sig_logg = star_data[5]
-    
-    star_data = isochrone_utilities.analyze_isochrones(blend.gr_0,blend.ri_0, 
-                                                       params['isochrone_file'],
-                                                       log=log)
-    blend.mass = star_data[0]
-    blend.sig_mass = star_data[1]
-    blend.teff = star_data[2]
-    blend.sig_teff = star_data[3]
-    blend.logg = star_data[4]
-    blend.sig_logg = star_data[5]
+    (source, blend) = match_source_blend_isochrones(params,source,blend,log)
     
     (source, blend) = calc_source_blend_ang_radii(source, blend, log)
     
@@ -159,6 +141,12 @@ def get_args():
         params['sig_f_s_i'] = float(raw_input('Please input the uncertainty for the source flux (SDSS-i) or None: '))
         params['f_b_i'] = float(raw_input('Please input the blend flux (SDSS-i) or None: '))
         params['sig_f_b_i'] = float(raw_input('Please input the uncertainty for the blend flux (SDSS-i) or None: '))
+        params['delta_m_g'] = float(raw_input('Please enter the offset between DanDIA and pyDANDIA photometry (SDSS-g): '))
+        params['sig_delta_m_g'] = float(raw_input('Please enter the uncertainty in the offset between DanDIA and pyDANDIA photometry (SDSS-g): '))
+        params['delta_m_r'] = float(raw_input('Please enter the offset between DanDIA and pyDANDIA photometry (SDSS-r): '))
+        params['sig_delta_m_r'] = float(raw_input('Please enter the uncertainty in the offset between DanDIA and pyDANDIA photometry (SDSS-r): '))
+        params['delta_m_i'] = float(raw_input('Please enter the offset between DanDIA and pyDANDIA photometry (SDSS-i): '))
+        params['sig_delta_m_i'] = float(raw_input('Please enter the uncertainty in the offset between DanDIA and pyDANDIA photometry (SDSS-i): '))
         
     else:
 
@@ -180,6 +168,12 @@ def get_args():
         params['sig_f_s_i'] = float(argv[16])
         params['f_b_i'] = float(argv[17])
         params['sig_f_b_i'] = float(argv[18])
+        params['delta_m_g'] = float(argv[19])
+        params['sig_delta_m_g'] = float(argv[20])
+        params['delta_m_r'] = float(argv[21])
+        params['sig_delta_m_r'] = float(argv[22])
+        params['delta_m_i'] = float(argv[23])
+        params['sig_delta_m_i'] = float(argv[24])
     
     for key, value in params.items():
         
@@ -262,11 +256,11 @@ def calc_source_blend_params(params,log):
     
     return source, blend
     
-def flux_to_mag_pylima(flux,flux_err):
+def flux_to_mag_pylima(flux, flux_err):
     """Function to convert the flux and flux uncertainty measured by 
     modeling in pyLIMA to magnitudes
 
-    Uses default pyLIMA zeropoint = 27.4 mag    
+    Uses default pyLIMA zeropoint = 27.4 mag
     """
     
     def flux2mag(ZP, flux):
@@ -332,8 +326,16 @@ def find_target_data(params,star_catalog,log):
             log.info('Target identified as star '+str(target.star_index)+\
                         ' in the combined ROME catalog, with parameters:')
             log.info('RA = '+str(target.ra)+' Dec = '+str(target.dec))
+            log.info('Measured ROME photometry, instrumental:')
+            log.info(target.summary(show_mags=False, show_instrumental=True))
             log.info('Measured ROME photometry, calibrated to the VPHAS+ scale:')
             log.info(target.summary(show_mags=True))
+            
+            target.set_delta_mag(params)
+            
+            log.info('Assigned delta mag offsets between DanDIA lightcurve and pyDANDIA reference frame analysis:')
+            for f in ['g', 'r', 'i']:
+                log.info('Delta m('+f+') = '+str(getattr(target, 'delta_m_'+f))+' +/- '+str(getattr(target, 'sig_delta_m_'+f)))
             
         if target.i != None and target.r != None:
             
@@ -470,7 +472,8 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
     plt.rcParams.update({'font.size': 18})
         
     plt.scatter(colours,mags,
-                 c='#E1AE13', marker='.', s=1, label=None)
+                 c='#E1AE13', marker='.', s=1, 
+                 label='Stars within ROME field')
     
     plt.scatter(local_colours,local_mags,
                  c='#8c6931', marker='*', s=4, 
@@ -520,16 +523,23 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
         
     if red_filter == 'i' and blue_filter == 'r' and yaxis_filter == 'i':
         plt.axis([-1.0,2.0,20.2,13.5])
-        plt.legend(loc=4)  # Lower right
+        l = plt.legend(loc=2)  # Lower right
     
     if red_filter == 'i' and blue_filter == 'r' and yaxis_filter == 'r':
         plt.axis([-1.0,2.0,21.0,13.5])
-        plt.legend(loc=4)  # Lower right
+        l = plt.legend(loc=2)  # Lower right
         
     if red_filter == 'r' and blue_filter == 'g':
-        plt.axis([-1.0,3.0,21.0,13.5])
-        plt.legend(loc=2)  # Upper left
+        plt.axis([0.0,3.0,22.0,13.5])
+        l = plt.legend(loc=2)  # Upper left
+    
+    if red_filter == 'i' and blue_filter == 'g':
+        plt.axis([0.0,4.4,22.0,13.5])
+        l = plt.legend(loc=2)  # Upper left
         
+    l.legendHandles[0]._sizes = [50]
+    l.legendHandles[1]._sizes = [50]
+    
     plt.savefig(plot_file)
 
     plt.close(1)
@@ -568,7 +578,8 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
         ax = plt.axes()
         
         ax.scatter(inst_gr, inst_ri, 
-                   c='#E1AE13', marker='.', s=1, label=None)
+                   c='#E1AE13', marker='.', s=1, 
+                 label='Stars within ROME field')
         
         ax.scatter(linst_gr, linst_ri, marker='*', s=4, c='#8c6931',
                    label='Stars < '+str(round(tol,1))+'arcmin of target')
@@ -588,7 +599,7 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
             spt = spectral_type[i]+luminosity_class[i]
             
             if luminosity_class[i] == 'V':
-                c = 'g'
+                c = 'k'
             else:
                 c = 'k'
                         
@@ -792,19 +803,19 @@ def localize_red_clump(star_catalog,close_cat_idx,log):
     log.info('Median (g-r), g: '+str(np.median(inst_gr))+', '+str(np.median(inst_g)))
     
     ri_min = 0.8 
-    ri_max = 1.1 
+    ri_max = 1.2 
     i_min = 15.5
     i_max = 16.5
     
     r_min = 16.2
     r_max = 17.5
     
-    gi_min = 2.0 
-    gi_max = 4.0
+    gi_min = 2.5 
+    gi_max = 3.5
     
     gr_min = 1.5 
     gr_max = 2.2 
-    g_min = 18.5
+    g_min = 17.8
     g_max = 19.5
     
     log.info('Selected Red Clump giants between:')
@@ -966,11 +977,15 @@ def calc_phot_properties(target, source, blend, RC, log):
     blend.calibrate_phot_properties(RC,log=log)
 
     log.info('\nSource star extinction-corrected magnitudes and de-reddened colours:\n')
+    log.info(source.summary(show_mags=True))
+    log.info(source.summary(show_mags=False,show_colours=True))
     log.info(source.summary(show_mags=False,show_cal=True))
     log.info(source.summary(show_mags=False,show_cal=True,show_colours=True))
     log.info(source.summary(show_mags=False,johnsons=True,show_cal=True))
     
     log.info('\nBlend extinction-corrected magnitudes and de-reddened colours:\n')
+    log.info(blend.summary(show_mags=True))
+    log.info(blend.summary(show_mags=False,show_colours=True))
     log.info(blend.summary(show_mags=False,show_cal=True))
     log.info(blend.summary(show_mags=False,show_cal=True,show_colours=True))
     log.info(blend.summary(show_mags=False,johnsons=True,show_cal=True))
@@ -983,12 +998,12 @@ def calc_source_blend_ang_radii(source, blend, log):
     log.info('\n')
     log.info('Calculating the angular radius of the source star:')
     source.calc_stellar_ang_radius(log)
-    log.info('Source angular radius (from SDSS (g-i), Boyajian+ 2014 relations) = '+str(source.ang_radius)+' '+str(source.sig_ang_radius))
+    log.info('Source angular radius (from SDSS (g-i), Boyajian+ 2014 relations) = '+str(round(source.ang_radius,4))+' +/- '+str(round(source.sig_ang_radius,4)))
     
     log.info('\n')
     log.info('Calculating the angular radius of the blend:')
     blend.calc_stellar_ang_radius(log)
-    log.info('Blend angular radius (from SDSS (g-i), Boyajian+ 2014 relations) = '+str(blend.ang_radius)+' '+str(blend.sig_ang_radius))
+    log.info('Blend angular radius (from SDSS (g-i), Boyajian+ 2014 relations) = '+str(round(blend.ang_radius,4))+' +/- '+str(round(blend.sig_ang_radius,4)))
     
     return source, blend
     
@@ -1046,6 +1061,37 @@ def calc_source_blend_distance(source,blend,log):
     
     return source, blend
 
+def match_source_blend_isochrones(params,source,blend,log):
+    """Function to find the closest matching isochrone for both source
+    and blend parameters"""
+    
+    log.info('\n')
+    log.info('Analysing isochrones for source star\n')
+    star_data = isochrone_utilities.analyze_isochrones(source.gr_0,source.ri_0, 
+                                                       params['isochrone_file'],
+                                                       log=log)
+    source.mass = star_data[0]
+    source.sig_mass = star_data[1]
+    source.teff = star_data[2]
+    source.sig_teff = star_data[3]
+    source.logg = star_data[4]
+    source.sig_logg = star_data[5]
+    
+    log.info('\n')
+    log.info('Analysing isochrones for blend\n')
+    
+    star_data = isochrone_utilities.analyze_isochrones(blend.gr_0,blend.ri_0, 
+                                                       params['isochrone_file'],
+                                                       log=log)
+    blend.mass = star_data[0]
+    blend.sig_mass = star_data[1]
+    blend.teff = star_data[2]
+    blend.sig_teff = star_data[3]
+    blend.logg = star_data[4]
+    blend.sig_logg = star_data[5]
+
+    return source, blend
+    
 def output_red_clump_data_latex(params,RC,log):
     """Function to output a LaTeX format table with the data for the Red Clump"""
     
