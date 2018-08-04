@@ -12,6 +12,8 @@ from astropy.coordinates import SkyCoord
 from astropy.coordinates import matching
 from astropy.table import Table
 import astropy.units as u
+from astropy import constants
+from astropy.time import Time
 import matplotlib.pyplot as plt
 import numpy as np
 import star_colour_data
@@ -24,7 +26,8 @@ import isochrone_utilities
 import photometry_classes
 import logging
 import stellar_radius_relations
-from astropy import constants
+import lens_properties
+import pyslalib
 
 def perform_colour_analysis():
     """Function to plot colour magnitude and colour-colour plots"""
@@ -62,7 +65,6 @@ def perform_colour_analysis():
     
     (target,source,blend) = calc_phot_properties(target, source, blend, RC, log)
     
-    
     plot_colour_colour_diagram(params,star_catalog,catalog_header,
                                target, source, blend, RC,
                                det_idx,cat_idx,close_cat_idx, log)
@@ -73,7 +75,9 @@ def perform_colour_analysis():
     
     (source, blend) = calc_source_blend_physical_radii(source, blend, log)
     
-    (source,blend) = calc_source_blend_distance(source, blend, log)
+    (source,blend) = calc_source_blend_distance(source, blend, RC, log)
+    
+    lens = calc_lens_parameters(params, source, RC, log)
     
     output_red_clump_data_latex(params,RC,log)
     
@@ -123,65 +127,33 @@ def get_args():
     
     if len(argv) == 1:
         
-        params['catalog_file'] = raw_input('Please enter the path to combined star catalog file: ')
-        params['red_dir'] = raw_input('Please enter the path to the output directory: ')
-        params['target_ra'] = raw_input('Please enter the RA of target [sexigesimal]:')
-        params['target_dec'] = raw_input('Please enter the Dec of target [sexigesimal]:')
-        params['star_class'] = raw_input('Please input the likely luminosity class of the source: ')
-        params['isochrone_file'] = raw_input('Please input the path to an isochrone data file or None: ')
-        params['f_s_g'] = float(raw_input('Please input the source flux (SDSS-g) or None: '))
-        params['sig_f_s_g'] = float(raw_input('Please input the uncertainty for the source flux (SDSS-g) or None: '))
-        params['f_b_g'] = float(raw_input('Please input the blend flux (SDSS-g) or None: '))
-        params['sig_f_b_g'] = float(raw_input('Please input the uncertainty for the blend flux (SDSS-g) or None: '))
-        params['f_s_r'] = float(raw_input('Please input the source flux (SDSS-r) or None: '))
-        params['sig_f_s_r'] = float(raw_input('Please input the uncertainty for the source flux (SDSS-r) or None: '))
-        params['f_b_r'] = float(raw_input('Please input the blend flux (SDSS-r) or None: '))
-        params['sig_f_b_r'] = float(raw_input('Please input the uncertainty for the blend flux (SDSS-r) or None: '))
-        params['f_s_i'] = float(raw_input('Please input the source flux (SDSS-i) or None: '))
-        params['sig_f_s_i'] = float(raw_input('Please input the uncertainty for the source flux (SDSS-i) or None: '))
-        params['f_b_i'] = float(raw_input('Please input the blend flux (SDSS-i) or None: '))
-        params['sig_f_b_i'] = float(raw_input('Please input the uncertainty for the blend flux (SDSS-i) or None: '))
-        params['delta_m_g'] = float(raw_input('Please enter the offset between DanDIA and pyDANDIA photometry (SDSS-g): '))
-        params['sig_delta_m_g'] = float(raw_input('Please enter the uncertainty in the offset between DanDIA and pyDANDIA photometry (SDSS-g): '))
-        params['delta_m_r'] = float(raw_input('Please enter the offset between DanDIA and pyDANDIA photometry (SDSS-r): '))
-        params['sig_delta_m_r'] = float(raw_input('Please enter the uncertainty in the offset between DanDIA and pyDANDIA photometry (SDSS-r): '))
-        params['delta_m_i'] = float(raw_input('Please enter the offset between DanDIA and pyDANDIA photometry (SDSS-i): '))
-        params['sig_delta_m_i'] = float(raw_input('Please enter the uncertainty in the offset between DanDIA and pyDANDIA photometry (SDSS-i): '))
-        
+        input_file = raw_input('Please enter the path to the parameter file: ')
+
     else:
 
-        params['catalog_file'] = argv[1]
-        params['red_dir'] = argv[2]
-        params['target_ra'] = argv[3]
-        params['target_dec'] = argv[4]
-        params['star_class'] = argv[5]
-        params['isochrone_file'] = argv[6]
-        params['f_s_g'] = float(argv[7])
-        params['sig_f_s_g'] = float(argv[8])
-        params['f_b_g'] = float(argv[9])
-        params['sig_f_b_g'] = float(argv[10])
-        params['f_s_r'] = float(argv[11])
-        params['sig_f_s_r'] = float(argv[12])
-        params['f_b_r'] = float(argv[13])
-        params['sig_f_b_r'] = float(argv[14])
-        params['f_s_i'] = float(argv[15])
-        params['sig_f_s_i'] = float(argv[16])
-        params['f_b_i'] = float(argv[17])
-        params['sig_f_b_i'] = float(argv[18])
-        params['delta_m_g'] = float(argv[19])
-        params['sig_delta_m_g'] = float(argv[20])
-        params['delta_m_r'] = float(argv[21])
-        params['sig_delta_m_r'] = float(argv[22])
-        params['delta_m_i'] = float(argv[23])
-        params['sig_delta_m_i'] = float(argv[24])
+        input_file = argv[1]
     
-    for key, value in params.items():
+    if path.isfile(input_file) == False:
         
-        if 'none' in str(value).lower():
+        print('ERROR: Cannot find input parameter file')
+        exit()
+        
+    flines = open(input_file,'r').readlines()
+    
+    str_keys = ['catalog_file', 'red_dir', 
+                'target_ra', 'target_dec', 
+                'star_class', 'isochrone_file']
+    for line in flines:
+        
+        (key, value) = line.replace('\n','').split()
+        
+        if key in str_keys:
             
-            value = None
-        
             params[key] = value
+            
+        else:
+            
+            params[key] = float(value)
             
     return params
     
@@ -1019,11 +991,22 @@ def calc_source_blend_physical_radii(source, blend, log):
     blend.calc_physical_radius(log)
     
     log.info('\n')
-    log.info('Source radius from Torres relation: '+\
+    log.info('Stellar radii derived from Torres relation (applies to main sequence and giants):')
+    log.info('Source radius: '+\
                     str(round(source.radius,2))+' +/- '+str(round(source.sig_radius,2))+' Rsol')
-    log.info('Blend radius from Torres relation: '+\
+    log.info('Blend radius: '+\
                     str(round(blend.radius,2))+' +/- '+str(round(blend.sig_radius,2))+' Rsol')
-                    
+    
+    source.starR_large_giant = 14.2
+    source.sig_starR_large_giant = 0.2
+    source.starR_small_giant = 8.1
+    source.sig_starR_small_giant = 0.1
+    
+    log.info('\n')
+    log.info('If the source were a giant, assigning possible physical radii values, based on data from Gaulme, P. et al. (2016), ApJ, 832, 121.')
+    log.info('Small giant radius = '+str(source.starR_small_giant)+' +/- '+str(source.sig_starR_small_giant)+' Rsol')
+    log.info('Large giant radius = '+str(source.starR_large_giant)+' +/- '+str(source.sig_starR_large_giant)+' Rsol')
+    
     return source, blend
     
 def convert_ndp(value,ndp):
@@ -1043,7 +1026,7 @@ def convert_ndp(value,ndp):
     
     return value
 
-def calc_source_blend_distance(source,blend,log):
+def calc_source_blend_distance(source,blend,RC,log):
     """Function to calculate the distance to the source star, given the
     angular and physical radius estimates"""
     
@@ -1054,10 +1037,24 @@ def calc_source_blend_distance(source,blend,log):
     
     log.info('Inferred source distance: '+str(source.D)+' +/- '+str(source.sig_D)+' pc')
     
+    try:
+        log.info('Inferred source distance if its a small red giant: '+\
+        str(source.D_small_giant)+' +/- '+str(source.sig_D_small_giant)+' pc')
+        
+        log.info('Inferred source distance if its a large red giant: '+\
+        str(source.D_large_giant)+' +/- '+str(source.sig_D_large_giant)+' pc')
+        
+    except AttributeError:
+        pass
     
     blend.calc_distance(log)
     
     log.info('Inferred blend distance: '+str(blend.D)+' +/- '+str(blend.sig_D)+' pc')
+    
+    (Rstar, sig_Rstar) = stellar_radius_relations.scale_source_distance(source.ang_radius, source.sig_ang_radius, RC.D*1000.0 ,log)
+    
+    source.radius = Rstar
+    source.sig_radius = sig_Rstar
     
     return source, blend
 
@@ -1076,6 +1073,7 @@ def match_source_blend_isochrones(params,source,blend,log):
     source.sig_teff = star_data[3]
     source.logg = star_data[4]
     source.sig_logg = star_data[5]
+    source.estimate_luminosity_class(log=log)
     
     log.info('\n')
     log.info('Analysing isochrones for blend\n')
@@ -1089,8 +1087,42 @@ def match_source_blend_isochrones(params,source,blend,log):
     blend.sig_teff = star_data[3]
     blend.logg = star_data[4]
     blend.sig_logg = star_data[5]
+    blend.estimate_luminosity_class(log=log)
 
     return source, blend
+
+def calc_lens_parameters(params, source, RC, log):
+    """Function to compute the physical parameters of the lens"""
+
+    earth_position = pyslalib.slalib.sla_epv(params['t0']-2400000.0)
+    
+    v_earth = earth_position[1]     # Earth's heliocentric velocity vector
+    
+    pi_E = [ params['pi_E_N'], params['pi_E_E'] ]
+    sig_pi_E = [ params['sig_pi_E_N'], params['sig_pi_E_E'] ]
+    
+    lens = lens_properties.Lens()
+    lens.ra = params['target_ra']
+    lens.dec = params['target_dec']
+    lens.tE = params['tE']
+    lens.sig_tE = params['sig_tE']
+    lens.t0 = params['t0']
+    lens.sig_t0 = params['sig_t0']
+    lens.rho = params['rho']
+    lens.sig_rho = params['sig_rho']
+    lens.pi_E = np.array([ params['pi_E_N'], params['pi_E_E'] ])
+    lens.sig_pi_E = np.array([ params['sig_pi_E_N'], params['sig_pi_E_E'] ])
+    
+    lens.calc_einstein_radius(source.ang_radius,source.sig_ang_radius,log=log)
+    
+    lens.calc_distance(RC.D,0.0,log)
+    
+    lens.q = 10**(params['logq'])
+    lens.sig_q = 10**(params['sig_logq'])
+    
+    lens.calc_masses(log)
+    
+    return lens
     
 def output_red_clump_data_latex(params,RC,log):
     """Function to output a LaTeX format table with the data for the Red Clump"""

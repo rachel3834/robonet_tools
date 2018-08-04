@@ -408,14 +408,68 @@ class Star:
         """Function to calculate the distance to the source star, given the
         angular and physical radius estimates"""
         
+        def calc_D(R_S, sig_RS, theta_S, sig_theta_S):
+            
+            D = (R_S/np.tan(theta_S)) / constants.pc.value
+            sig_D = np.sqrt((sig_RS/R_S)**2 + ((1.0/sig_theta_S)/(1.0/theta_S)**2))*D
+            
+            return D, sig_D
+            
         theta_S = ((self.ang_radius / 1e6)/3600.0)*(np.pi/180.0)  # radians
         sig_theta_S = ((self.sig_ang_radius / 1e6)/3600.0)*(np.pi/180.0)
         
         R_S = self.radius * constants.R_sun.value  # units of m
         sig_RS = self.sig_radius * constants.R_sun.value
         
-        self.D = (R_S/np.tan(theta_S)) / constants.pc.value
+        (self.D,self.sig_D) = calc_D(R_S, sig_RS, theta_S, sig_theta_S)
         
-        self.sig_D = np.sqrt((sig_RS/R_S)**2 + ((1.0/sig_theta_S)/(1.0/theta_S)**2))*self.D
+        try:
+            R_S = self.starR_small_giant * constants.R_sun.value 
+            sig_RS = self.sig_starR_small_giant * constants.R_sun.value
+            
+            (self.D_small_giant,self.sig_D_small_giant) = calc_D(R_S, sig_RS, theta_S, sig_theta_S)
+            
+            R_S = self.starR_large_giant * constants.R_sun.value 
+            sig_RS = self.sig_starR_large_giant * constants.R_sun.value
+            
+            (self.D_large_giant,self.sig_D_large_giant) = calc_D(R_S, sig_RS, theta_S, sig_theta_S)
+            
+        except AttributeError:
+            pass
         
+    def estimate_luminosity_class(self,log=None):
+        """Function to estimate the luminosity class of an instance, based on
+        the divisions based on the threshold relating log(g) and t_eff 
+        derived from 
+        Ciardi, D. et al. (2011), AJ, 141, 108.
+        """
+        if self.teff >= 6000.0:
+            
+            self.logg_thresh = 3.5
+            
+        elif self.teff <= 4250:
+            
+            self.logg_thresh = 4.0
+            
+        elif 4250.0 < self.teff and self.teff < 6000:
+            
+            self.logg_thresh = 5.2 - (2.8e-4*self.teff)
         
+        if log!=None:
+            log.info('\n')
+            log.info('Calculated minimum log(g) for a dwarf star of teff='+\
+                        str(round(self.teff,1))+': '+
+                        str(round(self.logg_thresh,1)))
+        
+        if self.logg > self.logg_thresh:
+            
+            self.Lclass = 'dwarf'
+            
+        else:
+            
+            self.Lclass = 'giant'
+        
+        if log!=None:
+            
+            log.info(' -> Star is likely to be a '+str(self.Lclass))
+    
