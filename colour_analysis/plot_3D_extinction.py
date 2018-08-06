@@ -24,7 +24,7 @@ def plot_3D_extinction_data():
         
         data_file = argv[1]
         plot_file = argv[2]
-        DM_source = argv[3]
+        DM_source = float(argv[3])
         
     (DistMod,EBV) = read_3D_map_data(data_file)
     
@@ -85,13 +85,21 @@ def plot_EBV_distance(DistMod, EBV, DM_source, plot_file):
     plt.rcParams.update({'font.size': 18})
     
     plt.plot(DistMod,EBV,'k-')
+    
+    [xmin,xmax,ymin,ymax] = plt.axis()
+    
+    if DM_source < xmax:
+        ydata = np.arange(EBV.min(), EBV.max()+0.2, 0.5)    
+        xdata = np.zeros(len(ydata))
+        xdata.fill(DM_source)
+    
+        plt.plot(xdata, ydata,'m-.')
+
+    else:
         
-    ydata = np.arange(EBV.min(), EBV.max()+0.2, 0.5)    
-    xdata = np.zeros(len(ydata))
-    xdata.fill(DM_source)
-
-    plt.plot(xdata, ydata,'m-.')
-
+        plt.arrow(xmax-1.0, (ymax-ymin)/2.0, 1.0, 0.0)
+        plt.text('$source_{m-M}$ = '+str(round(DM_source,1))+' mag', 
+                 xmax-1.0, (ymax-ymin)/2.0)
     plt.xlabel('Distance Modulus [mag]')
     plt.ylabel('E(B-V) [mag]')
 

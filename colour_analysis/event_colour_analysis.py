@@ -29,7 +29,7 @@ import stellar_radius_relations
 import lens_properties
 import pyslalib
 
-def perform_colour_analysis():
+def perform_event_analysis():
     """Function to plot colour magnitude and colour-colour plots"""
     
     tol = 2.0       # Arcmin
@@ -82,6 +82,8 @@ def perform_colour_analysis():
     output_red_clump_data_latex(params,RC,log)
     
     output_source_blend_data_latex(params,source,blend,log)
+    
+    output_lens_parameters_latex(params,source,lens,log)
     
 def start_log(params, console=False):
     """Function to initialise a log file"""
@@ -441,6 +443,8 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
     
     fig = plt.figure(1,(10,10))
     
+    ax = plt.subplot(111)
+    
     plt.rcParams.update({'font.size': 18})
         
     plt.scatter(colours,mags,
@@ -458,26 +462,26 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
         plt.errorbar(getattr(source,col_key), getattr(source,yaxis_filter), 
                  yerr = getattr(source,'sig_'+yaxis_filter),
                  xerr = getattr(source,'sig_'+col_key), color='m',
-                 marker='d',markersize=6, label='Source')
+                 marker='d',markersize=10, label='Source')
     
     if getattr(blend,blue_filter) != None and getattr(blend,red_filter) != None:
         
         plt.errorbar(getattr(blend,col_key), getattr(blend,yaxis_filter), 
                  yerr = getattr(blend,'sig_'+yaxis_filter),
                  xerr = getattr(blend,'sig_'+col_key), color='b',
-                 marker='+',markersize=6, label='Blend')
+                 marker='v',markersize=10, label='Blend')
                 
     if getattr(target,blue_filter) != None and getattr(target,red_filter) != None:
         
         plt.errorbar(getattr(target,col_key), getattr(target,yaxis_filter), 
                  yerr = getattr(target,'sig_'+yaxis_filter),
                  xerr = getattr(target,'sig_'+col_key), color='k',
-                 marker='x',markersize=6, label='Target at baseline')
+                 marker='x',markersize=10, label='Target at baseline')
                  
     plt.errorbar(getattr(RC,col_key), getattr(RC,yaxis_filter), 
                  yerr=getattr(RC,'sig_'+yaxis_filter), 
                  xerr=getattr(RC,'sig_'+col_key),
-                 color='g', marker='s',markersize=6, label='Red Clump centroid')
+                 color='g', marker='s',markersize=10, label='Red Clump centroid')
                  
     plt.xlabel('SDSS ('+blue_filter+'-'+red_filter+') [mag]')
 
@@ -494,23 +498,30 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
     plt.grid()
         
     if red_filter == 'i' and blue_filter == 'r' and yaxis_filter == 'i':
-        plt.axis([-1.0,2.0,20.2,13.5])
-        l = plt.legend(loc=2)  # Lower right
-    
+        plt.axis([-0.5,2.0,20.2,13.5])
+        
     if red_filter == 'i' and blue_filter == 'r' and yaxis_filter == 'r':
-        plt.axis([-1.0,2.0,21.0,13.5])
-        l = plt.legend(loc=2)  # Lower right
+        plt.axis([-0.5,2.0,21.0,13.5])
         
     if red_filter == 'r' and blue_filter == 'g':
-        plt.axis([0.0,3.0,22.0,13.5])
-        l = plt.legend(loc=2)  # Upper left
+        plt.axis([0.5,3.0,22.0,14.0])
     
     if red_filter == 'i' and blue_filter == 'g':
-        plt.axis([0.0,4.4,22.0,13.5])
-        l = plt.legend(loc=2)  # Upper left
+        plt.axis([0.5,4.4,22.0,14.0])
         
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 + box.height * -0.025,
+                 box.width, box.height * 0.95])
+
+    l = ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), ncol=2)
+
     l.legendHandles[0]._sizes = [50]
     l.legendHandles[1]._sizes = [50]
+
+    plt.rcParams.update({'legend.fontsize':18})
+    plt.rcParams.update({'font.size':18})
+    plt.rc('xtick', labelsize=18) 
+    plt.rc('ytick', labelsize=18)
     
     plt.savefig(plot_file)
 
@@ -557,15 +568,15 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
                    label='Stars < '+str(round(tol,1))+'arcmin of target')
                      
         if source.gr_0 != None and source.ri_0 != None:
-            plt.plot(source.gr_0, source.ri_0,'md',markersize=6, label='Source')
+            plt.plot(source.gr_0, source.ri_0,'md',markersize=10, label='Source')
             
         if blend.gr_0 != None and blend.ri_0 != None:
-            plt.plot(blend.gr_0, blend.ri_0,'bp',markersize=6, label='Blend')
+            plt.plot(blend.gr_0, blend.ri_0,'bv',markersize=10, label='Blend')
         
         (spectral_type, luminosity_class, gr_colour, ri_colour) = spectral_type_data.get_spectral_class_data()
         
-        plot_dwarfs = True
-        plot_giants = False
+        plot_dwarfs = False
+        plot_giants = True
         for i in range(0,len(spectral_type),1):
             
             spt = spectral_type[i]+luminosity_class[i]
@@ -584,7 +595,7 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
 
             if luminosity_class[i] == 'V' and plot_dwarfs:
                 
-                plt.plot(gr_colour[i], ri_colour[i], marker='v', color=c, alpha=0.5)
+                plt.plot(gr_colour[i], ri_colour[i], marker='s', color=c, alpha=0.5)
 
                 plt.annotate(spt, (gr_colour[i], 
                                ri_colour[i]+0.1), 
@@ -597,11 +608,23 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
         
         plot_file = path.join(params['red_dir'],'colour_colour_diagram.png')
         
-        plt.axis([-1.2,2.0,-1.5,1.0])
+        plt.axis([-1.0,2.0,-1.0,1.0])
     
         plt.grid()
         
-        plt.legend(loc=4) # Lower right
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * -0.025,
+                     box.width, box.height * 0.95])
+    
+        l = ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), ncol=2)
+    
+        l.legendHandles[2]._sizes = [50]
+        l.legendHandles[3]._sizes = [50]
+    
+        plt.rcParams.update({'legend.fontsize':18})
+        plt.rcParams.update({'font.size':18})
+        plt.rc('xtick', labelsize=18) 
+        plt.rc('ytick', labelsize=18)
     
         plt.savefig(plot_file)
     
@@ -1195,8 +1218,37 @@ def output_source_blend_data_latex(params,source,blend,log):
     t.close()
 
     log.info('Output source and blend data in laTex table to '+file_path)
+
+def output_lens_parameters_latex(params,source,lens,log):
+    """Function to output a LaTex format table with the lens parameters"""
     
+    file_path = path.join(params['red_dir'],'lens_data_table.tex')
+    
+    t = open(file_path, 'w')
+
+    t.write('\\begin{table}[h!]\n')
+    t.write('\\centering\n')
+    t.write('\\caption{Physical properties of the source and lens system} \\label{tab:lensproperties}\n')
+    t.write('\\begin{tabular}{lll}\n')
+    t.write('\\hline\n')
+    t.write('\\hline\n')
+    t.write('Parameter   &   Units    &   Value \\\\\n')
+    t.write('$\\theta_{\\rm{S}}$  & $\\mu$as     & '+str(round(source.ang_radius,3))+'$\pm$'+str(round(source.sig_ang_radius,3))+'\\\\\n')
+    t.write('$\\theta_{\\rm{E}}$  & $\\mu$as     & '+str(round(lens.thetaE,3))+'$\pm$'+str(round(lens.sig_thetaE,3))+'\\\\\n')
+    t.write('$R_{\\rm{S}}$       & $R_{\\odot}$ & '+str(round(source.radius,3))+'$\pm$'+str(round(source.sig_radius,3))+'\\\\\n')
+    t.write('$M_{L,tot}$        & $M_{\\odot}$ & '+str(round(lens.ML,3))+'$\pm$'+str(round(lens.sig_ML,3))+'\\\\\n')
+    t.write('$M_{L,1}$          & $M_{\\odot}$ & '+str(round(lens.M1,3))+'$\pm$'+str(round(lens.sig_M1,3))+'\\\\\n')
+    t.write('$M_{L,2}$          & $M_{\\odot}$ & '+str(round(lens.M2,3))+'$\pm$'+str(round(lens.sig_M2,3))+'\\\\\n')
+    t.write('$D_{L}$            & Kpc         & '+str(round(lens.D,3))+'$\pm$'+str(round(lens.sig_D,3))+'\\\\\n')
+    t.write('\\hline\n')
+    t.write('\\end{tabular}\n')
+    t.write('\\end{table}\n')
+
+    t.close()
+
+    log.info('Output lens parameters in laTex table to '+file_path)
+  
 if __name__ == '__main__':
     
-    perform_colour_analysis()
+    perform_event_analysis()
     

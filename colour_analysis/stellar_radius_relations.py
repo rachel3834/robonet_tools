@@ -244,7 +244,7 @@ def scale_source_distance(theta, sig_theta, DS, log):
     sig_theta_rads = (sig_theta/1e6/3600.0) * (np.pi/180.0)
     
     Rstar = (DS * np.sin(theta_rads)) / constants.R_sun.value
-    sig_Rstar = ((sig_theta_rads/theta_rads)*Rstar) / constants.R_sun.value
+    sig_Rstar = ((sig_theta_rads/theta_rads)*Rstar)
     
     log.info('Stellar radius '+str(Rstar)+' +/- '+str(sig_Rstar)+' Rsol')
     

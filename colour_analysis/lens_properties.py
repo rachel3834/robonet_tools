@@ -20,11 +20,25 @@ class Lens:
         self.sig_rho = None
         self.pi_E = None
         self.sig_pi_E = None
+ 
+    def rads_to_muas(self,value,sigma):
+        
+        value = (value * (180.0/np.pi)) * 3600.0 * 1e6
+        sigma = (sigma * (180.0/np.pi)) * 3600.0 * 1e6
+        
+        return value, sigma
+
+    def muas_to_rads(self,value,sigma):
+        
+        value = ((value / 1e6) / 3600.0)*(np.pi/180.0)
+        sigma = ((sigma / 1e6) / 3600.0)*(np.pi/180.0)
+        
+        return value, sigma
 
     def calc_einstein_radius(self,thetaS,sig_thetaS,log=None):
         """Function to calculate the angular Einstein radius and geometric projected
         motion while propagating errors formally."""
-        
+            
         if log!=None:
             log.info('\n')
             log.info('Calculating the Einstein radius')
@@ -38,38 +52,40 @@ class Lens:
         
         if log!=None:
             log.info('Magnitude of parallax vector: '+str(pi_E_mag)+'+/-'+str(sig_pi_E_mag))
+            log.info('Source angular radius: '+str(thetaS)+' +/- '+str(sig_thetaS)+' muas')
+            log.info('Rho: '+str(self.rho)+' +/- '+str(self.sig_rho))
         else:
             print('Magnitude of parallax vector: '+str(pi_E_mag)+'+/-'+str(sig_pi_E_mag))
-            
+                
+        if log!= None:
+            log.info('Source angular radius = '+str(thetaS)+'+/-'+str(sig_thetaS)+' microarcsec')
+        
         # Calculate fractional errors for use in propagating errors later:
         fthetaS = sig_thetaS / thetaS
         frho = self.sig_rho / self.rho
         ftE = self.sig_tE / self.tE
+        fpiE = sig_pi_E_mag / pi_E_mag
         
         # Calculate the angular Einstein radius:
         self.thetaE = thetaS / self.rho
         fthetaE = math.sqrt( fthetaS*fthetaS + frho*frho )
         self.sig_thetaE = fthetaE * self.thetaE
         
-        # Calculate mu_geo:
-        self.mu_geo = self.thetaE / tE
-        self.sig_mu_geo = math.sqrt( fthetaE*fthetaE + ftE*ftE ) * self.mu_geo
+        # Lens-source relative parallax: THIS PI_E IS NOT A VECTOR
+        self.pi_rel = self.thetaE * pi_E_mag
+        fthetaE = self.sig_thetaE/self.thetaE
+        self.sig_pi_rel = math.sqrt( (fthetaE*fthetaE) + \
+                                    (fpiE*fpiE) ) * self.pi_rel
         
         if log!= None:
             log.info('Angular Einstein radius = '+str(self.thetaE)+'+/-'+str(self.sig_thetaE)+' microarcsec')
-            log.info('Mu_geo = '+str(self.mu_geo)+'+/-'+str(self.sig_mu_geo)+' mu-as yr-1')
         else:
             print('Angular Einstein radius = '+str(self.thetaE)+'+/-'+str(self.sig_thetaE)+' microarcsec')
-            print('Mu_geo = '+str(self.mu_geo)+'+/-'+str(self.sig_mu_geo)+' mu-as yr-1')
             
-        # Lens-source relative parallax: THIS PI_E IS NOT A VECTOR
-        self.pi_rel = self.thetaE * pi_E_mag
-        self.sig_pi_rel = math.sqrt( (self.sig_thetaE*self.sig_thetaE) + (sig_pi_E_mag*sig_pi_E_mag) ) * self.pi_rel
-        
         if log!=None:
-            log.info('Lens-source relative parallax: ' + str(self.pi_rel)+'+/-'+str(self.sig_pi_rel)+' mu-as')
+            log.info('Lens-source relative parallax: ' + str(self.pi_rel)+'+/-'+str(self.sig_pi_rel)+' microarcsec')
         else:
-            print('Lens-source relative parallax: ' + str(self.pi_rel)+'+/-'+str(self.sig_pi_rel)+' mu-as')
+            print('Lens-source relative parallax: ' + str(self.pi_rel)+'+/-'+str(self.sig_pi_rel)+' microarcsec')
     
                 # Projected velocities:  pi_E IS A VECTOR
         def calc_v_geo( t, pi, pi_mag ):
@@ -78,7 +94,7 @@ class Lens:
             v = ( au_km / t ) * ( pi / (pi_mag*pi_mag) )
             
             return v
-    
+            
     def calc_mag_piE(self):
         
         pi_E_mag = math.sqrt( (self.pi_E*self.pi_E).sum() )
@@ -97,6 +113,11 @@ class Lens:
         sig_tE_s = self.sig_tE * 365.25 * 24.0 * 60.0 * 60.0
         v_geo = []
         sig_v_geo = []
+
+        # Calculate mu_geo:
+        self.mu_geo = self.thetaE / tE
+        self.sig_mu_geo = math.sqrt( fthetaE*fthetaE + ftE*ftE ) * self.mu_geo
+        
         
         for i in range(0,2,1):
             v = calc_v_geo( tE_s, self.pi_E[i], pi_E_mag )
@@ -130,11 +151,9 @@ class Lens:
         
         (pi_E_mag,sig_pi_E_mag) = self.calc_mag_piE()
         
-        thetaE = (self.thetaE / 1e6 / 3600.0) * (np.pi/180.0)        # mu-as -> rads
-        sig_thetaE = (self.sig_thetaE / 1e6 / 3600.0) * (np.pi/180.0)
+        (thetaE,sig_thetaE) = self.muas_to_rads(self.thetaE,self.sig_thetaE)
         
-        pi_rel = (self.pi_rel / 1e6 / 3600.0) * (np.pi/180.0)        # mu-as -> rads
-        sig_pi_rel = (self.sig_pi_rel / 1e6 / 3600.0) * (np.pi/180.0)
+        (pi_rel,sig_pi_rel) = self.muas_to_rads(self.pi_rel,self.sig_pi_rel)
         
         DS_m = DS * 1000.0 * constants.pc.value     # kpc -> m
         sig_DS_m = sig_DS * 1000.0 * constants.pc.value
@@ -144,12 +163,12 @@ class Lens:
             sig_pi_S = constants.au.value / sig_DS
         else:
             sig_pi_S = 0.0
-            
+        
         pi_L = pi_rel + pi_S                    # rads
         sig_pi_L = np.sqrt( sig_pi_rel*sig_pi_rel + sig_pi_S*sig_pi_S )
         
         DL = constants.au.value / pi_L
-        sig_DL = constants.au.value / sig_pi_L
+        sig_DL = (sig_pi_L / pi_L) * DL
         
         log.info('Distance to the lens: '+str(DL)+' +/- '+str(sig_DL)+' m')
         
@@ -158,14 +177,15 @@ class Lens:
         
         log.info('Distance to the lens: '+str(self.D)+' +/- '+\
                                          str(self.sig_D)+' kpc')
-                                         
+        
     def calc_masses(self,log):
         """Function to calculate the component masses of a binary lens"""
         
         (pi_E_mag,sig_pi_E_mag) = self.calc_mag_piE()
         
-        thetaE = (self.thetaE / 1e6 / 3600.0) * (np.pi/180.0)        # mu-as -> rads
-        sig_thetaE = (self.sig_thetaE / 1e6 / 3600.0) * (np.pi/180.0)
+        (thetaE, sig_thetaE) = self.muas_to_rads(self.thetaE, self.sig_thetaE)
+#        thetaE = (self.thetaE / 1e6 / 3600.0) * (np.pi/180.0)        # mu-as -> rads
+#        sig_thetaE = (self.sig_thetaE / 1e6 / 3600.0) * (np.pi/180.0)
         
         log.info('Magnitude of pi_E: '+str(pi_E_mag)+' +/- '+str(sig_pi_E_mag))
         log.info('Theta_E: '+str(thetaE)+' +/- '+str(sig_thetaE)+' rads')

@@ -291,11 +291,17 @@ class Star:
             theta_LD = 10**(log_theta_LD) * 1000.0
             sig_theta_LD = (sig_log_theta_LD/abs(log_theta_LD)) * theta_LD
             
-            ang_radius = theta_LD / 2.0
-            sig_ang_radius = (sig_theta_LD / theta_LD) * ang_radius
+            (ang_radius,sig_ang_radius) = calc_ang_radius(theta_LD,sig_theta_LD)
             
             return theta_LD, sig_theta_LD, ang_radius, sig_ang_radius
         
+        def calc_ang_radius(theta_LD,sig_theta_LD):
+            
+            ang_radius = theta_LD / 2.0
+            sig_ang_radius = (sig_theta_LD / theta_LD) * ang_radius
+            
+            return ang_radius, sig_ang_radius
+            
         radii = []
         
         log.info('\n')
@@ -332,41 +338,66 @@ class Star:
         
         log.info('\n')
         
-        (log_theta_LD, sig_log_theta_LD, flag) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(self.gr_0,self.sig_gr_0,self.g_0,self.sig_g_0,'g-r',0.0,log=log)
+        (log_theta_LD, sig_log_theta_LD, flag_gr) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(self.gr_0,self.sig_gr_0,self.g_0,self.sig_g_0,'g-r',0.0,log=log)
         
-        (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
+        (theta_LD_gr, sig_theta_LD_gr, ang_radius_gr, sig_ang_radius_gr) = calc_theta(log_theta_LD,sig_log_theta_LD)
         
         log.info('Based on Boyajian et al. 2014 relations for SDSS/Johnsons passbands:')
         log.info('Applies to main-sequence stars only.')
         log.info(' -> Using the (g-r) colour index = '+str(round(self.gr_0,3)))
         log.info(' -> Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
-        log.info(' -> Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
-        log.info(' -> Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
-        log.info(' -> Valid estimate? '+repr(flag))
+        log.info(' -> Theta_LD = '+str(round(theta_LD_gr,3))+' +/- '+str(round(sig_theta_LD_gr,3))+' microarcsec')
+        log.info(' -> Angular radius = '+str(round(ang_radius_gr,3))+' +/- '+str(round(sig_ang_radius_gr,3))+' microarcsec')
+        log.info(' -> Valid estimate? '+repr(flag_gr))
         
         if flag:
-            radii.append(ang_radius)
+            radii.append(ang_radius_gr)
         
         log.info('\n')
         
-        (log_theta_LD, sig_log_theta_LD, flag) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(self.gi_0,self.sig_gi_0,self.g_0,self.sig_g_0,'g-i',0.0,log=log)
+        (log_theta_LD, sig_log_theta_LD, flag_gi) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(self.gi_0,self.sig_gi_0,self.g_0,self.sig_g_0,'g-i',0.0,log=log)
         
-        (theta_LD,sig_theta_LD, ang_radius, sig_ang_radius) = calc_theta(log_theta_LD,sig_log_theta_LD)
+        (theta_LD_gi,sig_theta_LD_gi, ang_radius_gi, sig_ang_radius_gi) = calc_theta(log_theta_LD,sig_log_theta_LD)
         
         log.info(' -> Using the (g-i) colour index = '+str(round(self.gi_0,3)))
         log.info(' -> Log_10(theta_LD) = '+str(log_theta_LD)+' +/- '+str(sig_log_theta_LD))
-        log.info(' -> Theta_LD = '+str(round(theta_LD,3))+' +/- '+str(round(sig_theta_LD,3))+' microarcsec')
-        log.info(' -> Angular radius = '+str(round(ang_radius,3))+' +/- '+str(round(sig_ang_radius,3))+' microarcsec')
-        log.info(' -> Valid estimate? '+repr(flag))
+        log.info(' -> Theta_LD = '+str(round(theta_LD_gi,3))+' +/- '+str(round(sig_theta_LD_gi,3))+' microarcsec')
+        log.info(' -> Angular radius = '+str(round(ang_radius_gi,3))+' +/- '+str(round(sig_ang_radius_gi,3))+' microarcsec')
+        log.info(' -> Valid estimate? '+repr(flag_gi))
         
         if flag:
-            radii.append(ang_radius)
+            radii.append(ang_radius_gr)
         
-        self.theta = theta_LD
-        self.sig_theta = sig_theta_LD
-        self.ang_radius = ang_radius
-        self.sig_ang_radius = sig_ang_radius
+        use_index = None
         
+        if flag_gr and flag_gi:
+            
+            self.theta = (theta_LD_gr + theta_LD_gi)/2.0
+            self.sig_theta = np.sqrt( sig_theta_LD_gr*sig_theta_LD_gr +\
+                                        sig_theta_LD_gi*sig_theta_LD_gi)
+                                        
+            (self.ang_radius,self.sig_ang_radius) = calc_ang_radius(self.theta,self.sig_theta)
+            
+            use_index = 'average of (g-r) and (g-i)'
+            
+        elif flag_gr and flag_gi == False:
+            
+            self.theta = theta_LD_gr
+            self.sig_theta = sig_theta_LD_gr
+            self.ang_radius = ang_radius_gr
+            self.sig_ang_radius = sig_ang_radius_gr
+            
+            use_index = '(g-r)'
+
+        elif flag_gr == False and flag_gi:
+            
+            self.theta = theta_LD_gi
+            self.sig_theta = sig_theta_LD_gi
+            self.ang_radius = ang_radius_gi
+            self.sig_ang_radius = sig_ang_radius_gi
+
+            use_index = '(g-i)'
+            
         log.info('\n')
         
         (log_theta_LD, sig_log_theta_LD, flag) = stellar_radius_relations.calc_star_ang_radius_Boyajian2014(self.VI_0,self.sig_VI_0,self.V_0,self.sig_V_0,'V-I',0.0,log=log)
@@ -392,6 +423,14 @@ class Star:
         else:
             log.info('\n')
             log.info('WARNING: No reliable angular radii estimates were possible')
+        
+        log.info('\n')
+        if use_index == None:
+            log.info('WARNING: No reliable angular radii estimates were possible')
+        else:
+            log.info('Adopting theta_S value derived from index: '+use_index)
+            log.info('Source angular diameter = '+str(round(self.theta,3))+' +/- '+str(round(self.sig_theta,3))+' microarcsec')
+            log.info('Source angular radius = '+str(round(self.ang_radius,3))+' +/- '+str(round(self.sig_ang_radius,3))+' microarcsec')
             
         log.info('\n')
 
