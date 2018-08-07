@@ -9,6 +9,8 @@ from os import path
 from sys import argv
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
+import jester_phot_transforms
 
 def plot_3D_extinction_data():
     """Function to plot the 3D extinction derived from the maps from Pan-STARRS1
@@ -18,19 +20,49 @@ def plot_3D_extinction_data():
         
         data_file = raw_input('Please enter the path to the data file: ')
         plot_file = raw_input('Please enter the path to the output plot file: ')
-        DM_source = float(raw_input('Please enter the distance modulus of the source: '))
+        D_source = float(raw_input('Please enter the distance of the source: '))
+        D_lens = float(raw_input('Please enter the distance of the lens: '))
+        sig_D_lens = float(raw_input('Please enter the uncertainty on the distance of the lens: '))
         
     else:
         
         data_file = argv[1]
         plot_file = argv[2]
-        DM_source = float(argv[3])
+        D_source = float(argv[3])
+        D_lens = float(argv[4])
+        sig_D_lens = float(argv[5])
         
     (DistMod,EBV) = read_3D_map_data(data_file)
     
-    plot_EBV_distance(DistMod, EBV, DM_source, plot_file)
+    (DM_source, sig_DM_source) = calc_distance_modulus(D_source, 0.0)
+    (DM_lens, sig_DM_lens) = calc_distance_modulus(D_lens, sig_D_lens)
     
-
+    print('Distance modulus to: ')
+    print('Source: '+str(DM_source)+' +/- '+str(sig_DM_source)+' mag')
+    print('Lens: '+str(DM_lens)+' +/- '+str(sig_DM_lens)+' mag')
+    
+    (EBV_interp, EBV_lens, sig_EBV_lens) = interpolate_extinction(DistMod, EBV, DM_lens, sig_DM_lens)
+    
+    print('Interpolated estimate of the extinction to the lens:')
+    print('E(B-V) = '+str(EBV_lens)+' +/- '+str(sig_EBV_lens))
+    
+    plot_EBV_distance(DistMod, EBV, DM_source, DM_lens, EBV_interp, plot_file)
+    
+    results = jester_phot_transforms.transform_JohnsonCousins_to_SDSS(BV=EBV_lens, sigBV=sig_EBV_lens)
+    
+    print('E(g-r) = '+str(results['g-r'])+' +/- '+str(results['siggr']))
+    
+def calc_distance_modulus(D, sig_D):
+    """Function to calculate the distance modulus.
+    Note: assumes input distance is in kiloparsecs    
+    """
+    
+    DM = 5.0 * np.log10(D*1000.0) - 5.0
+    
+    sig_DM = (sig_D/D)*DM
+    
+    return DM, sig_DM
+    
 def read_3D_map_data(data_file):
     """Function to read the results of a query through
     http://argonaut.skymaps.info/
@@ -75,8 +107,23 @@ def read_3D_map_data(data_file):
     EBV = np.array(EBV)
     
     return DistMod, EBV
-
-def plot_EBV_distance(DistMod, EBV, DM_source, plot_file):
+    
+def interpolate_extinction(DistMod, EBV, DM_lens, sig_DM_lens):
+    """Function to interpolate the extinction curve and extract a 
+    precise estimate for the extinction suffered by the lens"""
+    
+    f = interp1d(DistMod, EBV)
+    
+    EBV_lens = f(DM_lens)
+    
+    min_ebv = f(DM_lens - sig_DM_lens)
+    max_ebv = f(DM_lens + sig_DM_lens)
+    
+    sig_EBV_lens = (max_ebv - min_ebv) / 2.0
+    
+    return f, EBV_lens, sig_EBV_lens
+    
+def plot_EBV_distance(DistMod, EBV, DM_source, DM_lens, EBV_interp, plot_file, plot_interpolation=True):
     """Function to plot the extinction as a function of distance along the
     line of sight"""
     
@@ -84,7 +131,7 @@ def plot_EBV_distance(DistMod, EBV, DM_source, plot_file):
 
     plt.rcParams.update({'font.size': 18})
     
-    plt.plot(DistMod,EBV,'k-')
+    plt.plot(DistMod,EBV,'k-',alpha=0.2)
     
     [xmin,xmax,ymin,ymax] = plt.axis()
     
@@ -100,6 +147,17 @@ def plot_EBV_distance(DistMod, EBV, DM_source, plot_file):
         plt.arrow(xmax-1.0, (ymax-ymin)/2.0, 1.0, 0.0)
         plt.text('$source_{m-M}$ = '+str(round(DM_source,1))+' mag', 
                  xmax-1.0, (ymax-ymin)/2.0)
+                 
+    ydata = np.arange(EBV.min(), EBV.max()+0.2, 0.5)    
+    xdata = np.zeros(len(ydata))
+    xdata.fill(DM_lens)
+
+    plt.plot(xdata, ydata,'b--')
+    
+    if plot_interpolation:
+        f = EBV_interp(DistMod)
+        plt.plot(DistMod, f, 'k:')
+        
     plt.xlabel('Distance Modulus [mag]')
     plt.ylabel('E(B-V) [mag]')
 
