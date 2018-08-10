@@ -46,7 +46,9 @@ class Star:
         self.sig_VI = None
         self.VR = None
         self.sig_VR = None
-    
+        
+        self.lightcurves = {'g': None, 'r': None, 'i': None}
+        
     def compute_colours(self,use_inst=True,use_cal=False):
         """Method to calculate the star's colours and colour uncertainties, 
         given measurements in 3 passbands.  

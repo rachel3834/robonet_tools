@@ -39,11 +39,15 @@ def perform_event_analysis():
     
     log = start_log(params)
     
-    (star_catalog,catalog_header) = read_combined_star_catalog(params,log)
+    (star_catalog,image_trios,catalog_header) = read_combined_star_catalog(params,log)
     
-    target = find_target_data(params,star_catalog,log)
+    lightcurves = read_lightcurves(params,log)
+    
+    target = find_target_data(params,star_catalog,lightcurves,image_trios,log)
 
     (source, blend) = calc_source_blend_params(params,log)
+    
+    source = calc_source_lightcurve(source, target, log)
     
     (det_idx, cat_idx, close_cat_idx) = index_valid_star_entries(star_catalog,
                                                                 target,tol,log,
@@ -144,7 +148,9 @@ def get_args():
     
     str_keys = ['catalog_file', 'red_dir', 
                 'target_ra', 'target_dec', 
-                'star_class', 'isochrone_file']
+                'star_class', 'isochrone_file',
+                'target_lc_file_g', 'target_lc_file_r', 'target_lc_file_i']
+                
     for line in flines:
         
         (key, value) = line.replace('\n','').split()
@@ -174,10 +180,70 @@ def read_combined_star_catalog(params,log):
     
     star_catalog = Table(data)
     
+    data = hdulist[2].data
+    
+    image_trios = Table(data)
+    
     log.info('Read data from combined colour star catalog')
     
-    return star_catalog, header
+    return star_catalog, image_trios, header
 
+def read_lightcurves(params,log):
+    """Function to read in data from DanDIA format lightcurves for the target
+    star in 3 colours"""
+    
+    lightcurves = { 'g':None, 'r':None , 'i': None}
+    
+    for f in lightcurves.keys():
+        
+        lc_file = params['target_lc_file_'+f]
+        
+        if path.isfile(lc_file):
+            
+            lightcurves[f] = read_rbn_lightcurve(lc_file,log)
+
+    return lightcurves
+    
+def read_rbn_lightcurve(lc_file,log):
+    """Function to read a lightcurve file in RoboNet format.
+    Note: Reads the calibrated lightcurve data.    
+    """
+    
+    if path.isfile(lc_file):
+        
+        lines = open(lc_file, 'r').readlines()
+        
+        imnames = []
+        hjd = []
+        cal_mag = []
+        cal_mag_err = []
+        
+        for l in lines:
+            
+            if l[0:1] != '#':
+                
+                entries = l.replace('\n','').split()
+                
+                imnames.append( str(entries[0]).replace('.fits','').replace('_crop','') )
+                hjd.append( float(entries[1]) )
+                cal_mag.append( float(entries[8]) )
+                cal_mag_err.append( float(entries[9]) )
+        
+        lc = Table()
+        lc['images'] = imnames
+        lc['hjd'] = hjd
+        lc['mag'] = cal_mag
+        lc['mag_err'] = cal_mag_err
+    
+        log.info('Read data for lightcurve '+lc_file)
+        
+    else:
+        log.info('ERROR: Cannot access lightcurve file '+lc_file)
+        
+        lc = Table()
+    
+    return lc
+    
 def calc_source_blend_params(params,log):
     """Function to construct a dictionary of needed parameters for the 
     source and blend"""
@@ -256,7 +322,7 @@ def flux_to_mag_pylima(flux, flux_err):
         
     return mag, mag_err
 
-def find_target_data(params,star_catalog,log):
+def find_target_data(params,star_catalog,lightcurves,image_trios,log):
     """Function to identify the photometry for a given target, if present
     in the star catalogue"""
     
@@ -320,10 +386,75 @@ def find_target_data(params,star_catalog,log):
         target.transform_to_JohnsonCousins()
         
         log.info(target.summary(show_mags=False,johnsons=True))
-    
+        
+    for f in ['i', 'r', 'g']:
+        
+        if f in lightcurves.keys():
+            
+            images = []
+            hjds = []
+            mags = []
+            magerrs = []
+            
+            for i in image_trios[f+'_images']:
+                name = str(i).replace('\n','').replace('.fits','')
+
+                idx = np.where(lightcurves[f]['images'] == name)[0]
+                
+                if len(idx) > 0:
+                    images.append(lightcurves[f]['images'][idx][0])
+                    hjds.append(lightcurves[f]['hjd'][idx][0])
+                    mags.append(lightcurves[f]['mag'][idx][0])
+                    magerrs.append(lightcurves[f]['mag_err'][idx][0])
+                else:
+                    images.append(name)
+                    hjds.append(9999999.999)
+                    mags.append(99.999)
+                    magerrs.append(-9.999)
+                    
+            lc = Table()
+            lc['images'] = images
+            lc['hjd'] = hjds
+            lc['mag'] = mags
+            lc['mag_err'] = magerrs
+            
+            target.lightcurves[f] = lc
+            
     return target
 
-
+def calc_source_lightcurve(source, target, log):
+    """Function to calculate the lightcurve of the source, based on the
+    model source flux and the change in magnitude from the lightcurve"""
+    
+    log.info('\n')
+    
+    for f in ['i', 'r', 'g']:
+        
+        idx = np.where(target.lightcurves[f]['mag_err'] > 0)[0]
+        
+        dmag = np.zeros(len(target.lightcurves[f]['mag']))
+        dmag.fill(99.99999)
+        dmerr = np.zeros(len(target.lightcurves[f]['mag']))
+        dmerr.fill(-9.9999)
+        
+        dmag[idx] = target.lightcurves[f]['mag'][idx] - getattr(target,f)
+        dmerr[idx] = np.sqrt( (target.lightcurves[f]['mag_err'][idx])**2 + getattr(target,'sig_'+f)**2 )
+        
+        lc = Table()
+        lc['images'] = target.lightcurves[f]['images']
+        lc['hjd'] = target.lightcurves[f]['hjd']
+        lc['mag'] = getattr(source,f) + dmag
+        lc['mag_err'] = np.zeros(len(lc['mag']))
+        lc['mag_err'] = dmerr
+        
+        lc['mag_err'][idx] = np.sqrt( dmerr[idx]*dmerr[idx] + (getattr(source,'sig_'+f))**2 )
+    
+        log.info('Calculated the source flux lightcurve in '+f)
+        
+        source.lightcurves[f] = lc
+        
+    return source
+    
 def index_valid_star_entries(star_catalog,target,tol,log,valid_cat=False):
     """Function to return an index of all stars with both full instrumental and
     catalogue entries"""
@@ -432,6 +563,22 @@ def analyse_colour_mag_diagrams(params,star_catalog,catalog_header,
     plot_colour_mag_diagram(params,inst_g, inst_gi, linst_g, linst_gi, target, 
                             source, blend, RC, 'g', 'i', 'g', tol, log)
     
+def plot_crosshairs(fig,xvalue,yvalue,linecolour):
+    
+    ([xmin,xmax,ymin,ymax]) = plt.axis()
+    
+    xdata = np.linspace(xmin,xmax,10.0)
+    ydata = np.zeros(len(xdata))
+    ydata.fill(yvalue)
+    
+    plt.plot(xdata, ydata, linecolour+'-')
+    
+    ydata = np.linspace(ymin,ymax,10.0)
+    xdata = np.zeros(len(ydata))
+    xdata.fill(xvalue)
+    
+    plt.plot(xdata, ydata, linecolour+'-')
+    
     
 def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours, 
                             target, source, blend, RC, blue_filter, red_filter, 
@@ -440,6 +587,21 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
     local stars close to the target in a different colour from the rest, 
     and indicating the position of both the target and the Red Clump centroid.
     """
+    
+    def calc_colour_lightcurve(blue_lc, red_lc, y_lc):
+        
+        idx1 = np.where( red_lc['mag_err'] > 0.0 )[0]
+        idx2 = np.where( blue_lc['mag_err'] > 0.0 )[0]
+        idx3 = np.where( y_lc['mag_err'] > 0.0 )[0]
+        idx = set(idx1).intersection(set(idx2))
+        idx = list(idx.intersection(set(idx3)))
+        
+        mags = y_lc['mag'][idx]
+        magerr = y_lc['mag_err'][idx]
+        cols = blue_lc['mag'][idx] - red_lc['mag'][idx]
+        colerr = np.sqrt(blue_lc['mag_err'][idx]**2 + red_lc['mag_err'][idx]**2)
+        
+        return mags, magerr, cols, colerr
     
     fig = plt.figure(1,(10,10))
     
@@ -459,11 +621,25 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
     
     if getattr(source,blue_filter) != None and getattr(source,red_filter) != None:
         
+        plot_trail = False
+        
         plt.errorbar(getattr(source,col_key), getattr(source,yaxis_filter), 
                  yerr = getattr(source,'sig_'+yaxis_filter),
                  xerr = getattr(source,'sig_'+col_key), color='m',
                  marker='d',markersize=10, label='Source')
-    
+        
+        plot_crosshairs(fig,getattr(source,col_key),getattr(source,yaxis_filter),'m')
+        
+        if plot_trail:
+            red_lc = source.lightcurves[red_filter]
+            blue_lc = source.lightcurves[blue_filter]
+            y_lc = source.lightcurves[yaxis_filter]
+            
+            (smags, smagerr, scols, scolerr) = calc_colour_lightcurve(blue_lc, red_lc, y_lc)
+            
+            plt.errorbar(scols, smags, yerr = smagerr, xerr = scolerr, 
+                         color='m', marker='d',markersize=10, label='Source')
+                 
     if getattr(blend,blue_filter) != None and getattr(blend,red_filter) != None:
         
         plt.errorbar(getattr(blend,col_key), getattr(blend,yaxis_filter), 
@@ -476,8 +652,18 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
         plt.errorbar(getattr(target,col_key), getattr(target,yaxis_filter), 
                  yerr = getattr(target,'sig_'+yaxis_filter),
                  xerr = getattr(target,'sig_'+col_key), color='k',
-                 marker='x',markersize=10, label='Target at baseline')
-                 
+                 marker='x',markersize=10)
+        
+        red_lc = target.lightcurves[red_filter]
+        blue_lc = target.lightcurves[blue_filter]
+        y_lc = target.lightcurves[yaxis_filter]
+        
+        (tmags, tmagerr, tcols, tcolerr) = calc_colour_lightcurve(blue_lc, red_lc, y_lc)
+        
+        plt.errorbar(tcols, tmags, yerr = tmagerr,xerr = tcolerr, 
+                     color='k', marker='+',markersize=10, alpha=0.4,
+                     label='Blended target')
+        
     plt.errorbar(getattr(RC,col_key), getattr(RC,yaxis_filter), 
                  yerr=getattr(RC,'sig_'+yaxis_filter), 
                  xerr=getattr(RC,'sig_'+col_key),
@@ -535,6 +721,21 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
     """Function to plot a colour-colour diagram, if sufficient data are
     available within the given star catalog"""
     
+    def calc_colours(g_lc,r_lc,i_lc):
+        
+        idx1 = np.where( g_lc['mag_err'] > 0.0 )[0]
+        idx2 = np.where( r_lc['mag_err'] > 0.0 )[0]
+        idx3 = np.where( i_lc['mag_err'] > 0.0 )[0]
+        idx = set(idx1).intersection(set(idx2))
+        idx = list(idx.intersection(set(idx3)))
+        
+        gr = g_lc['mag'][idx] - r_lc['mag'][idx] - RC.Egr
+        gr_err = np.sqrt(g_lc['mag_err'][idx]**2 + r_lc['mag_err'][idx]**2)
+        ri = r_lc['mag'][idx] - i_lc['mag'][idx] - RC.Eri
+        ri_err = np.sqrt(r_lc['mag_err'][idx]**2 + i_lc['mag_err'][idx]**2)
+        
+        return gr, gr_err, ri, ri_err
+        
     tol = 2.0
     
     filters = { 'ip': 'SDSS-i', 'rp': 'SDSS-r', 'gp': 'SDSS-g' }
@@ -568,11 +769,43 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
                    label='Stars < '+str(round(tol,1))+'arcmin of target')
                      
         if source.gr_0 != None and source.ri_0 != None:
+            
+            plot_trail = False 
+            
             plt.plot(source.gr_0, source.ri_0,'md',markersize=10, label='Source')
             
+            plot_crosshairs(fig,source.gr_0, source.ri_0,'m')
+        
+            if plot_trail:
+                g_lc = source.lightcurves['g']
+                r_lc = source.lightcurves['r']
+                i_lc = source.lightcurves['i']
+                
+                (sgr, sgr_err, sri, sri_err) = calc_colours(g_lc,r_lc,i_lc)
+                
+                plt.errorbar(sgr, sri, yerr = sri_err, xerr = sgr_err, 
+                             color='m',marker='d',markersize=10, label='Source')
+        
         if blend.gr_0 != None and blend.ri_0 != None:
             plt.plot(blend.gr_0, blend.ri_0,'bv',markersize=10, label='Blend')
+
+        if target.lightcurves['g'] != None and target.lightcurves['r'] != None\
+            and target.lightcurves['i'] != None:
+            
+            g_lc = target.lightcurves['g']
+            r_lc = target.lightcurves['r']
+            i_lc = target.lightcurves['i']
+            
+            (tgr, tgr_err, tri, tri_err) = calc_colours(g_lc,r_lc,i_lc)
+            
+            plt.errorbar(tgr, tri, yerr = tri_err, xerr = tgr_err, 
+                         color='k',marker='+',markersize=10, alpha=0.4,
+                         label='Blended target')
         
+            plt.errorbar(target.gr_0, target.ri_0, 
+                         yerr = target.sig_ri_0, xerr = target.sig_gr_0, 
+                         color='k',marker='x',markersize=10)
+                         
         (spectral_type, luminosity_class, gr_colour, ri_colour) = spectral_type_data.get_spectral_class_data()
         
         plot_dwarfs = False

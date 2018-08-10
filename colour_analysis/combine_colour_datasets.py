@@ -15,24 +15,26 @@ import astropy.units as u
 from pyDANDIA import metadata
 from pyDANDIA import logs
 import numpy as np
+import select_image_trios
 
 VERSION = 'combine_colour_datasets_0.0.1'
 
 def combine_colour_datasets():
     """Function to plot colour magnitude and colour-colour plots"""
     
-    datasets = {'ip': None, 'rp': None, 'gp': None}
+    datasets = {'ip': None, 'rp': None, 'gp': None,
+                'ip_images': None, 'rp_images': None, 'gp_images': None}
     
     params = get_args()
     
     log = logs.start_stage_log( params['red_dir'], 'combine_colour_datasets', version=VERSION )
     
-    for f in datasets.keys():
+    for f in ['ip', 'rp', 'gp']:
         
         if params[f] != None:
             
-            datasets[f] = extract_star_catalog(params,f,log)
-    
+            (datasets[f],datasets[f+'_images']) = extract_star_catalog(params,f,log)
+        
     if datasets.values().count(None) >= 2:
         
         log.info('ERROR: Data available for only 1 passband, cannot produce figures')
@@ -42,8 +44,10 @@ def combine_colour_datasets():
         
     (combined_catalog,col_names,formats,units,f1,f2,f3) = combine_star_catalogs(datasets,log)
     
+    image_trios = identify_image_trios(params,datasets,log)
+    
     output_combined_catalog(combined_catalog,col_names,formats,units,f1,f2,f3,
-                            params,log)
+                            image_trios,params,log)
     
     logs.close_log(log)
     
@@ -84,7 +88,8 @@ def extract_star_catalog(params,filter_id,log):
     reduction_metadata = metadata.MetaData()
     reduction_metadata.load_a_layer_from_file( path.dirname(meta_file), path.basename(meta_file), 'star_catalog' )
     reduction_metadata.load_a_layer_from_file( path.dirname(meta_file), path.basename(meta_file), 'phot_calib' )
-
+    reduction_metadata.load_a_layer_from_file( path.dirname(meta_file), path.basename(meta_file), 'images_stats' )
+    
     star_catalog = Table()
     star_catalog['star_index'] = reduction_metadata.star_catalog[1]['star_index']
     star_catalog['RA'] = reduction_metadata.star_catalog[1]['RA_J2000']
@@ -102,10 +107,20 @@ def extract_star_catalog(params,filter_id,log):
     star_catalog['gmag'] = reduction_metadata.phot_calib[1]['gmag']
     star_catalog['e_gmag'] = reduction_metadata.phot_calib[1]['e_gmag']
 
+
     log.info('Extracted data for '+str(len(star_catalog))+\
             ' stars for dataset '+filter_id)
             
-    return star_catalog
+    image_table = Table()
+    image_table['im_name'] = reduction_metadata.images_stats[1]['IM_NAME']
+    image_table['fwhm_x'] = reduction_metadata.images_stats[1]['FWHM_X']
+    image_table['fwhm_y'] = reduction_metadata.images_stats[1]['FWHM_Y']
+    image_table['sky'] = reduction_metadata.images_stats[1]['SKY']
+    
+    log.info('Extracted data for '+str(len(image_table))+\
+            ' images in the dataset')
+            
+    return star_catalog, image_table
 
 def combine_star_catalogs(datasets,log):
     """Function to cross-match stars between datasets"""
@@ -141,7 +156,7 @@ def init_combined_catalog(datasets,f1,log):
     formats = [ 'J', 'D', 'D' ]
     units = [ None, 'deg', 'deg' ]
     
-    for f in datasets.keys():
+    for f in ['ip', 'rp', 'gp']:
         if datasets[f] != None:
             col_names += [ 'ref_mag_'+f, 'ref_mag_err_'+f, 
                            'cal_ref_mag_'+f, 'cal_ref_mag_err_'+f ]
@@ -294,8 +309,27 @@ def populate_combined_catalog(combined_catalog,f1,dataset1,match_index,log,
         
     return combined_catalog
 
+def identify_image_trios(params,datasets,log):
+    """Function to identify image trios between the datasets"""
+    
+    triodata = select_image_trios.TriColourDataset()
+    
+    triodata.gdir_stats = datasets['gp_images']
+    triodata.rdir_stats = datasets['rp_images']
+    triodata.idir_stats = datasets['ip_images']
+    
+    triodata.outdir = params['red_dir']
+    
+    triodata.make_image_table()
+    
+    triodata.quality_control()
+    
+    triodata.identify_image_trios()
+    
+    return triodata.image_trios_table
+    
 def output_combined_catalog(combined_catalog,col_names,formats,units,f1,f2,f3,
-                            params,log):
+                            image_trios, params,log):
     """Function to write the combined catalog to a FITS table"""
 
     header = fits.Header()
@@ -328,7 +362,16 @@ def output_combined_catalog(combined_catalog,col_names,formats,units,f1,f2,f3,
                                     
     tbhdu = fits.BinTableHDU.from_columns(col_list)
     
-    thdulist = fits.HDUList([prihdu, tbhdu])
+    col_list2 = [ fits.Column(name='g_images',format='60A', 
+                              unit=None, array=image_trios['g_images'].data),
+                  fits.Column(name='r_images',format='60A', 
+                              unit=None, array=image_trios['r_images'].data),
+                  fits.Column(name='i_images',format='60A', 
+                              unit=None, array=image_trios['i_images'].data) ]
+
+    tbhdu2 = fits.BinTableHDU.from_columns(col_list2)
+    
+    thdulist = fits.HDUList([prihdu, tbhdu, tbhdu2])
     
     catalog_file = path.join(params['red_dir'],'combined_star_catalog.fits')
     

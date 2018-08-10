@@ -111,16 +111,37 @@ class TriColourDataset:
         
         self.image_table[idx,5] = '1'
         
-    def identify_image_trios(self):
+    def identify_image_trios(self,txt_output=False):
         """Function to review the sorted image table to identify trios of
         images in different passbands that were taken sequentially in the 
         same observation subrequest."""
         
-        output = open(path.join(self.outdir, 'image_trios.txt'),'w')
-        output.write('# Image name   Filter  FWHM_X   FWHM_Y   SKY   QC\n')
-
+        def append_image_list(name,f,gimages,rimages,iimages):
+            
+            if 'g' in f:
+                gimages.append(name)
+            elif 'r' in f:
+                rimages.append(name)
+            elif 'i' in f:
+                iimages.append(name)
+            
+            return gimages,rimages,iimages
+        
+        if txt_output:
+            output = open(path.join(self.outdir, 'image_trios.txt'),'w')
+            output.write('# Image name   Filter  FWHM_X   FWHM_Y   SKY   QC\n')
+        
+        t = Table()
+        
+        gimages = []
+        rimages = []
+        iimages = []
+        
         for i in range(0,len(self.image_table[:,0])-2,1):
             
+            name1 = self.image_table[i,0]
+            name2 = self.image_table[i+1,0]
+            name3 = self.image_table[i+2,0]
             date1 = int(str(self.image_table[i,0]).split('-')[2])
             date2 = int(str(self.image_table[i+1,0]).split('-')[2])
             date3 = int(str(self.image_table[i+2,0]).split('-')[2])
@@ -141,19 +162,31 @@ class TriColourDataset:
                 
                 self.image_trios.append( (i,i+1,i+2) )
                 
-                for j in range(i,i+3,1):
-                    
-                    text = ''
-
-                    for item in self.image_table[j,:]:
+                (gimages,rimages,iimages) = append_image_list(name1,f1,gimages,rimages,iimages)
+                (gimages,rimages,iimages) = append_image_list(name2,f2,gimages,rimages,iimages)
+                (gimages,rimages,iimages) = append_image_list(name3,f3,gimages,rimages,iimages)
+                
+                if txt_output:
+                    for j in range(i,i+3,1):
                         
-                        text += ' '+str(item)
+                        text = ''
+    
+                        for item in self.image_table[j,:]:
+                            
+                            text += ' '+str(item)
+                            
+                        output.write(text+'\n')
                         
-                    output.write(text+'\n')
-                    
-                output.write('\n')
+                    output.write('\n')
         
-        output.close()
+        if txt_output:
+            output.close()
+        
+        t['g_images'] = gimages
+        t['r_images'] = rimages
+        t['i_images'] = iimages
+        
+        self.image_trios_table = t
         
 def select_image_trios():
     """Function to select trios of images in different passbands that were
@@ -167,7 +200,7 @@ def select_image_trios():
 
     dataset.quality_control()
     
-    dataset.identify_image_trios()
+    dataset.identify_image_trios(txt_output=True)
     
 def get_args():
     """Function to obtain the necessary parameters"""
