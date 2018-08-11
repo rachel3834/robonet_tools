@@ -16,6 +16,7 @@ from astropy import constants
 from astropy.time import Time
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import optimize
 import star_colour_data
 import spectral_type_data
 import jester_phot_transforms
@@ -28,6 +29,7 @@ import logging
 import stellar_radius_relations
 import lens_properties
 import pyslalib
+import phot_source_colour
 
 def perform_event_analysis():
     """Function to plot colour magnitude and colour-colour plots"""
@@ -48,6 +50,8 @@ def perform_event_analysis():
     (source, blend) = calc_source_blend_params(params,log)
     
     source = calc_source_lightcurve(source, target, log)
+    
+    measure_photometric_source_colours(params,target,log)
     
     (det_idx, cat_idx, close_cat_idx) = index_valid_star_entries(star_catalog,
                                                                 target,tol,log,
@@ -322,6 +326,21 @@ def flux_to_mag_pylima(flux, flux_err):
         
     return mag, mag_err
 
+def mag_to_flux_pylima(mag, mag_err):
+    """Function to convert magnitudes into flux units.
+    Magnitude zeropoint is that used by pyLIMA.    
+    """
+    
+    ZP = 27.40
+    
+    flux = 10**( (mag - ZP) / -2.5 )
+    
+    ferr = mag_err/(2.5*np.log10(np.e)) * flux
+    
+    return flux, ferr
+
+    
+
 def find_target_data(params,star_catalog,lightcurves,image_trios,log):
     """Function to identify the photometry for a given target, if present
     in the star catalogue"""
@@ -395,6 +414,8 @@ def find_target_data(params,star_catalog,lightcurves,image_trios,log):
             hjds = []
             mags = []
             magerrs = []
+            fluxes = []
+            fluxerrs = []
             
             for i in image_trios[f+'_images']:
                 name = str(i).replace('\n','').replace('.fits','')
@@ -406,21 +427,54 @@ def find_target_data(params,star_catalog,lightcurves,image_trios,log):
                     hjds.append(lightcurves[f]['hjd'][idx][0])
                     mags.append(lightcurves[f]['mag'][idx][0])
                     magerrs.append(lightcurves[f]['mag_err'][idx][0])
+                    (flux,ferr) = mag_to_flux_pylima(lightcurves[f]['mag'][idx][0],
+                                                     lightcurves[f]['mag_err'][idx][0])
+                    fluxes.append(flux)
+                    fluxerrs.append(ferr)
+                    
                 else:
                     images.append(name)
                     hjds.append(9999999.999)
                     mags.append(99.999)
                     magerrs.append(-9.999)
+                    fluxes.append(9999999.999)
+                    fluxerrs.append(-9999999.999)
                     
             lc = Table()
             lc['images'] = images
             lc['hjd'] = hjds
             lc['mag'] = mags
             lc['mag_err'] = magerrs
+            lc['flux'] = fluxes
+            lc['flux_err'] = fluxerrs
             
             target.lightcurves[f] = lc
             
     return target
+
+def measure_photometric_source_colours(params,target,log):
+    """Function to measure the source colours directly from multi-passband
+    photometry"""
+    
+    log.info('\n')
+    log.info('Attempting to estimate the source colours directly from the photometry')
+    
+    for f1,f2 in [ ('g','r'), ('g','i'), ('r','i') ]:
+        
+        (source_colour,sig_source_colour,blend_flux, sig_blend_flux,fit) = phot_source_colour.measure_source_colour_odr(target.lightcurves[f1],
+                                                                    target.lightcurves[f2])
+        
+        log.info('Fit to '+f2+' vs. '+f1+' flux:')
+        log.info('Source colour ('+f1+'-'+f2+') = '+str(source_colour)+' +/- '+str(sig_source_colour))
+        log.info('Blend flux in '+f2+': '+str(blend_flux)+' +/- '+str(sig_blend_flux))
+    
+    
+        plot_file = path.join(params['red_dir'], 'flux_curve_'+f1+'_'+f2+'.png')
+    
+        phot_source_colour.plot_bicolour_flux_curves(target.lightcurves[f1],
+                                                     target.lightcurves[f2],
+                                                     fit,
+                                                     plot_file)
 
 def calc_source_lightcurve(source, target, log):
     """Function to calculate the lightcurve of the source, based on the
