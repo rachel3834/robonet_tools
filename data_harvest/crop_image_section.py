@@ -28,11 +28,8 @@ def process_image_set():
     
     pixscale = get_pixel_scale(header)
     
-    if params['sub_image_width_units'] == 'arcmins':
-        crop_half_width_pix = int((params['sub_image_width']*60.0)/pixscale)/2
-    elif params['sub_image_width_units'] == 'pixels':
-        crop_half_width_pix = int(params['sub_image_width'])/2
-        
+    crop_half_width_pix = int((params['sub_image_width']*60.0)/pixscale)/2
+    
     print('Half width of sub-image will be '+str(crop_half_width_pix)+' pix')
     
     if params['xoffset'] != 0.0 or params['yoffset'] != 0.0:
@@ -149,7 +146,7 @@ def get_args():
         params['dir_path'] = raw_input('Please enter the path to the image directory: ')
         params['target_ra'] = raw_input('Please enter the target RA: ')    
         params['target_dec'] = raw_input('Please enter the target Dec: ')    
-        params['sub_image_width'] = raw_input('Please enter the width of the cropped image [e.g. 4.0arcmins or 616pixels]: ')
+        params['sub_image_width'] = float(raw_input('Please enter the width of the cropped image [arcmin]: '))
         params['xoffset'] = float(raw_input('Please enter the box offset in the X-axis: '))
         params['yoffset'] = float(raw_input('Please enter the box offset in the Y-axis: '))
         
@@ -158,19 +155,9 @@ def get_args():
         params['dir_path'] = sys.argv[1]
         params['target_ra'] = sys.argv[2]
         params['target_dec'] = sys.argv[3]
-        params['sub_image_width'] = sys.argv[4]
+        params['sub_image_width'] = float(sys.argv[4])
         params['xoffset'] = float(sys.argv[5])
         params['yoffset'] = float(sys.argv[6])
-    
-    if 'arcmins' in params['sub_image_width']:
-        params['sub_image_width'] = float(params['sub_image_width'].replace('arcmins','').replace('\n',''))
-        params['sub_image_width_units'] = 'arcmins'
-    elif 'pixels' in params['sub_image_width']:
-        params['sub_image_width'] = float(params['sub_image_width'].replace('pixels','').replace('\n',''))
-        params['sub_image_width_units'] = 'pixels'
-    else:
-        print('Error: Unrecognized units for sub image width')
-        exit()
         
     return params
 

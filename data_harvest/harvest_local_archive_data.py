@@ -5,8 +5,9 @@ Created on Fri Jul 13 13:40:54 2018
 @author: rstreet
 """
 
-from sys import argv
 from os import path
+from sys import argv
+import glob
 from datetime import datetime
 from commands import getstatusoutput
 from shutil import copy
@@ -22,28 +23,41 @@ def archive_spider():
         print('Error: Cannot find archive data at '+params['archive_path'])
         exit()
     
-        for site in params['site_list']:
-            
-            camera_list = glob.glob(path.join(params['archive_path'],site,'fl*'))
-            
-            for camera_dir in camera_list:
-                
-                camera = path.basename(camera_dir)
-                
-                date_list = glob.glob(path.join(camera_dir,'20??????'))
-                
-                for date_dir in date_list:
-                    
-                    date = datetime.strptime(date_dir,"%Y%m%d")
-                    
-                    if date >= params['rome_start_date']:
-                        
-                        file_list = glob.glob(path.join(date_dir,'????????-'+camera+'-????????-????-e91.fits.fz'))
-                        
-                        for f in file_list:
-                                                        
-                            (rome_image,image_target) = check_matching_image(params,f)
-                            
+    for site in params['site_list']:
+
+        camera_list = glob.glob(path.join(params['archive_path'],site,'fl??'))
+
+        print('Found data for '+str(len(camera_list))+' cameras for site '+site)
+
+        for camera_dir in camera_list:
+
+            camera = path.basename(camera_dir)
+
+            print('Working on data from '+camera)
+
+            date_list = glob.glob(path.join(camera_dir,'20??????'))
+
+            print('Found '+str(len(date_list))+' nights of data')
+
+            for date_dir in date_list:
+
+                date = datetime.strptime(path.basename(date_dir),"%Y%m%d")
+
+                if date >= params['rome_start_date']:
+
+                    print('Walking over data for night '+date.strftime('%Y-%m-%d')+', camera '+camera)
+
+                    searchstr = path.join(date_dir,'processed','????????-'+camera+'-????????-????-e91.fits.fz')
+                    file_list = glob.glob(searchstr)
+
+                    print('Found '+str(len(file_list))+' files')
+
+                    for f in file_list:
+
+                        (rome_image,image_target) = check_matching_image(params,f)
+
+                        if rome_image:
+
                             copy_image_to_local_archive(params,f,image_target)
                             
 def get_args():
@@ -71,10 +85,20 @@ def get_args():
                             'ROME-FIELD-04': '/data09/ROME_Archive/ROME-FIELD-04',
                             'ROME-FIELD-05': '/data09/ROME_Archive/ROME-FIELD-05',
                             'ROME-FIELD-06': '/data09/ROME_Archive/ROME-FIELD-06',
-                            'ROME-FIELD-07': '/data10/ROME_Archive/ROME-FIELD-07',
-                            'ROME-FIELD-08': '/data10/ROME_Archive/ROME-FIELD-08',
-                            'ROME-FIELD-09': '/data10/ROME_Archive/ROME-FIELD-09',
-                            'ROME-FIELD-10': '/data10/ROME_Archive/ROME-FIELD-10',
+                            'ROME-FIELD-07': '/data09/ROME_Archive/ROME-FIELD-07',
+                            'ROME-FIELD-08': '/data09/ROME_Archive/ROME-FIELD-08',
+                            'ROME-FIELD-09': '/data09/ROME_Archive/ROME-FIELD-09',
+                            'ROME-FIELD-10': '/data09/ROME_Archive/ROME-FIELD-10',
+                            'ROME-FIELD-11': '/data09/ROME_Archive/ROME-FIELD-11',
+                            'ROME-FIELD-12': '/data09/ROME_Archive/ROME-FIELD-12',
+                            'ROME-FIELD-13': '/data09/ROME_Archive/ROME-FIELD-13',
+                            'ROME-FIELD-14': '/data09/ROME_Archive/ROME-FIELD-14',
+                            'ROME-FIELD-15': '/data09/ROME_Archive/ROME-FIELD-15',
+                            'ROME-FIELD-16': '/data09/ROME_Archive/ROME-FIELD-16',
+                            'ROME-FIELD-17': '/data09/ROME_Archive/ROME-FIELD-17',
+                            'ROME-FIELD-18': '/data09/ROME_Archive/ROME-FIELD-18',
+                            'ROME-FIELD-19': '/data09/ROME_Archive/ROME-FIELD-19',
+                            'ROME-FIELD-20': '/data09/ROME_Archive/ROME-FIELD-20',
                             }
     
     if params['field'] not in params['local_archive'].keys():
@@ -88,16 +112,16 @@ def check_matching_image(params,f):
     """Function to check whether the image given matches the fields selected
     for transfer to the local archive or not"""
     
-    image_target = getstatusoutput('gethead OBJECT '+f)
-    
+    (stat, image_target) = getstatusoutput('gethead OBJECT '+f)
+
     if params['field'] != 'ALL':
         
         template = params['field']
         
     else:
         template = 'ROME-FIELD'
-    
-    if template in coutput:
+
+    if template in image_target:
         
         return True, image_target
         
@@ -110,11 +134,19 @@ def copy_image_to_local_archive(params,f,image_target):
     local data repository, distributing the data across disks as necessary"""
     
     if image_target in params['local_archive'].keys():
+
+        dest = path.join(params['local_archive'][image_target],path.basename(f))
+
+        if path.isfile(dest) == False:
+
+            copy(f,params['local_archive'][image_target])
         
-        copy(f,params['local_archive'][image_target])
-        
-        print('Copied '+image_target+' '+path.basename(f)+' -> '+params['local_archive'][image_target])
-        
+            print('Copied '+image_target+' '+path.basename(f)+' -> '+params['local_archive'][image_target])
+
+        else:
+
+            print('Image '+path.basename(f)+' already archived at '+params['local_archive'][image_target])
+
     
 if __name__ == '__main__':
     
