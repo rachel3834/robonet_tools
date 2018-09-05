@@ -29,9 +29,9 @@ def process_image_set():
     pixscale = get_pixel_scale(header)
     
     if params['option'] == 'arcmin':
-        crop_half_width_pix = int((params['sub_image_width']*60.0)/pixscale)/2
+        crop_half_width_pix = int((params['sub_image_width_arcmin']*60.0)/pixscale)/2
     else:
-        crop_half_width_pix = int(params['sub_image_width']/2.0)
+        crop_half_width_pix = int(params['sub_image_width_pixels']/2.0)
         
     print('Half width of sub-image will be '+str(crop_half_width_pix)+' pix')
     
