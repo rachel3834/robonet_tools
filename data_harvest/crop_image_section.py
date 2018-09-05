@@ -28,8 +28,11 @@ def process_image_set():
     
     pixscale = get_pixel_scale(header)
     
-    crop_half_width_pix = int((params['sub_image_width']*60.0)/pixscale)/2
-    
+    if params['option'] == 'arcmin':
+        crop_half_width_pix = int((params['sub_image_width']*60.0)/pixscale)/2
+    else:
+        crop_half_width_pix = int(params['sub_image_width']/2.0)
+        
     print('Half width of sub-image will be '+str(crop_half_width_pix)+' pix')
     
     if params['xoffset'] != 0.0 or params['yoffset'] != 0.0:
@@ -145,8 +148,13 @@ def get_args():
         
         params['dir_path'] = raw_input('Please enter the path to the image directory: ')
         params['target_ra'] = raw_input('Please enter the target RA: ')    
-        params['target_dec'] = raw_input('Please enter the target Dec: ')    
-        params['sub_image_width'] = float(raw_input('Please enter the width of the cropped image [arcmin]: '))
+        params['target_dec'] = raw_input('Please enter the target Dec: ')
+        params['option'] = raw_input('Specify width of cropped image in arcmin or pixels? [arcmin,pixels]: ')
+        params['option'] = str(params['option']).lower()
+        if params['option'] == 'arcmin':
+            params['sub_image_width_arcmin'] = float(raw_input('Please enter the width of the cropped image [arcmin]: '))
+        else:
+            params['sub_image_width_pixels'] = float(raw_input('Please enter the width of the cropped image [pixels]: '))
         params['xoffset'] = float(raw_input('Please enter the box offset in the X-axis: '))
         params['yoffset'] = float(raw_input('Please enter the box offset in the Y-axis: '))
         
@@ -155,9 +163,13 @@ def get_args():
         params['dir_path'] = sys.argv[1]
         params['target_ra'] = sys.argv[2]
         params['target_dec'] = sys.argv[3]
-        params['sub_image_width'] = float(sys.argv[4])
-        params['xoffset'] = float(sys.argv[5])
-        params['yoffset'] = float(sys.argv[6])
+        params['option'] = sys.argv[4]
+        if params['option'] == 'arcmin':
+            params['sub_image_width_arcmin'] = float(sys.argv[5])
+        else:
+            params['sub_image_width_pixels'] = float(sys.argv[5])
+        params['xoffset'] = float(sys.argv[6])
+        params['yoffset'] = float(sys.argv[7])
         
     return params
 

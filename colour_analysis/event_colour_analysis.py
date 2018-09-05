@@ -458,8 +458,8 @@ def measure_photometric_source_colours(params,target,log):
     
     log.info('\n')
     log.info('Attempting to estimate the source colours directly from the photometry')
-    
-    for f1,f2 in [ ('g','r'), ('g','i'), ('r','i') ]:
+
+    for f1,f2 in [ ('g','r'), ('g','i'), ('r','i')]:
         
         (source_colour,sig_source_colour,blend_flux, sig_blend_flux,fit) = phot_source_colour.measure_source_colour_odr(target.lightcurves[f1],
                                                                     target.lightcurves[f2])
@@ -468,14 +468,38 @@ def measure_photometric_source_colours(params,target,log):
         log.info('Source colour ('+f1+'-'+f2+') = '+str(source_colour)+' +/- '+str(sig_source_colour))
         log.info('Blend flux in '+f2+': '+str(blend_flux)+' +/- '+str(sig_blend_flux))
     
-    
+        setattr(target,'fb_'+f2, blend_flux)
+        setattr(target,'sig_fb_'+f2, sig_blend_flux)
+        
         plot_file = path.join(params['red_dir'], 'flux_curve_'+f1+'_'+f2+'.png')
     
         phot_source_colour.plot_bicolour_flux_curves(target.lightcurves[f1],
                                                      target.lightcurves[f2],
-                                                     fit,
+                                                     fit,f1,f2,
                                                      plot_file)
-
+    
+    try:
+        
+        #gr = target.fb_g / target.fb_r
+        #sig_gr = np.sqrt( (target.sig_fb_g/target.fb_g)**2 + (target.sig_fb_r/target.fb_r)**2 )
+        
+        #setattr(target,'blend_gr',gr)
+        #setattr(target,'blend_sig_gr',sig_gr)
+        
+        ri = target.fb_r / target.fb_i
+        sig_ri = np.sqrt( (target.sig_fb_r/target.fb_r)**2 + (target.sig_fb_i/target.fb_i)**2 )
+        
+        setattr(target,'blend_ri',ri)
+        setattr(target,'blend_sig_ri',sig_ri)
+        
+        log.info('Blend colours:')
+        log.info('(g-r)_b = '+str(target.blend_gr)+' +/- '+str(target.blend_sig_gr))
+        log.info('(r-i)_b = '+str(target.blend_ri)+' +/- '+str(target.blend_sig_ri))
+        
+    except AttributeError:
+        
+        pass
+    
 def calc_source_lightcurve(source, target, log):
     """Function to calculate the lightcurve of the source, based on the
     model source flux and the change in magnitude from the lightcurve"""
