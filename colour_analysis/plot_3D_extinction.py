@@ -13,15 +13,15 @@ from scipy.interpolate import interp1d
 import jester_phot_transforms
 
 def plot_3D_extinction_data():
-    """Function to plot the 3D extinction derived from the maps from Pan-STARRS1
+    """Function to plot the 3D reddening derived from the maps from Pan-STARRS1
     by Green et al. 2015ApJ...810...25G"""
     
     if len(argv) == 1:
         
         data_file = raw_input('Please enter the path to the data file: ')
         plot_file = raw_input('Please enter the path to the output plot file: ')
-        D_source = float(raw_input('Please enter the distance of the source: '))
-        D_lens = float(raw_input('Please enter the distance of the lens: '))
+        D_source = float(raw_input('Please enter the distance of the source [kpc]: '))
+        D_lens = float(raw_input('Please enter the distance of the lens [kpc]: '))
         sig_D_lens = float(raw_input('Please enter the uncertainty on the distance of the lens: '))
         
     else:
@@ -41,9 +41,10 @@ def plot_3D_extinction_data():
     print('Source: '+str(DM_source)+' +/- '+str(sig_DM_source)+' mag')
     print('Lens: '+str(DM_lens)+' +/- '+str(sig_DM_lens)+' mag')
     
-    (EBV_interp, EBV_lens, sig_EBV_lens) = interpolate_extinction(DistMod, EBV, DM_lens, sig_DM_lens)
+    (EBV_interp, EBV_lens, sig_EBV_lens, Av_lens, sig_Av_lens) = interpolate_extinction(DistMod, EBV, DM_lens, sig_DM_lens)
     
-    print('Interpolated estimate of the extinction to the lens:')
+    print('Interpolated estimate of the extinction and reddening to the lens:')
+    print('Av = '+str(Av_lens)+' +/- '+str(sig_Av_lens))
     print('E(B-V) = '+str(EBV_lens)+' +/- '+str(sig_EBV_lens))
     
     plot_EBV_distance(DistMod, EBV, DM_source, DM_lens, EBV_interp, plot_file)
@@ -109,8 +110,13 @@ def read_3D_map_data(data_file):
     return DistMod, EBV
     
 def interpolate_extinction(DistMod, EBV, DM_lens, sig_DM_lens):
-    """Function to interpolate the extinction curve and extract a 
-    precise estimate for the extinction suffered by the lens"""
+    """Function to interpolate the reddening curve and extract a 
+    precise estimate for the reddening suffered by the lens.
+
+    The resulting E(B-V)_lens value is used to estimate extinction, Av
+    based on the relative visibility value for the Bulge determined by
+    Nataf et al 2012, 2013, ApJ, 769, 88, Rv~2.5.
+    """
     
     f = interp1d(DistMod, EBV)
     
@@ -121,10 +127,17 @@ def interpolate_extinction(DistMod, EBV, DM_lens, sig_DM_lens):
     
     sig_EBV_lens = (max_ebv - min_ebv) / 2.0
     
-    return f, EBV_lens, sig_EBV_lens
+    Rv = 2.5
+    sig_Rv = 0.2
+    
+    Av = Rv * EBV_lens
+    
+    sig_Av = np.sqrt( (sig_Rv/Rv)**2 + (sig_EBV_lens/EBV_lens)**2 ) * Av
+    
+    return f, EBV_lens, sig_EBV_lens, Av, sig_Av
     
 def plot_EBV_distance(DistMod, EBV, DM_source, DM_lens, EBV_interp, plot_file, plot_interpolation=True):
-    """Function to plot the extinction as a function of distance along the
+    """Function to plot the reddening as a function of distance along the
     line of sight"""
     
     fig = plt.figure(1,(10,10))
