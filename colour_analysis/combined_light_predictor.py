@@ -9,12 +9,14 @@ from os import path
 from sys import argv
 import numpy as np
 import json
+import jester_phot_transforms
 
 class Star():
     """Class to describe the photometric properties of a single stellar object"""
     
     def __init__(self,dm=None):
         self.name = None
+        self.MV = None
         self.Mg = None
         self.Mr = None
         self.Mi = None
@@ -24,13 +26,14 @@ class Star():
         self.MKs = None
         self.W149 = None
         self.Z087 = None
+        self.mV = None
         self.distance_modulus = dm
         self.ZP = 25.0
         
     def calculate_colours(self):
         
         colours = [('g','r'), ('r','i'), ('g','i'), 
-                   ('J','H'), ('H','Ks'), ('J','Ks')]
+                   ('J','H'), ('H','Ks'), ('J','Ks'),('B','V')]
         
         for band1,band2 in colours:
             
@@ -47,12 +50,18 @@ class Star():
     
     def calculate_apparent_magnitudes(self):
         
-        for band in ['g','r','i','z','J','H','Ks','W149','Z087']:
+        for band in ['B','V','g','r','i','z','J','H','Ks','W149','Z087']:
             
-            m = getattr(self,'M'+band)
-            m = m + self.distance_modulus
-            setattr(self,'m'+band,m)
-    
+            try:
+                m = getattr(self,'M'+band)
+                
+                if m != None:
+                    m = m + self.distance_modulus
+                    setattr(self,'m'+band,m)
+            
+            except AttributeError:
+                pass
+        
     def summary(self):
         return self.name+' '+str(round(self.Mg,3))+' '+str(round(self.Mr,3))+' '+str(round(self.Mi,3))+' '+str(round(self.Mz,3))+\
                          ' '+str(round(self.MJ,3))+' '+str(round(self.MH,3))+' '+str(round(self.MKs,3))
@@ -76,6 +85,26 @@ class Star():
         setattr(self,'MW149',mcomb)
         setattr(self,'MZ087',z)
         
+    def apply_extinction(self,Av,EBV):
+        
+        if self.mV != None and self.BV != None:
+            
+            self.mV_corr = self.mV + Av
+            self.BV_corr = self.BV + EBV
+            
+    def transform_extinc_corr_Johnson_SDSS(self):
+        
+        results = jester_phot_transforms.transform_JohnsonCousins_to_SDSS(BV=self.BV_corr, 
+                                                                          sigBV=0.0,
+                                                                          V=self.mV_corr, 
+                                                                          sigV=0.0)
+        self.mg_corr = results['g']
+        self.sig_mg_corr = results['sigg']
+        self.mr_corr = results['r']
+        self.sig_mr_corr = results['sigr']
+        self.gr_corr = results['g-r']
+        self.sig_gr_corr = results['siggr']
+
 class BinaryStar():
     """Class to described the photometric properties of a binary star"""
     
@@ -113,7 +142,7 @@ class BinaryStar():
         
     def calculate_combined_light(self):
         
-        for band in ['g','r','i','J','H','Ks']:
+        for band in ['B','V','g','r','i','J','H','Ks']:
             
             m = getattr(self.star1,'M'+band)
             f1 = mag_to_flux(m,self.star1.ZP)
@@ -136,16 +165,23 @@ class BinaryStar():
         self.star1.calculate_apparent_magnitudes()
         self.star2.calculate_apparent_magnitudes()
             
-        for band in ['g','r','i','J','H','Ks']:
+        for band in ['B','V','g','r','i','J','H','Ks']:
             
-            m = getattr(self,'M'+band+'_combined')
-            m = m + self.distance_modulus
-            setattr(self,'m'+band+'_combined',m)
-    
+            try:
+                m = getattr(self,'M'+band+'_combined')
+                
+                if m != None:
+                    
+                    m = m + self.distance_modulus
+                    setattr(self,'m'+band+'_combined',m)
+                
+            except AttributeError:
+                pass
+            
     def calculate_combined_colours(self):
         
-        passbands1 = [ 'g', 'r', 'J', 'H', 'J' ]
-        passbands2 = [ 'r', 'i', 'H', 'Ks', 'Ks' ]
+        passbands1 = [ 'B', 'g', 'r', 'J', 'H', 'J' ]
+        passbands2 = [ 'V', 'r', 'i', 'H', 'Ks', 'Ks' ]
         
         for i in range(0,len(passbands1),1):
             
@@ -158,6 +194,50 @@ class BinaryStar():
             col = m1 - m2
             
             setattr(self,band1+band2+'_combined',col)
+    
+    def apply_extinction(self,Av,EBV):
+        
+        for sid in [ 'star1', 'star2' ]:
+            
+            star = getattr(self,sid)
+            
+            star.apply_extinction(Av,EBV)
+    
+            setattr(self,sid,star)
+        
+        try:
+            mv = getattr(self,'mV_combined')
+            bv = getattr(self,'BV_combined')
+            
+            mv = mv + Av
+            bv = bv + EBV
+            
+            setattr(self,'mV_combined_corr',mv)
+            setattr(self,'BV_combined_corr',bv)
+            
+        except:
+            pass
+    
+    def transform_extinc_corr_Johnson_SDSS(self):
+        
+        results = jester_phot_transforms.transform_JohnsonCousins_to_SDSS(BV=self.BV_combined_corr, 
+                                                                          sigBV=0.0,
+                                                                          V=self.mV_combined_corr, 
+                                                                          sigV=0.0)
+        self.mg_combined_corr = results['g']
+        self.sig_mg_combined_corr = results['sigg']
+        self.mr_combined_corr = results['r']
+        self.sig_mr_combined_corr = results['sigr']
+        self.gr_combined_corr = results['g-r']
+        self.sig_gr_combined_corr = results['siggr']
+        
+        for sid in [ 'star1', 'star2' ]:
+            
+            star = getattr(self,sid)
+            
+            star.transform_extinc_corr_Johnson_SDSS()
+            
+            setattr(self,sid,star)
             
     def output_table(self, output_path):
                 

@@ -41,7 +41,7 @@ def plot_3D_extinction_data():
     print('Source: '+str(DM_source)+' +/- '+str(sig_DM_source)+' mag')
     print('Lens: '+str(DM_lens)+' +/- '+str(sig_DM_lens)+' mag')
     
-    (EBV_interp, EBV_lens, sig_EBV_lens, Av_lens, sig_Av_lens) = interpolate_extinction(DistMod, EBV, DM_lens, sig_DM_lens)
+    (EBV_interp, EBV_lens, sig_EBV_lens, Av_lens, sig_Av_lens) = interpolate_colour_excess(DistMod, EBV, DM_lens, sig_DM_lens)
     
     print('Interpolated estimate of the extinction and reddening to the lens:')
     print('Av = '+str(Av_lens)+' +/- '+str(sig_Av_lens))
@@ -51,7 +51,10 @@ def plot_3D_extinction_data():
     
     results = jester_phot_transforms.transform_JohnsonCousins_to_SDSS(BV=EBV_lens, sigBV=sig_EBV_lens)
     
+    print('Results from Jester transforms:')
     print('E(g-r) = '+str(results['g-r'])+' +/- '+str(results['siggr']))
+    
+    calc_schlafly_reddening(EBV_lens,sig_EBV_lens)
     
 def calc_distance_modulus(D, sig_D):
     """Function to calculate the distance modulus.
@@ -109,8 +112,9 @@ def read_3D_map_data(data_file):
     
     return DistMod, EBV
     
-def interpolate_extinction(DistMod, EBV, DM_lens, sig_DM_lens):
-    """Function to interpolate the reddening curve and extract a 
+def interpolate_colour_excess(DistMod, EBV, DM_lens, sig_DM_lens, 
+                              Rv_GB=2.5, sig_Rv_GB=0.2):
+    """Function to interpolate the colour excess curve and extract a 
     precise estimate for the reddening suffered by the lens.
 
     The resulting E(B-V)_lens value is used to estimate extinction, Av
@@ -127,12 +131,9 @@ def interpolate_extinction(DistMod, EBV, DM_lens, sig_DM_lens):
     
     sig_EBV_lens = (max_ebv - min_ebv) / 2.0
     
-    Rv = 2.5
-    sig_Rv = 0.2
+    Av = Rv_GB * EBV_lens
     
-    Av = Rv * EBV_lens
-    
-    sig_Av = np.sqrt( (sig_Rv/Rv)**2 + (sig_EBV_lens/EBV_lens)**2 ) * Av
+    sig_Av = np.sqrt( (sig_Rv_GB/Rv_GB)**2 + (sig_EBV_lens/EBV_lens)**2 ) * Av
     
     return f, EBV_lens, sig_EBV_lens, Av, sig_Av
     
@@ -177,7 +178,51 @@ def plot_EBV_distance(DistMod, EBV, DM_source, DM_lens, EBV_interp, plot_file, p
     plt.grid()
     
     plt.savefig(plot_file)
+
+def interpolate_Rv_to_bandpass(Rv,bandpass):
+    """Function to convert the reddening value provided in the V-band (Rv)
+    to the bandpass indicated, using the data from Table 6 from 
+    Schalafly & Finkbeiner, 2011, ApJ, 737, 103.
+    """
+
+    Rv_table_data = np.array( [ 2.1, 3.1, 4.1, 5.1 ] )
     
+    table_data = { 'SDSS-g': [3.843, 3.303, 3.054, 2.910],
+                   'SDSS-r': [2.255, 2.285, 2.300, 2.308],
+                   'SDSS-i': [1.583, 1.698, 1.751, 1.782],
+                   'SDSS-z': [1.211, 1.263, 1.286, 1.300] }    
+    
+    if Rv < Rv_table_data.min() or Rv > Rv_table_data.max():
+
+        print('ERROR: Rv ='+str(Rv)+' lies outside the range of available data.  No estimation of reddening coefficient can be provided.')
+        exit()
+
+    if bandpass not in table_data.keys():
+        
+        print('ERROR: No data available for bandpass '+bandpass+'. No estimation of reddening coefficient can be provided.')
+        exit()
+
+    ydata = table_data[bandpass]
+
+    f = interp1d(Rv_table_data, ydata)
+    
+    R_bandpass = f(Rv)
+    
+    return R_bandpass
+
+def calc_schlafly_reddening(EBV_lens, sig_EBV_lens, Rv_GB=2.5, sig_Rv_GB=0.2):
+    """Function to calculate the exinction in different bandpasses, based on 
+    the data in Schalafly & Finkbeiner, 2011, ApJ, 737, 103.
+    """
+    
+    print('Extinction and reddening from estimated from Schlafly & Finkbeiner data:')
+    for b in ['SDSS-g', 'SDSS-r', 'SDSS-i']:
+        Rb = interpolate_Rv_to_bandpass(Rv_GB,b)
+        Ab = Rb * EBV_lens
+        sig_Ab = (sig_EBV_lens/EBV_lens) * Ab
+        print('A('+b+') = '+str(Ab)+' +/- '+str(sig_Ab)+', Rb = '+str(Rb))
+
+
 if __name__ == '__main__':
 
     plot_3D_extinction_data()
