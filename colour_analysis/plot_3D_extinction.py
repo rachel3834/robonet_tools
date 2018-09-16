@@ -220,7 +220,7 @@ def calc_schlafly_reddening(EBV_lens, sig_EBV_lens, Rv_GB=2.5, sig_Rv_GB=0.2):
         Rb = interpolate_Rv_to_bandpass(Rv_GB,b)
         Ab = Rb * EBV_lens
         sig_Ab = (sig_EBV_lens/EBV_lens) * Ab
-        print('A('+b+') = '+str(Ab)+' +/- '+str(sig_Ab)+', Rb = '+str(Rb))
+        print('A('+b+') = '+str(Ab)+' +/- '+str(sig_Ab)+', R('+b+') = '+str(Rb))
 
 
 if __name__ == '__main__':

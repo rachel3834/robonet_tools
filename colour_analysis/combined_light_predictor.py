@@ -85,12 +85,32 @@ class Star():
         setattr(self,'MW149',mcomb)
         setattr(self,'MZ087',z)
         
-    def apply_extinction(self,Av,EBV):
+    def apply_extinction(self,extinction):
         
-        if self.mV != None and self.BV != None:
+        for f in ['V', 'g', 'r', 'i']:
             
-            self.mV_corr = self.mV + Av
-            self.BV_corr = self.BV + EBV
+            if 'A'+f in extinction.keys():
+
+                m = getattr(self,'m'+f)
+                
+                m = m + extinction['A'+f]
+                
+                setattr(self,'m'+f+'_corr',m)
+                
+        if 'EBV' in extinction.keys():
+            self.BV_corr = self.BV + extinction['EBV']
+        
+        c1 = ['g', 'r']
+        c2 = ['r', 'i']
+        
+        for i in range(0,2,1):
+            
+            m1 = getattr(self,'m'+c1[i])
+            m2 = getattr(self,'m'+c2[i])
+            
+            col = m1 - m2
+            
+            setattr(self, c1+c2+'_corr', col)
             
     def transform_extinc_corr_Johnson_SDSS(self):
         
@@ -195,28 +215,49 @@ class BinaryStar():
             
             setattr(self,band1+band2+'_combined',col)
     
-    def apply_extinction(self,Av,EBV):
+    def apply_extinction(self,extinction):
         
         for sid in [ 'star1', 'star2' ]:
             
             star = getattr(self,sid)
             
-            star.apply_extinction(Av,EBV)
+            star.apply_extinction(extinction)
     
             setattr(self,sid,star)
         
         try:
-            mv = getattr(self,'mV_combined')
+    
+            for f in ['V', 'g', 'r', 'i']:
+            
+                if 'A'+f in extinction.keys():
+    
+                    m = getattr(self,'m'+f+'_combined')
+                    
+                    m = m + extinction['A'+f]
+                    
+                    setattr(self,'m'+f+'_combined_corr',m)
+                
             bv = getattr(self,'BV_combined')
             
-            mv = mv + Av
-            bv = bv + EBV
+            bv = bv + extinction['EBV']
             
-            setattr(self,'mV_combined_corr',mv)
             setattr(self,'BV_combined_corr',bv)
+            
+            c1 = ['g', 'r']
+            c2 = ['r', 'i']
+            
+            for i in range(0,2,1):
+                
+                m1 = getattr(self,'m'+c1[i])
+                m2 = getattr(self,'m'+c2[i])
+                
+                col = m1 - m2
+                
+                setattr(self, c1+c2+'_corr', col)
             
         except:
             pass
+    
     
     def transform_extinc_corr_Johnson_SDSS(self):
         
