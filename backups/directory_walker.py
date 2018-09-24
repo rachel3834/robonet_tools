@@ -31,7 +31,7 @@ def walk_ml2016_structure(top_dir):
                 print(camera_dirs)
                 for camera in camera_dirs:
                     
-                    compress_dandia_reduced_data_products(camera)
+                    compress_data_products.compress_dandia_reduced_data_products(camera)
 
 
 if __name__ == '__main__':
