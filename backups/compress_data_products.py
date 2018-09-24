@@ -42,18 +42,23 @@ def fpack_image_dir(dir_path):
     
     for f in file_list:
         
-        (iexec,output) = getstatusoutput('fpack -q 64 '+f)
-
-        if len(output.replace(' ','').replace('\n','')) > 0:
+        if os.path.isfile(f+'.fz') == False:
             
-            print(output)
-        
+            (iexec,output) = getstatusoutput('fpack -q 64 '+f)
+    
+            if len(output.replace(' ','').replace('\n','')) > 0:
+                
+                print(output)
+            
+            else:
+                
+                if os.path.isfile(f+'.fz'):
+                
+                    os.remove(f)
+            
         else:
+            print('Skipping compression of '+f+' (compressed product already exists)')
             
-            if os.path.isfile(f+'.fz'):
-            
-                os.remove(f)
-
 def get_args():
     """Function to acquire the necessary commandline arguments"""
     
