@@ -89,7 +89,7 @@ class Star():
         
         for f in ['V', 'g', 'r', 'i']:
             
-            if 'A'+f in extinction.keys():
+            if 'A'+f in extinction.keys() and getattr(self,'m'+f) != None:
 
                 m = getattr(self,'m'+f)
                 
@@ -105,12 +105,12 @@ class Star():
         
         for i in range(0,2,1):
             
-            m1 = getattr(self,'m'+c1[i])
-            m2 = getattr(self,'m'+c2[i])
+            m1 = getattr(self,'m'+c1[i]+'_corr')
+            m2 = getattr(self,'m'+c2[i]+'_corr')
             
             col = m1 - m2
             
-            setattr(self, c1+c2+'_corr', col)
+            setattr(self, c1[i]+c2[i]+'_corr', col)
             
     def transform_extinc_corr_Johnson_SDSS(self):
         
@@ -162,30 +162,38 @@ class BinaryStar():
         
     def calculate_combined_light(self):
         
-        for band in ['B','V','g','r','i','J','H','Ks']:
+        for band in ['B','V','g','r','i','z','J','H','Ks']:
             
-            m = getattr(self.star1,'M'+band)
-            f1 = mag_to_flux(m,self.star1.ZP)
-            setattr(self.star1,'f'+band,f1)
+            try:
+                m1 = getattr(self.star1,'M'+band)
+                m2 = getattr(self.star2,'M'+band)
+                
+                if m1 != None:
+                    f1 = mag_to_flux(m1,self.star1.ZP)
+                    setattr(self.star1,'f'+band,f1)
+                
+                if m1 != None:
+                    f2 = mag_to_flux(m2,self.star1.ZP)
+                    setattr(self.star2,'f'+band,f2)
+                
+                if m1 != None and m2 != None:
+                    fcomb = f1 + f2
+                    mcomb = flux_to_mag(fcomb,self.ZP)
+                    
+                    setattr(self,'f'+band+'_combined',fcomb)
+                    setattr(self,'M'+band+'_combined',mcomb)
+                
+                #print 'M'+band+'_combined = ',getattr(self,'M'+band+'_combined')
             
-            m = getattr(self.star2,'M'+band)
-            f2 = mag_to_flux(m,self.star1.ZP)
-            setattr(self.star2,'f'+band,f2)
-            
-            fcomb = f1 + f2
-            mcomb = flux_to_mag(fcomb,self.ZP)
-            
-            setattr(self,'f'+band+'_combined',fcomb)
-            setattr(self,'M'+band+'_combined',mcomb)
-            
-            #print 'M'+band+'_combined = ',getattr(self,'M'+band+'_combined')
+            except AttributeError:
+                pass
             
     def calculate_apparent_magnitudes(self):
         
         self.star1.calculate_apparent_magnitudes()
         self.star2.calculate_apparent_magnitudes()
             
-        for band in ['B','V','g','r','i','J','H','Ks']:
+        for band in ['B','V','g','r','i','z','J','H','Ks']:
             
             try:
                 m = getattr(self,'M'+band+'_combined')
@@ -199,6 +207,9 @@ class BinaryStar():
                 pass
             
     def calculate_combined_colours(self):
+        
+        self.star1.calculate_colours()
+        self.star2.calculate_colours()
         
         passbands1 = [ 'B', 'g', 'r', 'J', 'H', 'J' ]
         passbands2 = [ 'V', 'r', 'i', 'H', 'Ks', 'Ks' ]
@@ -248,13 +259,13 @@ class BinaryStar():
             
             for i in range(0,2,1):
                 
-                m1 = getattr(self,'m'+c1[i])
-                m2 = getattr(self,'m'+c2[i])
+                m1 = getattr(self,'m'+c1[i]+'_combined_corr')
+                m2 = getattr(self,'m'+c2[i]+'_combined_corr')
                 
                 col = m1 - m2
                 
-                setattr(self, c1+c2+'_corr', col)
-            
+                setattr(self, c1[i]+c2[i]+'_combined_corr', col)
+        
         except:
             pass
     
