@@ -6,6 +6,7 @@ Created on Mon Sep 24 12:31:18 2018
 """
 
 from os import path
+from sys import argv
 import glob
 import compress_data_products
 
@@ -31,3 +32,17 @@ def walk_ml2016_structure(top_dir):
                 for camera in camera_dirs:
                     
                     compress_dandia_reduced_data_products(camera)
+
+
+if __name__ == '__main__':
+    
+    if len(argv) == 1:
+        
+        top_dir = raw_input('Please enter the top level directory path: ')
+        
+    else:
+        
+        top_dir = argv[1]
+    
+    walk_ml2016_structure(top_dir)
+    
