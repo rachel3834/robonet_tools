@@ -26,6 +26,8 @@ def map_DE_population(input_file):
     
     The second plot is a 2D histogram of the chi squared values of each pixel
     in the parameter space.
+    
+    Based on original code by E. Bachelet.
     """
     
     map_data = np.loadtxt(input_file)
