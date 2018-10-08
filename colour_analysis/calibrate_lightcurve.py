@@ -197,7 +197,7 @@ def get_args():
     else:
         
         params['lc_file'] = raw_input('Please enter the path to the lightcurve file: ')
-        params['red_dir'] = raw_input('Please enter the path to the reduction directory: ')
+        params['red_dir'] = raw_input('Please enter the path to the pyDANDIA reduction directory: ')
         params['log_dir'] = raw_input('Please enter the path to the log directory: ')
         params['metadata'] = raw_input('Please enter the path to the metadata file: ')
         params['staridx'] = raw_input('Please enter the index number of the star in the metadatas starcatalog table: ')

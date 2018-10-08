@@ -1,4 +1,5 @@
 Colour analysis procedure
+=========================
 
 * Select trio of best-quality gri reference images and use these to reduce
 both lightcurve and colour data for LSC
