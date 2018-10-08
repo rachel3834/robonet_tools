@@ -10,9 +10,9 @@ import numpy as np
 from matplotlib.colors import LogNorm
 import os
 from sys import argv
-plt.rc('font', family='serif')
-plt.rc('xtick', labelsize='x-small')
-plt.rc('ytick', labelsize='x-small')
+plt.rc('font', family='DejaVu Sans')
+plt.rc('xtick', labelsize='large')
+plt.rc('ytick', labelsize='large')
 
 
 def map_DE_population(input_file):
