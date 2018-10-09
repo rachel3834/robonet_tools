@@ -37,11 +37,14 @@ def extract_best_fit_mcmc_parameters(input_file):
             percent_34 = np.percentile(mcmc_chains[:, index], 16)
             percent_50 = np.percentile(mcmc_chains[:, index], 50)
             percent_84 = np.percentile(mcmc_chains[:, index], 84)
-        
+            
+            lower = percent_50 - percent_34
+            upper = percent_84 - percent_50
             print(key + ' ' + str(best_param) + ' [' + str(percent_34) + ',' + str(percent_50) + ',' + str(
                     percent_84) + ']')
+            print(key + ' ' + str(best_param) + ' -' + str(lower) + ' +' + str(upper))
                     
-    print('Chi^2 ' + str(-2*mcmc_chains[best_model_index, -1]) + '&0\n')
+    print('Chi^2 ' + str(-2*mcmc_chains[best_model_index, -1]) + '\n')
     
 if __name__ == '__main__':
     
