@@ -52,7 +52,7 @@ def map_DE_population(input_file):
     plt.scatter(map_data[index,4],map_data[index,5],
                 c=np.log10(map_data[index,-1]),alpha=0.25)
     
-    plt.title('$\chi^{2}$')
+    plt.title('$\log_{10}(\chi^{2})$')
     plt.xlabel('$log_{10}(s)$')
     plt.ylabel('$log_{10}(q)$')
     plt.colorbar()

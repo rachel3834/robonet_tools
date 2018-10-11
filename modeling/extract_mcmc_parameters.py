@@ -17,10 +17,6 @@ def extract_best_fit_mcmc_parameters(input_file):
     Based on code from pyLIMA by E. Bachelet.
     """
     
-    model_parameters = ['t0', 'u0', 'tE', 'rho', 
-                        'logs', 'logq', 'alpha', 'piEN', 'piEE',
-                        '1/sdsdt', 'dalpha/dt', '1/sdsz/dt']
-    
     if path.isfile(input_file) == False:
         raise IOError('Cannot find input file '+input_file)
         exit()
@@ -28,6 +24,21 @@ def extract_best_fit_mcmc_parameters(input_file):
     mcmc_chains = np.loadtxt(input_file)
     
     n_params = len(mcmc_chains[0,:]) - 1
+    
+    if n_params == 7:
+        model_parameters = ['t0', 'u0', 'tE', 'rho', 
+                            'logs', 'logq', 'alpha']
+    elif n_params == 9:
+        model_parameters = ['t0', 'u0', 'tE', 'rho', 
+                        'logs', 'logq', 'alpha', 'piEN', 'piEE']
+    elif n_params == 11:
+        model_parameters = ['t0', 'u0', 'tE', 'rho', 
+                        'logs', 'logq', 'alpha', 'piEN', 'piEE',
+                        'dsdt', 'dalpha/dt']
+    elif n_params == 12:
+        model_parameters = ['t0', 'u0', 'tE', 'rho', 
+                        'logs', 'logq', 'alpha', 'piEN', 'piEE',
+                        '1/sdsdt', 'dalpha/dt', '1/sdsz/dt']
     
     best_model_index = np.argmax(mcmc_chains[:, -1])
 
@@ -40,11 +51,41 @@ def extract_best_fit_mcmc_parameters(input_file):
             
             lower = percent_50 - percent_34
             upper = percent_84 - percent_50
+            
+            if 'log' in key:
+                best_param10 = 10**best_param
+                upper10 = 10**(best_param+upper)
+                lower10 = 10**(best_param-lower)
+                upper10 = upper10 - best_param10
+                lower10 = best_param10 - lower10
+                
+            if key in ['t0']:
+                ndp = 5
+            elif key in ['tE']:
+                ndp = 3
+            else:
+                ndp = 6
+            
+            best_param = round(best_param,ndp)
+            percent_34 = round(percent_34,ndp)
+            percent_50 = round(percent_50,ndp)
+            percent_84 = round(percent_84,ndp)
+            lower = round(lower,ndp)
+            upper = round(upper,ndp)
+            
+            if 'log' in key:
+                best_param10 = round(best_param10,ndp)
+                lower10 = round(lower10,ndp)
+                upper10 = round(upper10,ndp)
+            
             print(key + ' ' + str(best_param) + ' [' + str(percent_34) + ',' + str(percent_50) + ',' + str(
                     percent_84) + ']')
-            print(key + ' ' + str(best_param) + ' -' + str(lower) + ' +' + str(upper))
-                    
-    print('Chi^2 ' + str(-2*mcmc_chains[best_model_index, -1]) + '\n')
+            print(key + ' ' + str(best_param) + '$_{-' + str(lower) + '}^{+' + str(upper)+'}$')
+            if 'log' in key:
+                print(key.replace('log','') + ' ' + str(best_param10) + '$_{-' + str(lower10) + '}^{+' + str(upper10)+'}$')
+                
+    chichi = -2*mcmc_chains[best_model_index, -1]
+    print('Chi^2 ' + str(round(chichi,3)) + '\n')
     
 if __name__ == '__main__':
     
