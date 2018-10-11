@@ -1,0 +1,19 @@
+CMD3.0 http://stev.oapd.inaf.it/cgi-bin/cmd
+
+Isochrone tables were generated using the following settings:
+
+PARSEC v1.2S + COLIBRI PR16 evolutionary tracks (defaults)
+ninTPC=10, ηReimers=0.2
+
+Photometric system SDSS ugriz or VISTA ZYJHKs
+
+No circumstellar dust
+
+No interstellar extinction
+
+Initial mass function = Chabrier (2001) lognormal
+
+Sequence of isochrones of Z=0.0152, log(t/yr) = 6.6 to 10.13, dlogt = 0.05
+
+Output = isochrone table.
+
