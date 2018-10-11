@@ -307,7 +307,7 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
     cerr = params['cat_err_col']
     
     cat_mags = vphas_cat[cmag][match_index[:,1]]
-    cat_merrs = vphas_cat[cmag][match_index[:,2]]
+    cat_merrs = vphas_cat[cerr][match_index[:,1]]
     det_mags = star_catalog['mag'][match_index[:,0]]
     det_mag_errs = star_catalog['mag_err'][match_index[:,0]]
 
@@ -315,17 +315,17 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
         xbin1 = 16.0
         det_mags_max = 16.0
         det_mags_min = 10.0
-        cal_merr_max = 0.04
+        cat_merr_max = 0.04
     elif params['filter'] == 'rp':
         xbin1 = 13.5
         det_mags_max = 13.5
         det_mags_min = 10.0
-        cal_merr_max = 0.04
+        cat_merr_max = 0.04
     else:
         xbin1 = 13.5
         det_mags_max = 13.5
         det_mags_min = 10.0
-        cal_merr_max = 0.04
+        cat_merr_max = 0.04
     xibin = 0.5
     xbin2 = xbin1 - xibin
     
@@ -429,6 +429,103 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
                     'phot_model_transform_'+params['filter']+'.png'))
     
         plt.close(2)
+
+    log.info('Fitted parameters: '+repr(fit))
+    
+    return fit
+
+def model_phot_transform2(params,star_catalog,vphas_cat,match_index,fit,
+                         log, diagnostics=True):
+    """Function to make an initial guess at the fit parameters"""
+    
+    
+    log.info('Fit initial parameters: '+repr(fit))
+    
+    cmag = params['cat_mag_col']
+    cerr = params['cat_err_col']
+    
+    cat_mags = vphas_cat[cmag][match_index[:,1]]
+    cat_merrs = vphas_cat[cerr][match_index[:,1]]
+    det_mags = star_catalog['mag'][match_index[:,0]]
+    det_mag_errs = star_catalog['mag_err'][match_index[:,0]]
+
+    if params['filter'] == 'gp':
+        xbin1 = 16.0
+        det_mags_max = 16.0
+        det_mags_min = 10.0
+        cat_merr_max = 0.04
+    elif params['filter'] == 'rp':
+        xbin1 = 13.5
+        det_mags_max = 13.5
+        det_mags_min = 10.0
+        cat_merr_max = 0.04
+    else:
+        xbin1 = 13.5
+        det_mags_max = 13.5
+        det_mags_min = 10.0
+        cat_merr_max = 0.04
+    xibin = 0.5
+    xbin2 = xbin1 - xibin
+    
+    binned_data = []
+    peak_bin = []
+    xbins = []
+    ybins = []
+    
+    (hist_data,xedges,yedges) = np.histogram2d(det_mags,cat_mags,bins=24)
+    hist_data.T
+    
+    idx = np.where(hist_data < (hist_data.max()*0.05))
+    hist_data[idx] = 0
+    
+    idx = np.where(hist_data > (hist_data.max()*0.05))
+    xcenters = (xedges[:-1] + xedges[1:]) / 2
+    ycenters = (yedges[:-1] + yedges[1:]) / 2
+    
+    k = np.where(xcenters[idx[0]] < det_mags_max)
+    xbins = xcenters[idx[0][k]]
+    ybins = []
+    for x in idx[0][k]:
+        
+        k = np.where(hist_data[x,:] == (hist_data[x,:].max()))
+        ybins.append(ycenters[k][0])
+    
+    fit = calc_transform(fit, xbins, ybins)
+    
+    if diagnostics:
+        
+        f = open(os.path.join(params['red_dir'],'binned_phot.dat'),'w')
+        for i in range(0,len(xbins),1):
+            f.write(str(xbins[i])+' '+str(ybins[i])+'\n')
+        f.close()
+        
+        fig = plt.figure(3)
+        
+        plt.errorbar(star_catalog['mag'][match_index[:,0]],
+                     vphas_cat[cmag][match_index[:,1]], 
+                     xerr=star_catalog['mag_err'][match_index[:,0]],
+                     yerr=vphas_cat[cerr][match_index[:,1]],
+                     color='m', fmt='none')
+        
+        plt.plot(xbins,ybins,'g+',markersize=4)
+
+        xplot = np.linspace(xbins.min(),xbins.max(),50)
+        yplot = phot_func(fit,xplot)
+    
+        plt.plot(xplot, yplot,'k-')
+
+        plt.xlabel('Instrumental magnitude')
+        
+        plt.ylabel('VPHAS+ catalog magnitude')
+            
+        [xmin,xmax,ymin,ymax] = plt.axis()
+        
+        plt.axis([xmax,xmin,ymax,ymin])
+        
+        plt.savefig(os.path.join(params['red_dir'],
+                    'phot_model_transform_'+params['filter']+'.png'))
+    
+        plt.close(3)
 
     log.info('Fitted parameters: '+repr(fit))
     
