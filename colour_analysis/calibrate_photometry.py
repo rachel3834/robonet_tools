@@ -637,7 +637,7 @@ def output_to_metadata(star_catalog, reduction_metadata,vphas_cat,match_index,
         
     except AttributeError:
         
-        phot_catalog = np.zeros([len(star_catalog),11])
+        phot_catalog = np.zeros([len(star_catalog),12])
         phot_catalog[:,0] = star_catalog['star_index'][:]
         phot_catalog[:,1] = star_catalog['cal_ref_mag'][:]
         phot_catalog[:,2] = star_catalog['cal_ref_mag_err'][:]
