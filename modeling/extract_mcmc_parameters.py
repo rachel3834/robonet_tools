@@ -8,6 +8,7 @@ Created on Mon Oct  8 17:37:03 2018
 from sys import argv
 from os import path
 import numpy as np
+import calc_sq_with_errors
 
 def extract_best_fit_mcmc_parameters(input_file):
     """Function to identify the best fitting model from an output file of 
@@ -53,11 +54,7 @@ def extract_best_fit_mcmc_parameters(input_file):
             upper = percent_84 - percent_50
             
             if 'log' in key:
-                best_param10 = 10**best_param
-                upper10 = 10**(best_param+upper)
-                lower10 = 10**(best_param-lower)
-                upper10 = upper10 - best_param10
-                lower10 = best_param10 - lower10
+                (best_param10, lower10, upper10) = calc_sq_with_errors.calc_sq_with_errors(best_param, lower, upper)
                 
             if key in ['t0']:
                 ndp = 5

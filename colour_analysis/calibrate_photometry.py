@@ -307,6 +307,7 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
     cerr = params['cat_err_col']
     
     cat_mags = vphas_cat[cmag][match_index[:,1]]
+    cat_merrs = vphas_cat[cmag][match_index[:,2]]
     det_mags = star_catalog['mag'][match_index[:,0]]
     det_mag_errs = star_catalog['mag_err'][match_index[:,0]]
 
@@ -314,14 +315,17 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
         xbin1 = 16.0
         det_mags_max = 16.0
         det_mags_min = 10.0
+        cal_merr_max = 0.04
     elif params['filter'] == 'rp':
         xbin1 = 13.5
         det_mags_max = 13.5
         det_mags_min = 10.0
+        cal_merr_max = 0.04
     else:
         xbin1 = 13.5
         det_mags_max = 13.5
         det_mags_min = 10.0
+        cal_merr_max = 0.04
     xibin = 0.5
     xbin2 = xbin1 - xibin
     
@@ -352,7 +356,9 @@ def model_phot_transform(params,star_catalog,vphas_cat,match_index,fit,
                 
                 jdx1 = np.where(cat_mags[idx] <= ybin1)
                 jdx2 = np.where(cat_mags[idx] > ybin2)
-                jdx = list(set(jdx1[0].tolist()).intersection(set(jdx2[0].tolist())))
+                jdx3 = np.where(cat_merrs[idx] <= cat_merr_max)
+                jdx = set(jdx1[0].tolist()).intersection(set(jdx2[0].tolist()))
+                jdx = list(set(jdx).intersection(set(jdx3[0].tolist())))
                 
                 if len(jdx) > 0:
                     
