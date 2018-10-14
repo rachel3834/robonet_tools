@@ -17,42 +17,42 @@ def download_directory(aws_dir_path, local_dir_path):
     
     check_sanity(local_dir_path)
     
-    file_list = fetch_directory_file_list(aws_config, aws_dir_path)
+    dir_listing = fetch_directory_file_list(aws_config, aws_dir_path)
 
-    for entry in file_list:
-        print(entry)
+    download_file_list(aws_config, aws_dir_path, local_dir_path, dir_listing)
         
 def fetch_directory_file_list(aws_config, aws_dir_path):
     """Function to query the AWS Cloud to return a contents listing of 
     the directory path given"""
     
+    print('Querying Cloud directory list the contents to be downloaded (please be patient)...')
+    
     dir_listing = fetch_directory_listing(aws_config, aws_dir_path)
     
-    cont = True
+    sub_dir_list = check_for_sub_directories(dir_listing)
     
-    while cont:
+    while len(sub_dir_list) > 0:
         
-        cont = False
-        
-        sub_listing = []
-        
-        for entry in dir_listing:
-            
-            if '/' in entry[-1]:
+        for entry in sub_dir_list:
+
+            if len(entry) > 1 and '/' in entry[-1]:
                 
                 sub_aws_path = os.path.join(aws_dir_path,entry)
                 
-                sub_dir_list = fetch_directory_listing(aws_config, sub_aws_path)
+                sub_dir_contents = fetch_directory_listing(aws_config, sub_aws_path)
                 
-                sub_listing += sub_dir_list
+                paths_list = [os.path.join(entry,sub_dir_contents[i]) for i in range(0,len(sub_dir_contents),1)]
                 
-                for item in sub_dir_list:
-                    print item
-                    if '/' in item[-1]:
-
-                        cont = True
-        
-        dir_listing += sub_listing
+                dir_listing += paths_list
+                
+                i = dir_listing.index(entry)
+                tmp = dir_listing.pop(i)
+                
+        sub_dir_list = check_for_sub_directories(dir_listing)
+    
+    dir_listing = [os.path.join(aws_dir_path,dir_listing[i]) for i in range(0,len(dir_listing),1)]
+    
+    print(' -> Found '+str(len(dir_listing))+' files to be downloaded')
     
     return dir_listing
     
@@ -74,16 +74,47 @@ def fetch_directory_listing(aws_config, aws_dir_path):
     for line in coutput.split('\n'):
         entry = line.replace('PRE','').lstrip()
         
-        dir_listing.append(entry)
+        if len(entry) > 0:
+            dir_listing.append(entry)
 
     return dir_listing
+
+def check_for_sub_directories(dir_listing):
+    
+    sub_dir_list = []
+    
+    for item in dir_listing:
+        
+        if len(item) > 1 and '/' in item[-1]:
+            
+            sub_dir_list.append(item)
+    
+    return sub_dir_list
     
 def check_sanity(local_dir_path):
     
     if os.path.isdir(local_dir_path) == False:
         raise IOError('Cannot find local directory '+local_dir_path)
         exit()
+
+def download_file_list(aws_config, aws_dir_path, local_dir_path, dir_listing):
+    """Function to retrieve a list of files from the AWS Cloud"""
     
+    print('Downloading data from the Cloud...')
+    
+    for f in dir_listing:
+        
+        aws_path = os.path.join(aws_config.bucket, f)
+        local_path = os.path.join(local_dir_path, f)
+        
+        cl = 'aws --profile='+aws_config.profile+' s3 cp '+aws_path+' '+local_path
+    
+        print (cl)
+    
+        #(iexec,coutput) = getstatusoutput(cl)
+    
+        #print(coutput)
+
 if __name__ == '__main__':
     
     if len(sys.argv) < 3:
