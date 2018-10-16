@@ -50,7 +50,7 @@ def fetch_directory_file_list(aws_config, aws_dir_path):
                 
         sub_dir_list = check_for_sub_directories(dir_listing)
     
-    dir_listing = [os.path.join(aws_dir_path,dir_listing[i]) for i in range(0,len(dir_listing),1)]
+    #dir_listing = [os.path.join(aws_dir_path,dir_listing[i]) for i in range(0,len(dir_listing),1)]
     
     print(' -> Found '+str(len(dir_listing))+' files to be downloaded')
     
@@ -75,8 +75,17 @@ def fetch_directory_listing(aws_config, aws_dir_path):
         entry = line.replace('PRE','').lstrip()
         
         if len(entry) > 0:
-            dir_listing.append(entry)
+            
+            if '/' not in entry:
+                
+                entry_list = entry.split(' ')
+                
+                dir_listing.append(entry_list[-1])
+                
+            else:
 
+                dir_listing.append(entry)
+            
     return dir_listing
 
 def check_for_sub_directories(dir_listing):
@@ -102,18 +111,24 @@ def download_file_list(aws_config, aws_dir_path, local_dir_path, dir_listing):
     
     print('Downloading data from the Cloud...')
     
+    if '/' in aws_dir_path[-1]:
+        base_dir = os.path.basename(aws_dir_path[:-1])
+    else:
+        base_dir = os.path.basename(aws_dir_path)
+    
+    if aws_dir_path[0:1] == '/':
+        aws_dir_path = aws_dir_path[1:]
+    
     for f in dir_listing:
         
-        aws_path = os.path.join(aws_config.bucket, f)
-        local_path = os.path.join(local_dir_path, f)
+        aws_path = os.path.join(aws_config.bucket, aws_dir_path, f)
+        local_path = os.path.join(local_dir_path, base_dir, f)
         
         cl = 'aws --profile='+aws_config.profile+' s3 cp '+aws_path+' '+local_path
     
-        print (cl)
+        (iexec,coutput) = getstatusoutput(cl)
     
-        #(iexec,coutput) = getstatusoutput(cl)
-    
-        #print(coutput)
+        print(coutput)
 
 if __name__ == '__main__':
     
