@@ -279,13 +279,13 @@ def calc_phot_calib(params,star_catalog,vphas_cat,match_index,log):
     
     fit = [0.0, 0.0]
     
-    fit = model_phot_transform(params,star_catalog,vphas_cat,
+    fit = model_phot_transform2(params,star_catalog,vphas_cat,
                                    match_index,fit,log)
                                    
     for i in range(0,1,1):
 
-        fit = model_phot_transform(params,star_catalog,vphas_cat,
-                                   match_index,fit,log)
+        fit = model_phot_transform2(params,star_catalog,vphas_cat,
+                                   match_index,fit,log, diagnostics=True)
         
         log.info('Fit result ['+str(i)+']: '+repr(fit))
 
@@ -451,7 +451,7 @@ def model_phot_transform2(params,star_catalog,vphas_cat,match_index,fit,
 
     if params['filter'] == 'gp':
         xbin1 = 16.0
-        det_mags_max = 16.0
+        det_mags_max = 15.0
         det_mags_min = 10.0
         cat_merr_max = 0.04
     elif params['filter'] == 'rp':
