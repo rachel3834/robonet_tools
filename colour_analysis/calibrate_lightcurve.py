@@ -92,7 +92,11 @@ def calc_mag_offset(params,lc_data,reduction_metadata,star_catalog,log):
     
     images = lc_data[:,0].tolist()
     
-    refidx = images.index(params['refimage'].replace('.fits','_crop'))
+    try:
+        refidx = images.index(params['refimage'].replace('.fits','_crop'))
+        
+    except ValueError:
+        refidx = images.index(params['refimage'].replace('.fits',''))
     
     log.info('Reference image at index '+str(refidx)+' in lightcurve')
     
