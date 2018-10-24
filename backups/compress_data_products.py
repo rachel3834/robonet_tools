@@ -32,6 +32,16 @@ def compress_dandia_reduced_data_products(event_dir):
     for d in image_dirs:
         
         fpack_image_dir(d)
+    
+    
+    dir_list += glob.glob( os.path.join(event_dir,'imred','*') )
+    dir_list += glob.glob( os.path.join(event_dir,'gimred','*') )
+    dir_list += glob.glob( os.path.join(event_dir,'dimred','*') )
+    dir_list = glob.glob( os.path.join(event_dir,'lc/*/rawlc/') )
+    
+    for d in dir_list:
+        
+        tar_directory(d)
         
     print('Completed data compression')
     
@@ -58,7 +68,26 @@ def fpack_image_dir(dir_path):
             
         else:
             print('Skipping compression of '+f+' (compressed product already exists)')
-            
+
+def tar_directory(dir_path):
+    """Function to build a tarball of all files within a given directory"""
+    
+    (p,subd) = os.path.split(d)
+    subdir = os.path.basename(p)
+    
+    if 'lc/' in d:
+        tarball = os.path.join(d,'lightcurves.tar')
+    else:
+        tarball = os.path.join(d,subdir+'_data.tar')
+    
+    flist = glob.glob( os.path.join(d,'*') )
+    
+    cl = 'tar -cvf '+tarball+' '+flist
+    
+    (iexec,output) = getstatusoutput(cl)
+    
+    print(coutput)
+    
 def get_args():
     """Function to acquire the necessary commandline arguments"""
     
