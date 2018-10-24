@@ -34,14 +34,14 @@ def compress_dandia_reduced_data_products(event_dir):
         fpack_image_dir(d)
     
     
-    dir_list = glob.glob( os.path.join(event_dir,'imred','*') )
-    dir_list += glob.glob( os.path.join(event_dir,'gimred','*') )
-    dir_list += glob.glob( os.path.join(event_dir,'dimred','*') )
-    dir_list += glob.glob( os.path.join(event_dir,'lc/*/rawlc/') )
+    dir_list = [ os.path.join(event_dir,'imred'),
+                 os.path.join(event_dir,'gimred'),
+                 os.path.join(event_dir,'dimred'),
+                 os.path.join(event_dir,'lc/*/rawlc/') ]
     
     for d in dir_list:
         
-        tar_directory(d)
+        tar_directory(d,event_dir)
         
     print('Completed data compression')
     
@@ -69,24 +69,26 @@ def fpack_image_dir(dir_path):
         else:
             print('Skipping compression of '+f+' (compressed product already exists)')
 
-def tar_directory(dir_path):
+def tar_directory(dir_path,event_dir):
     """Function to build a tarball of all files within a given directory"""
     
-    (p,subd) = os.path.split(d)
-    subdir = os.path.basename(p)
-    
-    if 'lc/' in d:
-        tarball = os.path.join(d,'lightcurves.tar')
+    subdir = os.path.basename(dir_path)
+
+    if 'lc/' in dir_path:
+        tarball = os.path.join(event_dir,'lightcurves.tar')
     else:
-        tarball = os.path.join(d,subdir+'_data.tar')
-    
+        tarball = os.path.join(event_dir,subdir+'_data.tar')
+
     if os.path.isfile(tarball) == False:
-        flist = glob.glob( os.path.join(d,'*') )
-        
-        cl = 'tar -cvf '+tarball+' '+flist
-        
-        (iexec,output) = getstatusoutput(cl)
-        
+        flist = glob.glob( os.path.join(dir_path,'*') )
+
+        cl = 'tar -cvf '+tarball+' '+dir_path
+
+        print('Building tarball of '+dir_path)
+
+        (iexec,coutput) = getstatusoutput(cl)
+
+        print(tarball)
         print(coutput)
     
 def get_args():
