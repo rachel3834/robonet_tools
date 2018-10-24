@@ -51,13 +51,13 @@ def upload_directory(dir_path, local_root, aws_root):
                         aws_cp(aws_config,local_file_path,local_root,aws_root)
                 else:
                     
-                    upload_all_files_in_subdir(d,files)
+                    upload_all_files_in_subdir(aws_config,aws_root,local_root,d,files)
                     
             else:
                 
-                upload_all_files_in_subdir(d,files)
+                upload_all_files_in_subdir(aws_config,aws_root,local_root,d,files)
 
-def upload_all_files_in_subdir(subdir,files):
+def upload_all_files_in_subdir(aws_config,aws_root,local_root,subdir,files):
     """Function to upload all files in a given subdirectory"""
     
     for name in files:
