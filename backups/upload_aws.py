@@ -34,16 +34,40 @@ def upload_directory(dir_path, local_root, aws_root):
     
     aws_config = aws_cloud_config.get_aws_config()
     
-    for root, dirs, files in os.walk(dir_path):
+    for dir_paths, subdirs, files in os.walk(dir_path):
     
-        for name in files:
+        for d in dir_paths:
             
-            local_file_path = os.path.join(root,name)
-            
-            if not os.path.islink(local_file_path) and \
-                is_original_image(local_file_path) == False:
+            if 'imred' in d or 'rawlc' in d:
                 
-                aws_cp(aws_config,local_file_path,local_root,aws_root)
+                (has_tar,tarball_list) = check_tarball_exists(d)
+                
+                if has_tar and len(tarball_list) > 0:
+                    
+                    for ball in tarball_list:
+                        
+                        local_file_path = os.path.join(d,ball)
+                        
+                        aws_cp(aws_config,local_file_path,local_root,aws_root)
+                else:
+                    
+                    upload_all_files_in_subdir(d,files)
+                    
+            else:
+                
+                upload_all_files_in_subdir(d,files)
+
+def upload_all_files_in_subdir(subdir,files):
+    """Function to upload all files in a given subdirectory"""
+    
+    for name in files:
+                    
+        local_file_path = os.path.join(subdir,name)
+        
+        if not os.path.islink(local_file_path) and \
+            is_original_image(local_file_path) == False:
+            
+            aws_cp(aws_config,local_file_path,local_root,aws_root)
 
 def is_original_image(file_path):
     """Function to check whether a given file is a raw or BANZAI-processed
@@ -67,6 +91,21 @@ def is_original_image(file_path):
                         
                     result = True
     return result
+
+def check_tarball_exists(dir_path):
+    """Function to check for the existance of a tarball of data from a directory"""
+    
+    if 'rawlc' in dir_path and \
+        os.path.isfile(os.path.join(dir_path,'lightcurves.tar')):
+        
+        return True, [os.path.isfile(os.path.join(dir_path,'lightcurves.tar'))]
+        
+    if 'imred' in dir_path:
+        flist = glob.glob(os.path.join(dir_path,'.tar'))
+        
+        return True, flist
+    
+    return False, []
     
 if __name__ == '__main__':
     
