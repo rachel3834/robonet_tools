@@ -34,10 +34,10 @@ def compress_dandia_reduced_data_products(event_dir):
         fpack_image_dir(d)
     
     
-    dir_list += glob.glob( os.path.join(event_dir,'imred','*') )
+    dir_list = glob.glob( os.path.join(event_dir,'imred','*') )
     dir_list += glob.glob( os.path.join(event_dir,'gimred','*') )
     dir_list += glob.glob( os.path.join(event_dir,'dimred','*') )
-    dir_list = glob.glob( os.path.join(event_dir,'lc/*/rawlc/') )
+    dir_list += glob.glob( os.path.join(event_dir,'lc/*/rawlc/') )
     
     for d in dir_list:
         
@@ -80,13 +80,14 @@ def tar_directory(dir_path):
     else:
         tarball = os.path.join(d,subdir+'_data.tar')
     
-    flist = glob.glob( os.path.join(d,'*') )
-    
-    cl = 'tar -cvf '+tarball+' '+flist
-    
-    (iexec,output) = getstatusoutput(cl)
-    
-    print(coutput)
+    if os.path.isfile(tarball) == False:
+        flist = glob.glob( os.path.join(d,'*') )
+        
+        cl = 'tar -cvf '+tarball+' '+flist
+        
+        (iexec,output) = getstatusoutput(cl)
+        
+        print(coutput)
     
 def get_args():
     """Function to acquire the necessary commandline arguments"""
