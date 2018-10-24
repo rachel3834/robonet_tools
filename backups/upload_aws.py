@@ -40,11 +40,34 @@ def upload_directory(dir_path, local_root, aws_root):
             
             local_file_path = os.path.join(root,name)
             
-            if not os.path.islink(local_file_path):
+            if not os.path.islink(local_file_path) and \
+                is_original_image(local_file_path) == False:
                 
                 aws_cp(aws_config,local_file_path,local_root,aws_root)
 
-
+def is_original_image(file_path):
+    """Function to check whether a given file is a raw or BANZAI-processed
+    original image, as opposed to one that has been further processed by 
+    the DIA pipeline.  Since all LCO data are archived in the Cloud anyway, 
+    the original image data should be excluded from the upload."""
+    
+    result = False
+    
+    if 'fits' in file_path:
+        
+        (dir_path,filename) = os.path.split(file_path)
+        subdir = os.path.basename(dir_path)
+    
+        if '20' in subdir[0:2]:
+            
+            if '-e90' in filename or '-e91' in filename:
+                
+                if '.red.' not in filename and '.geo.' not in filename and \
+                    '.dif.' not in filename and '.bpm.' not in filename:
+                        
+                    result = True
+    return result
+    
 if __name__ == '__main__':
     
     if len(sys.argv) < 4:
