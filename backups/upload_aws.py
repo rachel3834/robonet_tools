@@ -41,22 +41,31 @@ def upload_directory(dir_path, local_root, aws_root):
         for name in files:
             
             local_file_path = os.path.join(root,name)
-            
-            if not os.path.islink(local_file_path) and \
+
+            if 'fits' in local_file_path and '20160803' in local_file_path:
+                print(os.path.islink(local_file_path))
+                print(is_original_image(local_file_path))
+                print(file_in_tarball(local_file_path, tarred_data))
+                print local_file_path
+
+            if os.path.islink(local_file_path) == False and \
                 is_original_image(local_file_path) == False and \
-                file_in_tarball(file_path, tarred_data) == False:
-                
+                file_in_tarball(local_file_path, tarred_data) == False:
+
                 aws_cp(aws_config,local_file_path,local_root,aws_root)
+
+                if 'fits' in local_file_path:
+                    print('-> Uploaded')
 
 def check_for_tarballs(dir_path):
     """Function to check for the existance of a tarball of data from a directory"""
     
     tarred_data = {}
     
-    tarred_data['/lc/'] = os.path.isfile(os.path.join(dir_path,'lightcurves.tar')
-    tarred_data['/imred/'] = os.path.isfile(os.path.join(dir_path,'imred_data.tar')
-    tarred_data['/gimred/'] = os.path.isfile(os.path.join(dir_path,'gimred_data.tar')
-    tarred_data['/dimred/'] = os.path.isfile(os.path.join(dir_path,'dimred_data.tar')
+    tarred_data['/lc/'] = os.path.isfile(os.path.join(dir_path,'lightcurves.tar'))
+    tarred_data['/imred/'] = os.path.isfile(os.path.join(dir_path,'imred_data.tar'))
+    tarred_data['/gimred/'] = os.path.isfile(os.path.join(dir_path,'gimred_data.tar'))
+    tarred_data['/dimred/'] = os.path.isfile(os.path.join(dir_path,'dimred_data.tar'))
     
     return tarred_data
 
@@ -91,12 +100,10 @@ def is_original_image(file_path):
                 
                 if '.red.' not in filename and '.geo.' not in filename and \
                     '.dif.' not in filename and '.bpm.' not in filename:
-                        
+
                     result = True
     return result
 
-def is_tarballed_data(file_path):
-    """Function to verify whether a given 
 if __name__ == '__main__':
     
     if len(sys.argv) < 4:
