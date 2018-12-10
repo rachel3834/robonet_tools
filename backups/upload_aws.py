@@ -77,7 +77,7 @@ def file_in_tarball(file_path, tarred_data):
         
         if d in file_path:
             
-            return tarred_data[d]
+            return True
     
     return False
     
