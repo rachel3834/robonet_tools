@@ -31,7 +31,7 @@ def map_mcmc_chains(input_file):
     chisq = -2*mcmc_chains[index, -1]
     
     plt.scatter(mcmc_chains[index,4],mcmc_chains[index,5],
-                c=np.log10(chisq),alpha=0.25)
+                c=mcmc_chains[index,1],alpha=0.25)
     
     plt.title('$\log_{10}(\chi^{2})$')
     plt.xlabel('$log_{10}(s)$')
