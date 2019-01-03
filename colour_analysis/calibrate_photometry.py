@@ -460,9 +460,13 @@ def model_phot_transform2(params,star_catalog,vphas_cat,match_index,fit,
         det_mags_min = 10.0
         cat_merr_max = 0.04
     else:
-        xbin1 = 13.5
-        det_mags_max = 13.5
-        det_mags_min = 10.0
+        #xbin1 = 13.5
+        #det_mags_max = 13.5
+        #det_mags_min = 10.0
+        #cat_merr_max = 0.04
+        xbin1 = 16.0
+        det_mags_max = 21.0
+        det_mags_min = 16.0
         cat_merr_max = 0.04
     xibin = 0.5
     xbin2 = xbin1 - xibin
@@ -501,11 +505,16 @@ def model_phot_transform2(params,star_catalog,vphas_cat,match_index,fit,
         
         fig = plt.figure(3)
         
-        plt.errorbar(star_catalog['mag'][match_index[:,0]],
+        plt_errs = False
+        if plt_errs:
+            plt.errorbar(star_catalog['mag'][match_index[:,0]],
                      vphas_cat[cmag][match_index[:,1]], 
                      xerr=star_catalog['mag_err'][match_index[:,0]],
                      yerr=vphas_cat[cerr][match_index[:,1]],
                      color='m', fmt='none')
+        else:
+            plt.plot(star_catalog['mag'][match_index[:,0]],
+                     vphas_cat[cmag][match_index[:,1]],'m.', markersize=1)
         
         plt.plot(xbins,ybins,'g+',markersize=4)
 

@@ -125,9 +125,6 @@ def plot_matched_ref_photometry(star_cat1,star_cat2,match_index,log):
     
     plt.plot(star_cat1['mag'][idx], star_cat2['mag'][idx], 'm.', markersize=1)
     
-    #(xmin,xmax,ymin,ymax) = plt.axis()
-    #plt.axis([xmin,xmax,0.0,ymax])
-    
     plt.xlabel('Magnitude catalog 1')
     plt.ylabel('Magnitude catalog 2')
     

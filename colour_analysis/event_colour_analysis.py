@@ -681,6 +681,14 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
         
         return mags, magerr, cols, colerr
     
+    
+    add_source_trail = False
+    add_target_trail = True
+    add_crosshairs = True
+    add_source = True
+    add_blend = True
+    add_rc_centroid = True
+    
     fig = plt.figure(1,(10,10))
     
     ax = plt.subplot(111)
@@ -697,18 +705,18 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
     
     col_key = blue_filter+red_filter
     
-    if getattr(source,blue_filter) != None and getattr(source,red_filter) != None:
-        
-        plot_trail = False
+    if getattr(source,blue_filter) != None and getattr(source,red_filter) != None\
+        and add_source:
         
         plt.errorbar(getattr(source,col_key), getattr(source,yaxis_filter), 
                  yerr = getattr(source,'sig_'+yaxis_filter),
                  xerr = getattr(source,'sig_'+col_key), color='m',
                  marker='d',markersize=10, label='Source')
         
-        plot_crosshairs(fig,getattr(source,col_key),getattr(source,yaxis_filter),'m')
+        if add_crosshairs:
+            plot_crosshairs(fig,getattr(source,col_key),getattr(source,yaxis_filter),'m')
         
-        if plot_trail:
+        if add_source_trail:
             red_lc = source.lightcurves[red_filter]
             blue_lc = source.lightcurves[blue_filter]
             y_lc = source.lightcurves[yaxis_filter]
@@ -718,14 +726,16 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
             plt.errorbar(scols, smags, yerr = smagerr, xerr = scolerr, 
                          color='m', marker='d',markersize=10, label='Source')
                  
-    if getattr(blend,blue_filter) != None and getattr(blend,red_filter) != None:
+    if getattr(blend,blue_filter) != None and getattr(blend,red_filter) != None \
+        and add_blend:
         
         plt.errorbar(getattr(blend,col_key), getattr(blend,yaxis_filter), 
                  yerr = getattr(blend,'sig_'+yaxis_filter),
                  xerr = getattr(blend,'sig_'+col_key), color='b',
                  marker='v',markersize=10, label='Blend')
                 
-    if getattr(target,blue_filter) != None and getattr(target,red_filter) != None:
+    if getattr(target,blue_filter) != None and getattr(target,red_filter) != None \
+        and add_target_trail:
         
         plt.errorbar(getattr(target,col_key), getattr(target,yaxis_filter), 
                  yerr = getattr(target,'sig_'+yaxis_filter),
@@ -741,8 +751,9 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
         plt.errorbar(tcols, tmags, yerr = tmagerr,xerr = tcolerr, 
                      color='k', marker='+',markersize=10, alpha=0.4,
                      label='Blended target')
-        
-    plt.errorbar(getattr(RC,col_key), getattr(RC,yaxis_filter), 
+    
+    if add_rc_centroid:
+        plt.errorbar(getattr(RC,col_key), getattr(RC,yaxis_filter), 
                  yerr=getattr(RC,'sig_'+yaxis_filter), 
                  xerr=getattr(RC,'sig_'+col_key),
                  color='g', marker='s',markersize=10, label='Red Clump centroid')
@@ -813,7 +824,16 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
         ri_err = np.sqrt(r_lc['mag_err'][idx]**2 + i_lc['mag_err'][idx]**2)
         
         return gr, gr_err, ri, ri_err
-        
+    
+    
+    add_source_trail = False
+    add_target_trail = True
+    add_blend = True
+    add_source = True
+    add_crosshairs = True
+    add_blend = True
+    add_rc_centroid = True
+    
     tol = 2.0
     
     filters = { 'ip': 'SDSS-i', 'rp': 'SDSS-r', 'gp': 'SDSS-g' }
@@ -846,15 +866,14 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
         ax.scatter(linst_gr, linst_ri, marker='*', s=4, c='#8c6931',
                    label='Stars < '+str(round(tol,1))+'arcmin of target')
                      
-        if source.gr_0 != None and source.ri_0 != None:
-            
-            plot_trail = False 
+        if source.gr_0 != None and source.ri_0 != None and add_source:
             
             plt.plot(source.gr_0, source.ri_0,'md',markersize=10, label='Source')
             
-            plot_crosshairs(fig,source.gr_0, source.ri_0,'m')
+            if add_crosshairs:
+                plot_crosshairs(fig,source.gr_0, source.ri_0,'m')
         
-            if plot_trail:
+            if add_source_trail:
                 g_lc = source.lightcurves['g']
                 r_lc = source.lightcurves['r']
                 i_lc = source.lightcurves['i']
@@ -864,11 +883,11 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
                 plt.errorbar(sgr, sri, yerr = sri_err, xerr = sgr_err, 
                              color='m',marker='d',markersize=10, label='Source')
         
-        if blend.gr_0 != None and blend.ri_0 != None:
+        if blend.gr_0 != None and blend.ri_0 != None and add_blend:
             plt.plot(blend.gr_0, blend.ri_0,'bv',markersize=10, label='Blend')
 
         if target.lightcurves['g'] != None and target.lightcurves['r'] != None\
-            and target.lightcurves['i'] != None:
+            and target.lightcurves['i'] != None and add_target_trail:
             
             g_lc = target.lightcurves['g']
             r_lc = target.lightcurves['r']
@@ -929,9 +948,12 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
     
         l = ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), ncol=2)
     
-        l.legendHandles[2]._sizes = [50]
-        l.legendHandles[3]._sizes = [50]
-    
+        try:
+            l.legendHandles[2]._sizes = [50]
+            l.legendHandles[3]._sizes = [50]
+        except IndexError:
+            pass
+        
         plt.rcParams.update({'legend.fontsize':18})
         plt.rcParams.update({'font.size':18})
         plt.rc('xtick', labelsize=18) 
