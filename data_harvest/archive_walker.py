@@ -59,7 +59,9 @@ def locate_search_subdirs(search_params, active_sites, active_cameras_prefix):
                            ddate <= search_params['end_date']:
                            
                            search_dirs.append(dpath)
-        
+    
+    print('Identified '+str(len(search_dir))+' data directories to search')
+    
     return search_dirs
     
 def get_args():
@@ -121,6 +123,8 @@ def scan_for_data(search_params, search_dirs, header_params):
     for d in search_dirs:
         
         file_list = glob.glob(path.join(d, 'processed', '*.fits.fz'))
+        
+        print(' -> Found '+str(len(file_list))+' frames in '+d)
         
         for f in file_list:
             
