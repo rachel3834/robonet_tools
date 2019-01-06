@@ -127,7 +127,7 @@ def scan_for_data(search_params, search_dirs, header_params):
         
         file_list = glob.glob(path.join(dpath, '*.fits.fz'))
         
-        print(' -> Found '+str(len(file_list))+' frames in '+doath)
+        print(' -> Found '+str(len(file_list))+' frames in '+dpath)
         
         for f in file_list:
             
