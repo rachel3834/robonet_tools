@@ -5,11 +5,12 @@ Created on Thu Jan  3 16:42:56 2019
 @author: rstreet
 """
 
-from os import path
+from os import path, makedirs
 from sys import argv
 from astropy.io import fits
 from datetime import datetime
 import glob
+from shutil import copy
 
 def search_lco_local_archive():
     """Function to search the LCO local data archive, primarily for data
@@ -31,7 +32,7 @@ def search_lco_local_archive():
     
     search_dirs = locate_search_subdirs(search_params, active_sites, 
                                         active_cameras_prefix)
-
+    
     scan_for_data(search_params, search_dirs, header_params)
     
 def locate_search_subdirs(search_params, active_sites, active_cameras_prefix):
@@ -44,7 +45,7 @@ def locate_search_subdirs(search_params, active_sites, active_cameras_prefix):
 
             cameras = glob.glob(path.join(search_params['archive_path'],\
                                             site,camera_prefix+'*'))
-            
+                                            
             for camera_dir in cameras:
                 
                 date_list = glob.glob(path.join(camera_dir,'20??????'))
@@ -52,37 +53,45 @@ def locate_search_subdirs(search_params, active_sites, active_cameras_prefix):
                 for dpath in date_list:
                     
                     ddate = path.basename(dpath)
-                    ddate = datetime.strptime(ddate, '%Y%m%dT')
+                    ddate = datetime.strptime(ddate, '%Y%m%d')
                     
                     if ddate >= search_params['start_date'] and \
                            ddate <= search_params['end_date']:
                            
                            search_dirs.append(dpath)
-    
+        
     return search_dirs
     
 def get_args():
     
-    search_params = {}
+    search_params = {'copy': False}
     
     if len(argv) == 1:
-        params['archive_path'] = raw_input('Please enter the path to the top-level archive directory [e.g. /net/archive/archive/engineering/]: ')
-        params['start_date'] = raw_input('Please enter the start date for a search: ')
-        params['end_date'] = raw_input('Please enter the end date for a search: ')
-        params['log_dir'] = raw_input('Please enter the directory path for output: ')
-        params['search_key'] = raw_input('Please enter header parameter to be used to identify data [OBJECT or GROUPID]: ')
-        params['search_substr'] = raw_input('Please enter the sub-string which must be included in the search_key value for data to be selected [e.g. OGLE, no wildcards required]: ')
+        search_params['archive_path'] = raw_input('Please enter the path to the top-level archive directory [e.g. /net/archive/archive/engineering/]: ')
+        search_params['start_date'] = raw_input('Please enter the start date for a search: ')
+        search_params['end_date'] = raw_input('Please enter the end date for a search: ')
+        search_params['log_dir'] = raw_input('Please enter the directory path for output: ')
+        search_params['search_key'] = raw_input('Please enter header parameter to be used to identify data [OBJECT or GROUPID]: ')
+        search_params['search_substr'] = raw_input('Please enter the sub-string which must be included in the search_key value for data to be selected [e.g. OGLE, no wildcards required]: ')
+        opt = raw_input('Copy selected data?  Y or n: ')
+        
+        if 'Y' in str(opt).upper():
+            search_params['copy'] = True
+            
     else:
-        params['archive_path'] = argv[1]
-        params['start_date'] = argv[2]
-        params['end_date'] = argv[3]
-        params['log_dir'] = argv[4]
-        params['search_key'] = argv[5]
-        params['search_substr'] = argv[6]
-
+        search_params['archive_path'] = argv[1]
+        search_params['start_date'] = argv[2]
+        search_params['end_date'] = argv[3]
+        search_params['log_dir'] = argv[4]
+        search_params['search_key'] = argv[5]
+        search_params['search_substr'] = argv[6]
+        
+        if '-copy' in argv:
+            search_params['copy'] = True
+            
     for d in ['start_date', 'end_date']:
-        t = datetime.strptime(params[d], '%Y-%m-%d')
-        params[d] = t
+        t = datetime.strptime(search_params[d], '%Y-%m-%d')
+        search_params[d] = t
     
     return search_params
     
@@ -107,26 +116,40 @@ def scan_for_data(search_params, search_dirs, header_params):
                          'archive_walker_search_results.log')
     
     data_log = open(log_path,'w')
-    data_log.write('# ' + ' '.join(header_params) + 'Path')
+    data_log.write('# ' + ' '.join(header_params) + ' Path\n')
     
     for d in search_dirs:
         
-        file_list = glob.glob(path.join(d, '*.fits.fz'))
+        file_list = glob.glob(path.join(d, 'processed', '*.fits.fz'))
         
         for f in file_list:
             
             header_info = get_image_header_info(f, header_params)
             
             output = ''
-            for key, value in header_info.items():
-                output += ' ' + str(value)
+            for key in header_params:
+                output += ' ' + str(header_info[key])
             
             output += ' ' + f + '\n'
             
             data_log.write(output)
     
     data_log.close()
+
+def copy_data_from_archive(search_params,file_path):
     
+    if search_params['copy'] == True:
+        
+        (src,file_name) = str(path.split(file_path))
+        dest = src.replace(search_params['archive_path'],search_params['log_dir'])
+        
+        if path.isdir(dest) == False:
+            makedirs(dest)
+        
+        copy(file_path, path.join(dest,file_name))
+        
+        print('-> Transferred '+file_name+' to '+dest)
+        
 if __name__ == '__main__':
         
     search_lco_local_archive()
