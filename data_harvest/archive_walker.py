@@ -95,6 +95,9 @@ def get_args():
         t = datetime.strptime(search_params[d], '%Y-%m-%d')
         search_params[d] = t
     
+    print('Searching data archive with the following parameters:')
+    print(search_params)
+    
     return search_params
     
 def get_image_header_info(image_path, params):
@@ -133,11 +136,12 @@ def scan_for_data(search_params, search_dirs, header_params):
             
             header_info = get_image_header_info(f, header_params)
             
-            output = ''
-            for key in header_params:
-                output += ' ' + str(header_info[key])
-            
-            output += ' ' + f + '\n'
+            if search_params['search_substr'] in header_info[search_params['search_key']]:
+                output = ''
+                for key in header_params:
+                    output += ' ' + str(header_info[key])
+                
+                output += ' ' + f + '\n'
             
             data_log.write(output)
     
