@@ -143,7 +143,7 @@ def scan_for_data(search_params, search_dirs, header_params):
                 
                 output += ' ' + f + '\n'
             
-            data_log.write(output)
+                data_log.write(output)
     
     data_log.close()
 
