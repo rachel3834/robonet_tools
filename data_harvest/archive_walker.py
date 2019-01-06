@@ -60,7 +60,7 @@ def locate_search_subdirs(search_params, active_sites, active_cameras_prefix):
                            
                            search_dirs.append(dpath)
     
-    print('Identified '+str(len(search_dir))+' data directories to search')
+    print('Identified '+str(len(search_dirs))+' data directories to search')
     
     return search_dirs
     
