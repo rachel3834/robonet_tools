@@ -5,7 +5,12 @@ Created on Tue Jan 15 10:09:36 2019
 @author: rstreet
 """
 
-def generate_model_lightcurve(e):
+import numpy as np
+import copy
+from pyLIMA import microltoolbox
+import matplotlib.pyplot as plt
+
+def generate_model_lightcurve(e,ts=None,diagnostics=False):
     """Function to produce a model lightcurve based on a parameter set
     fitted by pyLIMA
     
@@ -17,7 +22,8 @@ def generate_model_lightcurve(e):
     
     fit_params = e.fits[-1].model.compute_pyLIMA_parameters(e.fits[-1].fit_results)
     
-    ts = np.linspace(lc[:,0].min(), lc[:,0].max(), len(lc[:,0]))
+    if type(ts) != type(np.zeros(1)):
+        ts = np.linspace(lc[:,0].min(), lc[:,0].max(), len(lc[:,0]))
 
     reference_telescope = copy.copy(e.fits[-1].event.telescopes[0])
     
@@ -33,5 +39,22 @@ def generate_model_lightcurve(e):
     
     mag_model = microltoolbox.flux_to_magnitude(flux_model)
 
+    if diagnostics:
+        fig = plt.figure(1,(10,10))
+    
+        plt.plot(ts,mag_model,'r-')
+    
+        plt.xlabel('HJD')
+        plt.ylabel('Magnitude')
+        
+        rev_yaxis = True
+        if rev_yaxis:
+            [xmin,xmax,ymin,ymax] = plt.axis()
+            plt.axis([xmin,xmax,ymax,ymin])
+        
+        plt.grid()
+        plt.savefig('lc_model_test.png')
+        
+        plt.close(1)
+        
     return mag_model
-

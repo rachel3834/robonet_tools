@@ -14,8 +14,10 @@ from pyLIMA import telescopes
 from pyLIMA import microlmodels
 from pyLIMA import microlmagnification
 from pyLIMA import microloutputs
+from pyLIMA import microltoolbox
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
 class Dataset():
     
@@ -67,8 +69,13 @@ def estimate_error_scaling():
     
         e.telescopes.append(d.tel)
         
-    e = create_model(e,params)
+    (e,params) = create_model(e,params)
     
+    norm_lcs = generate_residual_lcs(e,params)
+    
+    model_lc = pylima_lightcurve_tools.generate_model_lightcurve(e,diagnostics=True)
+    
+    estimate_err_scale_factors(norm_lcs,e,params)
     
 def get_params():
     """Input file format expected:  ASCII, with lines:
@@ -131,7 +138,12 @@ def get_params():
                 
                 entries = line.replace('EVENT_PARAMETER','').replace('\n','').split()
                 params[str(entries[0].strip()).lower()] = entries[1]
-    
+            
+            elif 'OUTPUT' in line:
+                
+                entries = line.replace('OUTPUT','').replace('\n','').split()
+                params['output'] = entries[0]
+                
     for d in params['datasets']:
         print(d.summary())
         
@@ -177,7 +189,9 @@ def create_model(e,params):
         model_params.append('sdsdt')
         model_params.append('dalphadt')
         model_params.append('sdszdt')
-            
+    
+    params['model_params'] = model_params
+    
     model = microlmodels.create_model(params['model_type'], e,
                                   parallax=parallax_params,
                                   orbital_motion=orbital_params,
@@ -198,32 +212,122 @@ def create_model(e,params):
     e.fits.append(f)
     
     fig = microloutputs.LM_plot_lightcurves(f)
-    
-    #pylima_params = f.model.compute_pyLIMA_parameters(f.fit_results)
-        
-    #A = model.model_magnification(e.telescopes[0],pylima_params)
-    
-    #lightcurve = e.telescopes[0].lightcurve_magnitude
-        
-    #fig = plt.figure(1,(10,10))
-    
-    #plt.plot(lightcurve[:,0],A,'b.')
-    
-    #plt.xlabel('HJD')
-    #plt.ylabel('Magnification')
-    
-    #rev_yaxis = False
-    #if rev_yaxis:
-    #    [xmin,xmax,ymin,ymax] = plt.axis()
-    #    plt.axis([xmin,xmax,ymax,ymin])
-    
-    #plt.grid()
-    #plt.savefig('lc_test.png')
-    
+
     plt.show()
     
-    return e
+    plt.close()
     
+    return e,params
+
+def generate_residual_lcs(e,params):
+    
+    f = e.fits[-1]
+    model = f.model
+    
+    pylima_params = model.compute_pyLIMA_parameters(params['model_params'])
+    
+    norm_lcs = []
+    
+    for tel in e.telescopes:
+        nlc = f.model_residuals(tel, pylima_params)
+        
+        norm_lcs.append(nlc)
+    print(norm_lcs)
+    
+    return norm_lcs
+    
+def plot_lcs(lc_data):
+
+    fig = plt.figure(1,(10,10))
+    
+    for i,lc in enumerate(lc_data):
+        plt.errorbar(lc[:,0],lc[:,1],yerr=lc[:,2],fmt='.')
+    
+    plt.xlabel('HJD')
+    plt.ylabel('Magnitude')
+    
+    rev_yaxis = True
+    if rev_yaxis:
+        [xmin,xmax,ymin,ymax] = plt.axis()
+        plt.axis([xmin,xmax,ymax,ymin])
+    
+    plt.grid()
+    plt.savefig('lc_test.png')
+    
+    plt.close(1)
+
+def straightline(x, a0, a1):
+    return a0 + a1*x
+    
+def estimate_err_scale_factors(norm_lcs,e,params):
+
+    f = open(path.join(params['output'],'fitted_err_rescalings.dat'),'w')
+    
+    for i in range(0,len(norm_lcs),1):
+        
+        lc = norm_lcs[i]
+        
+        model_lc = pylima_lightcurve_tools.generate_model_lightcurve(e,ts=lc[:,0],
+                                                                     diagnostics=True)
+        
+        N = float(len(lc))
+        Ndof = N - len(params['model_params'])
+        sqrtNdof = np.sqrt(Ndof/N)
+        
+        delta = (lc[:,1] - model_lc)
+        
+        idx1 = np.where(abs(delta) <= 0.1)[0]
+        idx2 = np.where(lc[:,2] <= 0.05)[0]
+        idx = list(set(idx1).intersection(set(idx2)))
+        
+        sigmas = lc[:,2]**2
+        delta = (delta/sqrtNdof)**2
+        
+        (intercept,slope) = curve_fit(straightline, sigmas[idx], delta[idx])[0]
+        
+        if intercept > 0:
+            a0 = np.sqrt(intercept)
+            #a0 = intercept
+        else:
+            a0 = np.median(delta[idx])
+        if slope > 0:
+            a1 = np.sqrt(slope)
+            #a1 = slope
+        else:
+            a1 = 0.0
+        median_delta = np.median(np.sqrt(delta[idx]))
+        
+        f.write(params['datasets'][i].name+' a0='+str(a0)+' a1='+str(a1)+'\n')
+        print(params['datasets'][i].name+\
+            ' intercept='+str(intercept)+' slope='+str(slope)+\
+            ' a0='+str(a0)+' a1='+str(a1)+' median delta='+str(median_delta))
+        
+        x = np.linspace(sigmas[idx].min(),sigmas[idx].max(),20)
+        y = straightline(x, intercept, slope)
+        
+        fig = plt.figure(1,(10,10))
+        
+        plt.plot(sigmas,delta,'b.')
+        
+        plt.plot(x,y,'k-')
+        
+        [xmin,xmax,ymin,ymax] = plt.axis()
+        plt.axis([xmin,xmax,-0.01,0.25])
+        plt.xlabel('$\sigma^{2}$')
+        plt.ylabel('$[(Data-model)/\sqrt{N_{dof}/N}]^{2}$')
+        
+        plt.savefig(path.join(params['output'],
+                    'err_factor_fit_'+params['datasets'][i].name+'.png'))
+    
+        plt.close(1)
+        
+        err_new = np.sqrt(median_delta**2 + sigmas[idx])
+        err_factor = np.median(err_new/np.sqrt(sigmas[idx]))
+        f.write('Error factor = '+str(err_factor)+'\n')
+        f.write('Median old error = '+str(np.median(np.sqrt(sigmas[idx])))+'\n')
+        f.write('Median new error = '+str(np.median(err_new))+'\n')
+        
+    f.close()
     
 if __name__ == '__main__':
     estimate_error_scaling()
