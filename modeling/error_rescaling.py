@@ -17,7 +17,7 @@ from pyLIMA import microloutputs
 from pyLIMA import microltoolbox
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
+from scipy import optimize
 
 class Dataset():
     
@@ -27,6 +27,14 @@ class Dataset():
         self.data_file = None
         self.tel = None
         self.gamma = None
+        self.k = None
+        self.k_err = None
+        self.emin = None
+        self.emin_err = None
+        self.a0 = None
+        self.a0_err = None
+        self.a1 = None
+        self.a1_err = None
         
         if params != None:
             self.name = params['name']
@@ -57,6 +65,12 @@ class Dataset():
                                  light_curve_magnitude=lightcurve,
                                  light_curve_magnitude_dictionnary={'time': 0, 'mag': 1, 'err_mag': 2})
         
+    def k_emin_results(self):
+        return self.name+' k='+str(self.k)+'+/-'+str(self.k_err)+', emin='+str(self.emin)+'+/-'+str(self.emin_err)
+    
+    def slope_results(self):
+        return self.name+' a0='+str(self.a0)+'+/-'+str(self.a0_err)+', a1='+str(self.a1)+'+/-'+str(self.a1_err)
+        
 def estimate_error_scaling():
     
     params = get_params()
@@ -71,11 +85,11 @@ def estimate_error_scaling():
         
     (e,params) = create_model(e,params)
     
-    norm_lcs = generate_residual_lcs(e,params)
+    residual_lcs = generate_residual_lcs(e,params)
+        
+    params = estimate_err_scale_factors(residual_lcs,e,params)
     
-    model_lc = pylima_lightcurve_tools.generate_model_lightcurve(e,diagnostics=True)
-    
-    estimate_err_scale_factors(norm_lcs,e,params)
+    params = rescale_lightcurves(e,params)
     
 def get_params():
     """Input file format expected:  ASCII, with lines:
@@ -144,6 +158,11 @@ def get_params():
                 entries = line.replace('OUTPUT','').replace('\n','').split()
                 params['output'] = entries[0]
                 
+            elif 'BINARY_ORIGIN' in line:
+                
+                entries = line.replace('BINARY_ORIGIN','').replace('\n','').split()
+                params['binary_origin'] = entries[0]
+                
     for d in params['datasets']:
         print(d.summary())
         
@@ -159,7 +178,7 @@ def create_event(params):
 
     return e
     
-def create_model(e,params):
+def create_model(e,params,diagnostics=False):
     
     f = microlfits.MLFits(e)
     
@@ -196,6 +215,10 @@ def create_model(e,params):
                                   parallax=parallax_params,
                                   orbital_motion=orbital_params,
                                   blend_flux_ratio = False)
+    
+    if 'binary origin' in params.keys():
+        model.binary_origin  = params['binary_origin']
+        
     model.define_model_parameters()
     
     f.model = model
@@ -204,6 +227,8 @@ def create_model(e,params):
     for key in model_params:
         results.append(params[key])
     
+    params['fitted_model_params'] = results
+    
     results = results + params['phot_params']
     results.append(params['chisq'])
     
@@ -211,11 +236,12 @@ def create_model(e,params):
     
     e.fits.append(f)
     
-    fig = microloutputs.LM_plot_lightcurves(f)
-
-    plt.show()
+    if diagnostics:
+        fig = microloutputs.LM_plot_lightcurves(f)
     
-    plt.close()
+        plt.show()
+        
+        plt.close()
     
     return e,params
 
@@ -224,17 +250,23 @@ def generate_residual_lcs(e,params):
     f = e.fits[-1]
     model = f.model
     
-    pylima_params = model.compute_pyLIMA_parameters(params['model_params'])
+    pylima_params = model.compute_pyLIMA_parameters(params['fitted_model_params'])
     
-    norm_lcs = []
+    residual_lcs = []
     
     for tel in e.telescopes:
-        nlc = f.model_residuals(tel, pylima_params)
         
-        norm_lcs.append(nlc)
-    print(norm_lcs)
+        flux = tel.lightcurve_flux[:, 1]
+        flux_model = model.compute_the_microlensing_model(tel, pylima_params)[0]
+        
+        dmag = 2.5 * np.log10(flux_model/flux)
+        
+        res_lc = np.copy(tel.lightcurve_magnitude)
+        res_lc[:,1] = dmag
+        
+        residual_lcs.append(res_lc)
     
-    return norm_lcs
+    return residual_lcs
     
 def plot_lcs(lc_data):
 
@@ -259,55 +291,69 @@ def plot_lcs(lc_data):
 def straightline(x, a0, a1):
     return a0 + a1*x
     
-def estimate_err_scale_factors(norm_lcs,e,params):
+def estimate_err_scale_factors(residual_lcs,e,params):
 
+    print('\nEstimating rescaling factors using slope approach: ')
     f = open(path.join(params['output'],'fitted_err_rescalings.dat'),'w')
     
-    for i in range(0,len(norm_lcs),1):
+    for i in range(0,len(residual_lcs),1):
         
-        lc = norm_lcs[i]
-        
-        model_lc = pylima_lightcurve_tools.generate_model_lightcurve(e,ts=lc[:,0],
-                                                                     diagnostics=True)
+        d = params['datasets'][i]
+
+        lc = residual_lcs[i]
         
         N = float(len(lc))
         Ndof = N - len(params['model_params'])
         sqrtNdof = np.sqrt(Ndof/N)
+        Ndofsq = (Ndof/N)**2
         
-        delta = (lc[:,1] - model_lc)
+        delta = lc[:,1]
         
         idx1 = np.where(abs(delta) <= 0.1)[0]
         idx2 = np.where(lc[:,2] <= 0.05)[0]
         idx = list(set(idx1).intersection(set(idx2)))
         
-        sigmas = lc[:,2]**2
-        delta = (delta/sqrtNdof)**2
+        sigmas_sq = lc[:,2]**2
+        res_sq = (delta/Ndofsq)**2
         
-        (intercept,slope) = curve_fit(straightline, sigmas[idx], delta[idx])[0]
+        #(intercept,slope) = optimize.curve_fit(straightline, sigmas[idx], delta[idx])[0]
+        (popt,pcov) = optimize.curve_fit(straightline, sigmas_sq[idx], res_sq[idx])
+        
+        (intercept,slope) = popt
+        (intercept_err,slope_err) = np.sqrt(np.diag(pcov))
         
         if intercept > 0:
-            a0 = np.sqrt(intercept)
-            #a0 = intercept
+            d.a0 = np.sqrt(intercept)
+            d.a0_err = (intercept_err/intercept)*d.a0
         else:
-            a0 = np.median(delta[idx])
+            median_res = np.median(res_sq[idx])
+            mad = np.median(res_sq[idx]-median_res)
+            
+            d.a0 = np.sqrt(median_res)
+            d.a0_err = (mad/median_res)*d.a0
+            
         if slope > 0:
-            a1 = np.sqrt(slope)
-            #a1 = slope
+            d.a1 = np.sqrt(slope)
+            d.a1_err = (slope_err/slope)*d.a1
         else:
-            a1 = 0.0
-        median_delta = np.median(np.sqrt(delta[idx]))
+            d.a1 = 0.0
+            d.a1_err = None
         
-        f.write(params['datasets'][i].name+' a0='+str(a0)+' a1='+str(a1)+'\n')
-        print(params['datasets'][i].name+\
-            ' intercept='+str(intercept)+' slope='+str(slope)+\
-            ' a0='+str(a0)+' a1='+str(a1)+' median delta='+str(median_delta))
         
-        x = np.linspace(sigmas[idx].min(),sigmas[idx].max(),20)
+        res = np.sqrt(res_sq[idx])
+        median_res = np.median(np.sqrt(res))
+        mad_res = abs(np.median(res-median_res))
+        
+        f.write(d.slope_results()+'\n')
+        print(d.slope_results()+' median residuals ='+\
+                str(median_res)+'+/-'+str(mad_res))
+        
+        x = np.linspace(sigmas_sq[idx].min(),sigmas_sq[idx].max(),20)
         y = straightline(x, intercept, slope)
         
         fig = plt.figure(1,(10,10))
         
-        plt.plot(sigmas,delta,'b.')
+        plt.plot(sigmas_sq,res_sq,'b.')
         
         plt.plot(x,y,'k-')
         
@@ -315,20 +361,100 @@ def estimate_err_scale_factors(norm_lcs,e,params):
         plt.axis([xmin,xmax,-0.01,0.25])
         plt.xlabel('$\sigma^{2}$')
         plt.ylabel('$[(Data-model)/\sqrt{N_{dof}/N}]^{2}$')
+        plt.title('Residuals for '+d.name)
         
         plt.savefig(path.join(params['output'],
-                    'err_factor_fit_'+params['datasets'][i].name+'.png'))
+                    'err_factor_fit_'+d.name+'.png'))
     
         plt.close(1)
         
-        err_new = np.sqrt(median_delta**2 + sigmas[idx])
-        err_factor = np.median(err_new/np.sqrt(sigmas[idx]))
+        err_new = np.sqrt(median_res**2 + sigmas_sq[idx])
+        err_factor = np.median(err_new/np.sqrt(sigmas_sq[idx]))
         f.write('Error factor = '+str(err_factor)+'\n')
-        f.write('Median old error = '+str(np.median(np.sqrt(sigmas[idx])))+'\n')
+        f.write('Median old error = '+str(np.median(np.sqrt(sigmas_sq[idx])))+'\n')
         f.write('Median new error = '+str(np.median(err_new))+'\n')
+        
+        params['datasets'][i] = d
         
     f.close()
     
+    return params
+    
+def objective_function(fit_process_parameters, your_event, your_model, guess):
+    """Optimizing function for errorbar rescaling by Etienne Bachelet"""
+    
+    rescaled_flux = np.copy(fit_process_parameters)
+    model_param = np.copy(guess)
+    
+    pyLIMA_parameters = your_model.compute_pyLIMA_parameters(model_param)
+    
+    chichi = 0
+    for index,telescope in enumerate(your_event.telescopes):
+         if (rescaled_flux[2*index]>0) and (rescaled_flux[2*index+1]>=0):
+              pass
+         else:
+              return np.inf
+              
+    for index,telescope in enumerate(your_event.telescopes):
+        # Find the residuals of telescope observation regarding the parameters and model
+        model = your_model.compute_the_microlensing_model(telescope, pyLIMA_parameters)
+        flux= telescope.lightcurve_flux[:,1]
+        
+        errmag = np.sqrt(rescaled_flux[2*index]**2*telescope.lightcurve_magnitude[:,2]**2 + \
+                            rescaled_flux[2*index+1]**2)
+        errflux = errmag*telescope.lightcurve_flux[:,1]*np.log(10)/2.5
+        
+        residus = (flux - model[0])/errflux 
+        chichi += (residus ** 2).sum()+np.sum(2*np.log(errflux))
+    
+        #print('CHICHI: ',chichi, fit_process_parameters, guess)
+    
+    #opt = raw_input('Continue?')
+    
+    return chichi
+
+def rescale_lightcurves(e,params):
+    """Function to estimate the re-scaling factors k and emin from the 
+    equation:
+    
+    e' = k sqrt(sigma**2 + emin**2)
+    
+    Developed by Etienne Bachelet
+    """
+    
+    print('\nEstimating rescaling factors using k,emin approach:')
+    rescale_params_guess = []
+
+    for i in e.telescopes:
+        
+        rescale_params_guess.append(1.0)    # k
+        rescale_params_guess.append(0.0)    # emin
+        
+    fit_model_params = []
+    for key in params['model_params']:
+        fit_model_params.append(params[key])
+    
+    result = optimize.minimize(objective_function, rescale_params_guess,
+                               args=(e, e.fits[-1].model, fit_model_params),
+                               options={'maxiter': 1e5})
+    
+    covar = result.hess_inv
+    
+    x_errors = np.sqrt( np.diagonal(covar) )
+    
+    for i, tel in enumerate(e.telescopes):
+        
+        d = params['datasets'][i]
+        d.k = result.x[i*2]
+        d.k_err = x_errors[i*2]
+        d.emin = result.x[i*2+1]
+        d.emin_err = x_errors[i*2+1]
+        params['datasets'][i] = d
+        
+        print(d.k_emin_results())
+        
+    return params
+        
 if __name__ == '__main__':
     estimate_error_scaling()
     
