@@ -65,11 +65,19 @@ class Dataset():
                                  light_curve_magnitude=lightcurve,
                                  light_curve_magnitude_dictionnary={'time': 0, 'mag': 1, 'err_mag': 2})
         
-    def k_emin_results(self):
-        return self.name+' k='+str(self.k)+'+/-'+str(self.k_err)+', emin='+str(self.emin)+'+/-'+str(self.emin_err)
+    def k_emin_results(self,latex=False):
+        if latex and self.k_err != None and self.emin_err != None:
+            return self.name+' k='+str(round(self.k,3))+'$\pm$'+str(round(self.k_err,3))+\
+                        ', emin='+str(round(self.emin,3))+'$\pm$'+str(round(self.emin_err,3))
+        else:
+            return self.name+' k='+str(self.k)+'+/-'+str(self.k_err)+', emin='+str(self.emin)+'+/-'+str(self.emin_err)
     
-    def slope_results(self):
-        return self.name+' a0='+str(self.a0)+'+/-'+str(self.a0_err)+', a1='+str(self.a1)+'+/-'+str(self.a1_err)
+    def slope_results(self,latex=False):
+        if latex and self.a0_err != None and self.a1_err != None:
+            return self.name+' a0='+str(round(self.a0,3))+'$\pm$'+str(round(self.a0_err,3))+\
+                    ', a1='+str(round(self.a1,3))+'$\pm$'+str(round(self.a1_err,3))
+        else:
+            return self.name+' a0='+str(self.a0)+'+/-'+str(self.a0_err)+', a1='+str(self.a1)+'+/-'+str(self.a1_err)
         
 def estimate_error_scaling():
     
@@ -90,6 +98,8 @@ def estimate_error_scaling():
     params = estimate_err_scale_factors(residual_lcs,e,params)
     
     params = rescale_lightcurves(e,params)
+    
+    output_results(params)
     
 def get_params():
     """Input file format expected:  ASCII, with lines:
@@ -294,7 +304,6 @@ def straightline(x, a0, a1):
 def estimate_err_scale_factors(residual_lcs,e,params):
 
     print('\nEstimating rescaling factors using slope approach: ')
-    f = open(path.join(params['output'],'fitted_err_rescalings.dat'),'w')
     
     for i in range(0,len(residual_lcs),1):
         
@@ -336,7 +345,7 @@ def estimate_err_scale_factors(residual_lcs,e,params):
             d.a1 = np.sqrt(slope)
             d.a1_err = (slope_err/slope)*d.a1
         else:
-            d.a1 = 0.0
+            d.a1 = 1.0
             d.a1_err = None
         
         
@@ -344,7 +353,6 @@ def estimate_err_scale_factors(residual_lcs,e,params):
         median_res = np.median(np.sqrt(res))
         mad_res = abs(np.median(res-median_res))
         
-        f.write(d.slope_results()+'\n')
         print(d.slope_results()+' median residuals ='+\
                 str(median_res)+'+/-'+str(mad_res))
         
@@ -370,13 +378,8 @@ def estimate_err_scale_factors(residual_lcs,e,params):
         
         err_new = np.sqrt(median_res**2 + sigmas_sq[idx])
         err_factor = np.median(err_new/np.sqrt(sigmas_sq[idx]))
-        f.write('Error factor = '+str(err_factor)+'\n')
-        f.write('Median old error = '+str(np.median(np.sqrt(sigmas_sq[idx])))+'\n')
-        f.write('Median new error = '+str(np.median(err_new))+'\n')
         
         params['datasets'][i] = d
-        
-    f.close()
     
     return params
     
@@ -454,7 +457,49 @@ def rescale_lightcurves(e,params):
         print(d.k_emin_results())
         
     return params
+
+def output_results(params):
+    
+    tel_codes = []
+    for d in params['datasets']:
+
+        tel_codes.append(d.name)
+    
+    tel_codes = np.array(tel_codes)
+    idx = np.argsort(tel_codes)
+    
+    output_file = path.join(params['output'],'fitted_err_rescalings.dat')
+    f = open(output_file,'w')
+    
+    f.write('Results from slope method:\n')
+    for i in idx:
         
+        d = params['datasets'][i]        
+        f.write(d.slope_results()+'\n')
+    
+    f.write('\n')
+    for i in idx:
+        
+        d = params['datasets'][i]    
+        f.write(d.slope_results(latex=True)+'\n')
+    
+    f.write('\n')
+    f.write('Results from k/emin method:\n')
+    for i in idx:
+        
+        d = params['datasets'][i]  
+        f.write(d.k_emin_results()+'\n')
+    
+    f.write('\n')
+    for i in idx:
+        
+        d = params['datasets'][i]  
+        f.write(d.k_emin_results(latex=True)+'\n')
+        
+    f.close()
+    
+    print('\nOutput summary of results to '+output_file)
+    
 if __name__ == '__main__':
     estimate_error_scaling()
     
