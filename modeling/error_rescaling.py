@@ -47,7 +47,7 @@ class Dataset():
         else:
             return self.name+' '+self.filter+' '+self.data_file
 
-    def read_dataset_to_telescope(self):
+    def read_dataset_to_telescope(self,model_type):
         
         if 'p.t' in self.data_file:
             lightcurve = np.loadtxt(self.data_file,dtype=str)
@@ -64,7 +64,10 @@ class Dataset():
         self.tel = telescopes.Telescope(name=self.name, camera_filter=self.filter, 
                                  light_curve_magnitude=lightcurve,
                                  light_curve_magnitude_dictionnary={'time': 0, 'mag': 1, 'err_mag': 2})
-        
+        if 'FS' in model_type:
+            self.tel.gamma = self.gamma
+            print(self.tel.name, self.tel.gamma)
+            
     def k_emin_results(self,latex=False):
         if latex and self.k_err != None and self.emin_err != None:
             return self.name+' k='+str(round(self.k,3))+'$\pm$'+str(round(self.k_err,3))+\
@@ -87,7 +90,7 @@ def estimate_error_scaling():
     
     for d in params['datasets']:
         
-        d.read_dataset_to_telescope()
+        d.read_dataset_to_telescope(params['model_type'])
     
         e.telescopes.append(d.tel)
         
@@ -161,7 +164,10 @@ def get_params():
             elif 'EVENT_PARAMETER' in line:
                 
                 entries = line.replace('EVENT_PARAMETER','').replace('\n','').split()
-                params[str(entries[0].strip()).lower()] = entries[1]
+                if 'NAME' in entries[0]:
+                    params[str(entries[0].strip()).lower()] = entries[1]
+                else:
+                    params[str(entries[0].strip()).lower()] = float(entries[1])
             
             elif 'OUTPUT' in line:
                 
