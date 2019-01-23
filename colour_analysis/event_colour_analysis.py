@@ -165,7 +165,10 @@ def get_args():
             
         else:
             
-            params[key] = float(value)
+            if 'none' not in str(value).lower():
+                params[key] = float(value)
+            else:
+                params[key] = None
             
     return params
     
@@ -1469,15 +1472,26 @@ def calc_lens_parameters(params, source, RC, log):
     lens.pi_E = np.array([ params['pi_E_N'], params['pi_E_E'] ])
     lens.sig_pi_E = np.array([ params['sig_pi_E_N'], params['sig_pi_E_E'] ])
     
-    lens.calc_einstein_radius(source.ang_radius,source.sig_ang_radius,log=log)
+    lens.calc_angular_einstein_radius(source.ang_radius,source.sig_ang_radius,log=log)
     
     lens.calc_distance(RC.D,0.0,log)
+    lens.calc_einstein_radius(log)
     
     lens.q = 10**(params['logq'])
-    lens.sig_q = 10**(params['sig_logq'])
+    lens.sig_q = (params['sig_logq']/params['logq']) * lens.q
+    lens.s = 10**(params['logs'])
+    lens.sig_s = (params['sig_logs']/params['logs']) * lens.s
     
     lens.calc_masses(log)
     
+    if params['dsdt'] != None and params['dalphadt'] != None
+        lens.dsdt = params['dsdt']
+        lens.sig_dsdt = params['sig_dsdt']
+        lens.dalphadt = params['dalphadt']
+        lens.sig_dalphadt = params['sig_dalphadt']
+    
+        lens.calc_orbital_energies(log)
+        
     return lens
     
 def output_red_clump_data_latex(params,RC,log):

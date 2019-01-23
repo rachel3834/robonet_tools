@@ -22,7 +22,7 @@ def plot_bicolour_flux_curves(lc1,lc2,a,f1,f2,plot_file):
     
     plt.errorbar(lc2['flux'][idx],lc1['flux'][idx],
                  xerr=lc2['flux_err'][idx], yerr=lc1['flux_err'][idx],
-                color='k',marker='.',markersize=1,fmt=None)
+                color='k',fmt='+',marker='+',markersize=10)
     
     ydata = straight_line_function(a,lc2['flux'][idx])
     

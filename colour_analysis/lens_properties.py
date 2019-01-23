@@ -35,7 +35,7 @@ class Lens:
         
         return value, sigma
 
-    def calc_einstein_radius(self,thetaS,sig_thetaS,log=None):
+    def calc_angular_einstein_radius(self,thetaS,sig_thetaS,log=None):
         """Function to calculate the angular Einstein radius and geometric projected
         motion while propagating errors formally."""
             
@@ -177,6 +177,23 @@ class Lens:
         
         log.info('Distance to the lens: '+str(self.D)+' +/- '+\
                                          str(self.sig_D)+' kpc')
+    
+    def calc_einstein_radius(self,log):
+        """Function to calculate the Einstein radius in physical units"""
+        
+        (thetaE, sig_thetaE) = self.muas_to_rads(self.thetaE, self.sig_thetaE)
+        
+        delta_thetaE = np.cos(thetaE) * sig_thetaE
+        
+        # Kpc -> AU
+        DL = self.D * 1000.0 * constants.pc.value / constants.au.value
+        sig_DL = self.sig_D * 1000.0 * constants.pc.value / constants.au.value
+        
+        self.RE = D * np.sin(thetaE)
+        self.sig_RE = np.sqrt( (sig_DL/D)*(sig_DL/D) + \
+                        (delta_thetaE/thetaE)*(delta_thetaE/thetaE) ) * self.RE
+        
+        log.info('Einstein radius = '+str(self.RE)+' +/- '+str(self.sig_RE)+' AU')
         
     def calc_masses(self,log):
         """Function to calculate the component masses of a binary lens"""
@@ -205,10 +222,57 @@ class Lens:
         self.M2 = self.ML * ( self.q / (1.0 + self.q) )
         self.sig_M2 = (self.sig_ML/self.ML)*self.M2
         
-        
         log.info('Total lens mass = '+str(self.ML)+' +/- '+str(self.sig_ML)+' Msol')
         log.info('M1 mass = '+str(self.M1)+' +/- '+str(self.sig_M1)+' Msol')
         log.info('M2 mass = '+str(self.M2)+' +/- '+str(self.sig_M2)+' Msol')
+    
+    def calc_projected_separation(self,log):
+        """Method to calculate the projected separation of the components of a
+        binary lens at the time of an event"""
+        
+        (thetaE, sig_thetaE) = self.muas_to_rads(self.thetaE, self.sig_thetaE)
+        
+        self.a_proj = self.s * self.D * thetaE
+        
+        # D is in kpc -> AU, s is in units of thetaE
+        DL = self.D * 1000.0 * constants.pc.value / constants.au.value
+        sig_DL = self.sig_D * 1000.0 * constants.pc.value / constants.au.value
+        
+        self.sig_a_proj = np.sqrt( (self.sig_s/self.s)*(self.sig_s/self.s) + \
+                            (sig_DL/DL)*(sig_DL/DL) + \
+                              (sig_thetaE/thetaE)*(sig_thetaE/thetaE) ) * self.a_proj
+                              
+        log.info('Projected separation of lens masses = '+str(self.a_proj)+' +/- '+str(self.sig_a_proj)+' AU')
+    
+    def calc_orbital_energies(self,log):
+        """Method to calculate the ratio of the kinetic and potential energy
+        of the binary orbit as a test of whether the object could be bound"""
+        
+        sre = self.s * self.RE
+        
+        sig_sre = np.sqrt( (self.sig_s/self.s)*(self.sig_s/self.s) + \
+                    (self.sig_RE/self.RE)*(self.sig_RE/self.RE) ) * sre
+                    
+        # Units d^-1 -> year^-2
+        dsdt = self.dsdt * 365.24
+        sig_dsdt = self.sig_dsdt * 365.24
+        dadt = self.dalphadt = * 365.24
+        sig_dadt = self.sig_dalphadt * 365.24
+        
+        gamma_sq = (dsdt / self.s)*(dsdt / self.s) + \
+                    (dadt*dadt)
+                    
+        sig_gamma_sq = np.sqrt( (sig_dsdt/dsdt)*(sig_dsdt/dsdt) + \
+                        (self.sig_s/self.s)*(self.sig_s/self.s) + \
+                         (sig_dadt/dadt)*(sig_dadt/dadt) ) * gamma_sq
+        
+        self.kepe = (sre*sre*sre * gamma_sq) / ( 8.0 * np.pi*np.pi * self.ML )
+        
+        self.sig_kepe = np.sqrt( (3 * (sig_sre/sre))*(3 * (sig_sre/sre)) + \
+                    (2*sig_gamma_sq/gamma_sq)*(2*sig_gamma_sq/gamma_sq) + \
+                      (self.sig_ML/self.ML)*(self.sig_ML/self.ML) ) * self.kepe
+        
+        log.info('Binary lens ratio of KE/PE = '+str(self.kepe)+' +/- '+str(self.sig_kepe))
         
 if __name__ == '__main__':
     
@@ -230,5 +294,5 @@ if __name__ == '__main__':
     ve2 = float(raw_input('Please enter the Earth E velocity: '))
     v_earth = np.array( [ve1, ve2] )
     
-    l.calc_einstein_radius(thetaS,sig_thetaS,v_earth)
+    l.calc_angular_einstein_radius(thetaS,sig_thetaS,v_earth)
     
