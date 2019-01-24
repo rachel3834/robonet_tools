@@ -1475,6 +1475,7 @@ def calc_lens_parameters(params, source, RC, log):
     lens.calc_angular_einstein_radius(source.ang_radius,source.sig_ang_radius,log=log)
     
     lens.calc_distance(RC.D,0.0,log)
+    lens.calc_distance_modulus(log)
     lens.calc_einstein_radius(log)
     
     lens.q = 10**(params['logq'])

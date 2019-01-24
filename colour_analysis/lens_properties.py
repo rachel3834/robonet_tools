@@ -181,6 +181,20 @@ class Lens:
             log.info('Distance to the lens: '+str(self.D)+' +/- '+\
                                          str(self.sig_D)+' kpc')
     
+    def calc_distance_modulus(self,log):
+        """Method to calculate the distance modulus to the lens, given
+        its distance from the observer
+        Note: assumes input distance is in kiloparsecs    
+        """
+    
+        self.dist_mod = 5.0 * np.log10(self.D * 1000.0) - 5.0
+    
+        self.sig_dist_mod = (self.sig_D/self.D)*self.dist_mod
+        
+        if log!=None:
+            log.info('Lens distance modulus = '+str(self.dist_mod)+\
+                                        ' +/- '+str(self.sig_dist_mod))
+            
     def calc_einstein_radius(self,log):
         """Function to calculate the Einstein radius in physical units"""
         

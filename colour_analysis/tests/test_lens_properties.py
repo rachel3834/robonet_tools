@@ -81,6 +81,25 @@ def test_calc_distance():
     
     assert round(lens.D,2) == 2.95
     assert round(lens.sig_D,2) == 0.29
+
+def test_calc_distance_modulus():
+    
+    lens = test_lens()
+    
+    DS = 7.48 # Kpc
+    sig_DS = 0.0 # Kpc
+    thetaS = 9.143
+    sig_thetaS = 0.792
+    
+    lens.calc_angular_einstein_radius(thetaS, sig_thetaS)
+    lens.calc_distance(DS,sig_DS,log=None)
+    lens.calc_distance_modulus(log=None)
+    
+    print('Lens distance modulus = '+str(lens.dist_mod)+\
+                             ' +/- '+str(lens.sig_dist_mod))
+    
+    assert round(lens.dist_mod,2) == 12.35
+    assert round(lens.sig_dist_mod,2) == 1.22
     
 def test_calc_projected_separation():
     
@@ -148,4 +167,6 @@ if __name__ == '__main__':
     test_calc_einstein_radius()
     print('\n')
     test_calc_orbital_energies()
+    print('\n')
+    test_calc_distance_modulus()
     
