@@ -167,15 +167,18 @@ class Lens:
         pi_L = pi_rel + pi_S                    # rads
         sig_pi_L = np.sqrt( sig_pi_rel*sig_pi_rel + sig_pi_S*sig_pi_S )
         
+        
         DL = constants.au.value / pi_L
         sig_DL = (sig_pi_L / pi_L) * DL
-        
-        log.info('Distance to the lens: '+str(DL)+' +/- '+str(sig_DL)+' m')
+
+        if log!=None:
+            log.info('Distance to the lens: '+str(DL)+' +/- '+str(sig_DL)+' m')
         
         self.D = DL / constants.pc.value / 1000.0
         self.sig_D = sig_DL / constants.pc.value / 1000.0
         
-        log.info('Distance to the lens: '+str(self.D)+' +/- '+\
+        if log!=None:
+            log.info('Distance to the lens: '+str(self.D)+' +/- '+\
                                          str(self.sig_D)+' kpc')
     
     def calc_einstein_radius(self,log):
@@ -189,11 +192,12 @@ class Lens:
         DL = self.D * 1000.0 * constants.pc.value / constants.au.value
         sig_DL = self.sig_D * 1000.0 * constants.pc.value / constants.au.value
         
-        self.RE = D * np.sin(thetaE)
-        self.sig_RE = np.sqrt( (sig_DL/D)*(sig_DL/D) + \
+        self.RE = DL * np.sin(thetaE)
+        self.sig_RE = np.sqrt( (sig_DL/DL)*(sig_DL/DL) + \
                         (delta_thetaE/thetaE)*(delta_thetaE/thetaE) ) * self.RE
         
-        log.info('Einstein radius = '+str(self.RE)+' +/- '+str(self.sig_RE)+' AU')
+        if log!=None:
+            log.info('Einstein radius = '+str(self.RE)+' +/- '+str(self.sig_RE)+' AU')
         
     def calc_masses(self,log):
         """Function to calculate the component masses of a binary lens"""
@@ -204,8 +208,9 @@ class Lens:
 #        thetaE = (self.thetaE / 1e6 / 3600.0) * (np.pi/180.0)        # mu-as -> rads
 #        sig_thetaE = (self.sig_thetaE / 1e6 / 3600.0) * (np.pi/180.0)
         
-        log.info('Magnitude of pi_E: '+str(pi_E_mag)+' +/- '+str(sig_pi_E_mag))
-        log.info('Theta_E: '+str(thetaE)+' +/- '+str(sig_thetaE)+' rads')
+        if log!=None:
+            log.info('Magnitude of pi_E: '+str(pi_E_mag)+' +/- '+str(sig_pi_E_mag))
+            log.info('Theta_E: '+str(thetaE)+' +/- '+str(sig_thetaE)+' rads')
         
         kappa = ((constants.c*constants.c * constants.au)/(4.0*constants.G)).value
         
@@ -222,9 +227,10 @@ class Lens:
         self.M2 = self.ML * ( self.q / (1.0 + self.q) )
         self.sig_M2 = (self.sig_ML/self.ML)*self.M2
         
-        log.info('Total lens mass = '+str(self.ML)+' +/- '+str(self.sig_ML)+' Msol')
-        log.info('M1 mass = '+str(self.M1)+' +/- '+str(self.sig_M1)+' Msol')
-        log.info('M2 mass = '+str(self.M2)+' +/- '+str(self.sig_M2)+' Msol')
+        if log!=None:
+            log.info('Total lens mass = '+str(self.ML)+' +/- '+str(self.sig_ML)+' Msol')
+            log.info('M1 mass = '+str(self.M1)+' +/- '+str(self.sig_M1)+' Msol')
+            log.info('M2 mass = '+str(self.M2)+' +/- '+str(self.sig_M2)+' Msol')
     
     def calc_projected_separation(self,log):
         """Method to calculate the projected separation of the components of a
@@ -232,17 +238,19 @@ class Lens:
         
         (thetaE, sig_thetaE) = self.muas_to_rads(self.thetaE, self.sig_thetaE)
         
-        self.a_proj = self.s * self.D * thetaE
-        
         # D is in kpc -> AU, s is in units of thetaE
         DL = self.D * 1000.0 * constants.pc.value / constants.au.value
         sig_DL = self.sig_D * 1000.0 * constants.pc.value / constants.au.value
         
+        self.a_proj = self.s * DL * thetaE
+        
         self.sig_a_proj = np.sqrt( (self.sig_s/self.s)*(self.sig_s/self.s) + \
                             (sig_DL/DL)*(sig_DL/DL) + \
                               (sig_thetaE/thetaE)*(sig_thetaE/thetaE) ) * self.a_proj
-                              
-        log.info('Projected separation of lens masses = '+str(self.a_proj)+' +/- '+str(self.sig_a_proj)+' AU')
+        
+        if log!=None:
+            log.info('Projected separation of lens masses = '+\
+                    str(self.a_proj)+' +/- '+str(self.sig_a_proj)+' AU')
     
     def calc_orbital_energies(self,log):
         """Method to calculate the ratio of the kinetic and potential energy
@@ -256,7 +264,7 @@ class Lens:
         # Units d^-1 -> year^-2
         dsdt = self.dsdt * 365.24
         sig_dsdt = self.sig_dsdt * 365.24
-        dadt = self.dalphadt = * 365.24
+        dadt = self.dalphadt * 365.24
         sig_dadt = self.sig_dalphadt * 365.24
         
         gamma_sq = (dsdt / self.s)*(dsdt / self.s) + \
@@ -272,7 +280,9 @@ class Lens:
                     (2*sig_gamma_sq/gamma_sq)*(2*sig_gamma_sq/gamma_sq) + \
                       (self.sig_ML/self.ML)*(self.sig_ML/self.ML) ) * self.kepe
         
-        log.info('Binary lens ratio of KE/PE = '+str(self.kepe)+' +/- '+str(self.sig_kepe))
+        if log!=None:
+            log.info('Binary lens ratio of KE/PE = '+\
+                    str(self.kepe)+' +/- '+str(self.sig_kepe))
         
 if __name__ == '__main__':
     

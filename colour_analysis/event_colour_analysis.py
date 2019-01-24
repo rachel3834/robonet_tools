@@ -1484,7 +1484,7 @@ def calc_lens_parameters(params, source, RC, log):
     
     lens.calc_masses(log)
     
-    if params['dsdt'] != None and params['dalphadt'] != None
+    if params['dsdt'] != None and params['dalphadt'] != None:
         lens.dsdt = params['dsdt']
         lens.sig_dsdt = params['sig_dsdt']
         lens.dalphadt = params['dalphadt']
