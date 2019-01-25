@@ -31,6 +31,7 @@ def map_DE_population(input_file):
     """
     
     map_data = np.loadtxt(input_file)
+    map_data = map_data[map_data[:-1].argsort(),]
     
     fig = plt.figure(1,(10,5))
         
