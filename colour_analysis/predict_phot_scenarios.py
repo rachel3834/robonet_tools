@@ -13,39 +13,42 @@ import jester_phot_transforms
 def predict_photometry(output_path,dm,extinction):
     """Driver code to set up scenarios and generate output"""
     
-    kstar = Kdwarf(name='K star', dm=dm)
-    kstar.calculate_apparent_magnitudes()
-    kstar.apply_extinction(extinction)
+    #kstar = Kdwarf(name='K star', dm=dm)
+    #kstar.calculate_apparent_magnitudes()
+    #kstar.apply_extinction(extinction)
     #kstar.transform_extinc_corr_Johnson_SDSS()
     
-    mstar = Mdwarf(name='M star', dm=dm)
-    mstar.calculate_apparent_magnitudes()
-    mstar.apply_extinction(extinction)
+    m3star = M3dwarf(name='M star', dm=dm)
+    m3star.calculate_apparent_magnitudes()
+    m3star.apply_extinction(extinction)
     #mstar.transform_extinc_corr_Johnson_SDSS()
     
-    wd_hot = WhiteDwarf(100000.0,dm=dm)
-    wd_hot.calculate_apparent_magnitudes()
-    wd_hot.apply_extinction(extinction)
+    m7star = M7dwarf(name='M star', dm=dm)
+    m7star.calculate_apparent_magnitudes()
+    m7star.apply_extinction(extinction)
+    
+    #wd_hot = WhiteDwarf(100000.0,dm=dm)
+    #wd_hot.calculate_apparent_magnitudes()
+    #wd_hot.apply_extinction(extinction)
     #wd_hot.transform_extinc_corr_Johnson_SDSS()
     
-    wd_mid = WhiteDwarf(20000.0,dm=dm)
-    wd_mid.calculate_apparent_magnitudes()
-    wd_mid.apply_extinction(extinction)
+    #wd_mid = WhiteDwarf(20000.0,dm=dm)
+    #wd_mid.calculate_apparent_magnitudes()
+    #wd_mid.apply_extinction(extinction)
     #wd_mid.transform_extinc_corr_Johnson_SDSS()
     
-    wd_cool = WhiteDwarf(4000.0,dm=dm)
-    wd_cool.calculate_apparent_magnitudes()
-    wd_cool.apply_extinction(extinction)
+    #wd_cool = WhiteDwarf(4000.0,dm=dm)
+    #wd_cool.calculate_apparent_magnitudes()
+    #wd_cool.apply_extinction(extinction)
     #wd_cool.transform_extinc_corr_Johnson_SDSS()
     
     ms_binary = scenario1(dm,extinction)
     
-    k_wd_binary = scenario2(dm,extinction)
+    #k_wd_binary = scenario2(dm,extinction)
     
-    m_wd_binary = scenario3(dm,extinction)
+    #m_wd_binary = scenario3(dm,extinction)
     
-    output_latex_table(kstar,mstar,wd_hot,wd_mid,wd_cool, 
-                       ms_binary, k_wd_binary, m_wd_binary, output_path)
+    output_latex_table(m3star,m7star, ms_binary, output_path)
                        
 
 def Kdwarf(name=None,dm=None):
@@ -69,7 +72,7 @@ def Kdwarf(name=None,dm=None):
         
     return star
 
-def Mdwarf(name=None,dm=None):
+def M4dwarf(name=None,dm=None):
     """Definition of a single, main sequence M-dwarf star of mass 0.25 Msol"""
     
     star = combined_light_predictor.Star()
@@ -83,6 +86,49 @@ def Mdwarf(name=None,dm=None):
     star.MJ = 8.398
     star.MH = 7.910
     star.MKs = 7.676
+    
+    star.distance_modulus = dm
+    
+    star.calculate_colours()
+    
+    return star
+
+def M3dwarf(name=None,dm=None):
+    """Definition of a single, main sequence M-dwarf star of mass 0.35 Msol"""
+    
+    star = combined_light_predictor.Star()
+    
+    star.name = name
+    star.Mg = 11.933
+    star.Mr = 10.409
+    star.Mi = 9.475
+    star.MB = 13.175
+    star.MV = 11.574
+    star.MJ = 7.566
+    star.MH = 7.014
+    star.MKs = 6.779
+    
+    star.distance_modulus = dm
+    
+    star.calculate_colours()
+    
+    return star
+
+
+def M7dwarf(name=None,dm=None):
+    """Definition of a single, main sequence M-dwarf star of mass 0.09 Msol"""
+    
+    star = combined_light_predictor.Star()
+    
+    star.name = name
+    star.Mg = 19.149
+    star.Mr = 17.181
+    star.Mi = 14.700
+    star.MB = 21.124
+    star.MV = 18.674
+    star.MJ = 11.033
+    star.MH = 10.458
+    star.MKs = 10.178
     
     star.distance_modulus = dm
     
@@ -165,14 +211,14 @@ def WhiteDwarf(teff, dm=None):
 def scenario1(dm,extinction):
     """Define a main sequence binary consisting of a K-dwarf and an M-dwarf"""
 
-    kstar = Kdwarf(name='K star', dm=dm)
-    mstar = Mdwarf(name='M star', dm=dm)
+    m3star = M3dwarf(name='K star', dm=dm)
+    m7star = M7dwarf(name='M star', dm=dm)
     
     binary = combined_light_predictor.BinaryStar()
     binary.distance_modulus = dm
     
-    binary.star1 = kstar
-    binary.star2 = mstar
+    binary.star1 = m3star
+    binary.star2 = m7star
     
     binary.calculate_combined_light()
     
@@ -245,50 +291,49 @@ def roundfloat(value,ndp):
     
     return output
     
-def output_latex_table(kstar,mstar,wd_hot,wd_mid,wd_cool, 
-                       ms_binary, k_wd_binary, m_wd_binary, output_path):
+def output_latex_table(m3star,m7star, ms_binary, output_path):
     """Function to output a LaTeX-format table of the stellar photometry"""
     
     t = open(output_path, 'w')
     
     t.write('\\begin{table}[h!]\n')
     t.write('\\centering\n')
-    t.write('\\caption{Predicted photometric properties of different lens system scenarios.  Apparent magnitudes are calculated for the measured lens distance without extinction or reddening, except for the bottom section.  White dwarf is abbreviated to WD, main sequence to MS.} \\label{tab:binaryphot}\n')
-    t.write('\\begin{tabular}{lcccccccc}\n')
+    t.write('\\caption{Predicted photometric properties of the lens system.  Apparent magnitudes are calculated for the measured lens distance without extinction or reddening, except for the bottom section.  } \\label{tab:binaryphot}\n')
+    t.write('\\begin{tabular}{lccc}\n')
     t.write('\\hline\n')
     t.write('\\hline\n')
-    t.write('Quantity	   & K-dwarf & M-dwarf & WD         & WD          & WD            &MS & WD +   & WD +  \\\\\n')
-    t.write('\\[mag\\]		   &		 & 	     & 4000\\,K  & 20,000\\,K & 100,000\\,K  & K+M    & K-dwarf   & M-dwarf  \\\\\n')
-    t.write('$M_{B}$       & '+roundfloat(kstar.MB,3)+' & '+roundfloat(mstar.MB,3)+' & '+roundfloat(wd_cool.MB,3)+' & '+roundfloat(wd_mid.MB,3)+' & '+roundfloat(wd_hot.MB,3)+' & '+roundfloat(ms_binary.MB_combined,3)+' & '+roundfloat(k_wd_binary.MB_combined,3)+' & '+roundfloat(m_wd_binary.MB_combined,3)+'\\\\\n')
-    t.write('$M_{V}$       & '+roundfloat(kstar.MV,3)+' & '+roundfloat(mstar.MV,3)+' & '+roundfloat(wd_cool.MV,3)+' & '+roundfloat(wd_mid.MV,3)+' & '+roundfloat(wd_hot.MV,3)+' & '+roundfloat(ms_binary.MV_combined,3)+' & '+roundfloat(k_wd_binary.MV_combined,3)+' & '+roundfloat(m_wd_binary.MV_combined,3)+'\\\\\n')
-    t.write('$M_{g}$       & '+roundfloat(kstar.Mg,3)+' & '+roundfloat(mstar.Mg,3)+' & '+roundfloat(wd_cool.Mg,3)+' & '+roundfloat(wd_mid.Mg,3)+' & '+roundfloat(wd_hot.Mg,3)+' & '+roundfloat(ms_binary.Mg_combined,3)+' & '+roundfloat(k_wd_binary.Mg_combined,3)+' & '+roundfloat(m_wd_binary.Mg_combined,3)+'\\\\\n')
-    t.write('$M_{r}$       & '+roundfloat(kstar.Mr,3)+' & '+roundfloat(mstar.Mr,3)+' & '+roundfloat(wd_cool.Mr,3)+' & '+roundfloat(wd_mid.Mr,3)+' & '+roundfloat(wd_hot.Mr,3)+' & '+roundfloat(ms_binary.Mr_combined,3)+' & '+roundfloat(k_wd_binary.Mr_combined,3)+' & '+roundfloat(m_wd_binary.Mr_combined,3)+'\\\\\n')
-    t.write('$M_{i}$       & '+roundfloat(kstar.Mi,3)+' & '+roundfloat(mstar.Mi,3)+' & '+roundfloat(wd_cool.Mi,3)+' & '+roundfloat(wd_mid.Mi,3)+' & '+roundfloat(wd_hot.Mi,3)+' & '+roundfloat(ms_binary.Mi_combined,3)+' & '+roundfloat(k_wd_binary.Mi_combined,3)+' & '+roundfloat(m_wd_binary.Mi_combined,3)+'\\\\\n')
-    t.write('$M_{J}$       & '+roundfloat(kstar.MJ,3)+' & '+roundfloat(mstar.MJ,3)+' & '+roundfloat(wd_cool.MJ,3)+' & '+roundfloat(wd_mid.MJ,3)+' & '+roundfloat(wd_hot.MJ,3)+' & '+roundfloat(ms_binary.MJ_combined,3)+' & '+roundfloat(k_wd_binary.MJ_combined,3)+' & '+roundfloat(m_wd_binary.MJ_combined,3)+'\\\\\n')
-    t.write('$M_{H}$       & '+roundfloat(kstar.MH,3)+' & '+roundfloat(mstar.MH,3)+' & '+roundfloat(wd_cool.MH,3)+' & '+roundfloat(wd_mid.MH,3)+' & '+roundfloat(wd_hot.MH,3)+' & '+roundfloat(ms_binary.MH_combined,3)+' & '+roundfloat(k_wd_binary.MH_combined,3)+' & '+roundfloat(m_wd_binary.MH_combined,3)+'\\\\\n')
-    t.write('$M_{Ks}$      & '+roundfloat(kstar.MKs,3)+' & '+roundfloat(mstar.MKs,3)+' & '+roundfloat(wd_cool.MKs,3)+' & '+roundfloat(wd_mid.MKs,3)+' & '+roundfloat(wd_hot.MKs,3)+' & '+roundfloat(ms_binary.MKs_combined,3)+' & '+roundfloat(k_wd_binary.MKs_combined,3)+' & '+roundfloat(m_wd_binary.MKs_combined,3)+'\\\\\n')
-    t.write('$(B-V)$       & '+roundfloat(kstar.BV,3)+' & '+roundfloat(mstar.BV,3)+' & '+roundfloat(wd_cool.BV,3)+' & '+roundfloat(wd_mid.BV,3)+' & '+roundfloat(wd_hot.BV,3)+' & '+roundfloat(ms_binary.BV_combined,3)+' & '+roundfloat(k_wd_binary.BV_combined,3)+' & '+roundfloat(m_wd_binary.BV_combined,3)+'\\\\\n')
-    t.write('$(g-r)$       & '+roundfloat(kstar.gr,3)+' & '+roundfloat(mstar.gr,3)+' & '+roundfloat(wd_cool.gr,3)+' & '+roundfloat(wd_mid.gr,3)+' & '+roundfloat(wd_hot.gr,3)+' & '+roundfloat(ms_binary.gr_combined,3)+' & '+roundfloat(k_wd_binary.gr_combined,3)+' & '+roundfloat(m_wd_binary.gr_combined,3)+'\\\\\n')
-    t.write('$(r-i)$       & '+roundfloat(kstar.ri,3)+' & '+roundfloat(mstar.ri,3)+' & '+roundfloat(wd_cool.ri,3)+' & '+roundfloat(wd_mid.ri,3)+' & '+roundfloat(wd_hot.ri,3)+' & '+roundfloat(ms_binary.ri_combined,3)+' & '+roundfloat(k_wd_binary.ri_combined,3)+' & '+roundfloat(m_wd_binary.ri_combined,3)+'\\\\\n')
-    t.write('$(J-H)$       & '+roundfloat(kstar.JH,3)+' & '+roundfloat(mstar.JH,3)+' & '+roundfloat(wd_cool.JH,3)+' & '+roundfloat(wd_mid.JH,3)+' & '+roundfloat(wd_hot.JH,3)+' & '+roundfloat(ms_binary.JH_combined,3)+' & '+roundfloat(k_wd_binary.JH_combined,3)+' & '+roundfloat(m_wd_binary.JH_combined,3)+'\\\\\n')
-    t.write('$(H-Ks)$      & '+roundfloat(kstar.HKs,3)+' & '+roundfloat(mstar.HKs,3)+' & '+roundfloat(wd_cool.HKs,3)+' & '+roundfloat(wd_mid.HKs,3)+' & '+roundfloat(wd_hot.HKs,3)+' & '+roundfloat(ms_binary.HKs_combined,3)+' & '+roundfloat(k_wd_binary.HKs_combined,3)+' & '+roundfloat(m_wd_binary.HKs_combined,3)+'\\\\\n')
-    t.write('$(J-Ks)$      & '+roundfloat(kstar.JKs,3)+' & '+roundfloat(mstar.JKs,3)+' & '+roundfloat(wd_cool.JKs,3)+' & '+roundfloat(wd_mid.JKs,3)+' & '+roundfloat(wd_hot.JKs,3)+' & '+roundfloat(ms_binary.JKs_combined,3)+' & '+roundfloat(k_wd_binary.JKs_combined,3)+' & '+roundfloat(m_wd_binary.JKs_combined,3)+'\\\\\n')
-    t.write('$m_{B}$       & '+roundfloat(kstar.mB,3)+' & '+roundfloat(mstar.mB,3)+' & '+roundfloat(wd_cool.mB,3)+' & '+roundfloat(wd_mid.mB,3)+' & '+roundfloat(wd_hot.mB,3)+' & '+roundfloat(ms_binary.mB_combined,3)+' & '+roundfloat(k_wd_binary.mB_combined,3)+' & '+roundfloat(m_wd_binary.mB_combined,3)+'\\\\\n')
-    t.write('$m_{V}$       & '+roundfloat(kstar.mV,3)+' & '+roundfloat(mstar.mV,3)+' & '+roundfloat(wd_cool.mV,3)+' & '+roundfloat(wd_mid.mV,3)+' & '+roundfloat(wd_hot.mV,3)+' & '+roundfloat(ms_binary.mV_combined,3)+' & '+roundfloat(k_wd_binary.mV_combined,3)+' & '+roundfloat(m_wd_binary.mV_combined,3)+'\\\\\n')
-    t.write('$m_{g}$       & '+roundfloat(kstar.mg,3)+' & '+roundfloat(mstar.mg,3)+' & '+roundfloat(wd_cool.mg,3)+' & '+roundfloat(wd_mid.mg,3)+' & '+roundfloat(wd_hot.mg,3)+' & '+roundfloat(ms_binary.mg_combined,3)+' & '+roundfloat(k_wd_binary.mg_combined,3)+' & '+roundfloat(m_wd_binary.mg_combined,3)+'\\\\\n')
-    t.write('$m_{r}$       & '+roundfloat(kstar.mr,3)+' & '+roundfloat(mstar.mr,3)+' & '+roundfloat(wd_cool.mr,3)+' & '+roundfloat(wd_mid.mr,3)+' & '+roundfloat(wd_hot.mr,3)+' & '+roundfloat(ms_binary.mr_combined,3)+' & '+roundfloat(k_wd_binary.mr_combined,3)+' & '+roundfloat(m_wd_binary.mr_combined,3)+'\\\\\n')
-    t.write('$m_{i}$       & '+roundfloat(kstar.mi,3)+' & '+roundfloat(mstar.mi,3)+' & '+roundfloat(wd_cool.mi,3)+' & '+roundfloat(wd_mid.mi,3)+' & '+roundfloat(wd_hot.mi,3)+' & '+roundfloat(ms_binary.mi_combined,3)+' & '+roundfloat(k_wd_binary.mi_combined,3)+' & '+roundfloat(m_wd_binary.mi_combined,3)+'\\\\\n')
-    t.write('$m_{J}$       & '+roundfloat(kstar.mJ,3)+' & '+roundfloat(mstar.mJ,3)+' & '+roundfloat(wd_cool.mJ,3)+' & '+roundfloat(wd_mid.mJ,3)+' & '+roundfloat(wd_hot.mJ,3)+' & '+roundfloat(ms_binary.mJ_combined,3)+' & '+roundfloat(k_wd_binary.mJ_combined,3)+' & '+roundfloat(m_wd_binary.mJ_combined,3)+'\\\\\n')
-    t.write('$m_{H}$       & '+roundfloat(kstar.mH,3)+' & '+roundfloat(mstar.mH,3)+' & '+roundfloat(wd_cool.mH,3)+' & '+roundfloat(wd_mid.mH,3)+' & '+roundfloat(wd_hot.mH,3)+' & '+roundfloat(ms_binary.mH_combined,3)+' & '+roundfloat(k_wd_binary.mH_combined,3)+' & '+roundfloat(m_wd_binary.mH_combined,3)+'\\\\\n')
-    t.write('$m_{Ks}$      & '+roundfloat(kstar.mKs,3)+' & '+roundfloat(mstar.mKs,3)+' & '+roundfloat(wd_cool.mKs,3)+' & '+roundfloat(wd_mid.mKs,3)+' & '+roundfloat(wd_hot.mKs,3)+' & '+roundfloat(ms_binary.mKs_combined,3)+' & '+roundfloat(k_wd_binary.mKs_combined,3)+' & '+roundfloat(m_wd_binary.mKs_combined,3)+'\\\\\n')
+    t.write('Quantity	   & M3-dwarf      & M7-dwarf   & MS-binary \\\\\n')
+    t.write('\\[mag\\]	   &		       & 	        & M3+M7     \\\\\n')
+    t.write('$M_{B}$       & '+roundfloat(m3star.MB,3)+' & '+roundfloat(m7star.MB,3)+' & '+roundfloat(ms_binary.MB_combined,3)+'\\\\\n')
+    t.write('$M_{V}$       & '+roundfloat(m3star.MV,3)+' & '+roundfloat(m7star.MV,3)+' & '+roundfloat(ms_binary.MV_combined,3)+'\\\\\n')
+    t.write('$M_{g}$       & '+roundfloat(m3star.Mg,3)+' & '+roundfloat(m7star.Mg,3)+' & '+roundfloat(ms_binary.Mg_combined,3)+'\\\\\n')
+    t.write('$M_{r}$       & '+roundfloat(m3star.Mr,3)+' & '+roundfloat(m7star.Mr,3)+' & '+roundfloat(ms_binary.Mr_combined,3)+'\\\\\n')
+    t.write('$M_{i}$       & '+roundfloat(m3star.Mi,3)+' & '+roundfloat(m7star.Mi,3)+' & '+roundfloat(ms_binary.Mi_combined,3)+'\\\\\n')
+    t.write('$M_{J}$       & '+roundfloat(m3star.MJ,3)+' & '+roundfloat(m7star.MJ,3)+' & '+roundfloat(ms_binary.MJ_combined,3)+'\\\\\n')
+    t.write('$M_{H}$       & '+roundfloat(m3star.MH,3)+' & '+roundfloat(m7star.MH,3)+' & '+roundfloat(ms_binary.MH_combined,3)+'\\\\\n')
+    t.write('$M_{Ks}$      & '+roundfloat(m3star.MKs,3)+' & '+roundfloat(m7star.MKs,3)+' & '+roundfloat(ms_binary.MKs_combined,3)+'\\\\\n')
+    t.write('$(B-V)$       & '+roundfloat(m3star.BV,3)+' & '+roundfloat(m7star.BV,3)+' & '+roundfloat(ms_binary.BV_combined,3)+'\\\\\n')
+    t.write('$(g-r)$       & '+roundfloat(m3star.gr,3)+' & '+roundfloat(m7star.gr,3)+' & '+roundfloat(ms_binary.gr_combined,3)+'\\\\\n')
+    t.write('$(r-i)$       & '+roundfloat(m3star.ri,3)+' & '+roundfloat(m7star.ri,3)+' & '+roundfloat(ms_binary.ri_combined,3)+'\\\\\n')
+    t.write('$(J-H)$       & '+roundfloat(m3star.JH,3)+' & '+roundfloat(m7star.JH,3)+' & '+roundfloat(ms_binary.JH_combined,3)+'\\\\\n')
+    t.write('$(H-Ks)$      & '+roundfloat(m3star.HKs,3)+' & '+roundfloat(m7star.HKs,3)+' & '+roundfloat(ms_binary.HKs_combined,3)+'\\\\\n')
+    t.write('$(J-Ks)$      & '+roundfloat(m3star.JKs,3)+' & '+roundfloat(m7star.JKs,3)+' & '+roundfloat(ms_binary.JKs_combined,3)+'\\\\\n')
+    t.write('$m_{B}$       & '+roundfloat(m3star.mB,3)+' & '+roundfloat(m7star.mB,3)+' & '+roundfloat(ms_binary.mB_combined,3)+'\\\\\n')
+    t.write('$m_{V}$       & '+roundfloat(m3star.mV,3)+' & '+roundfloat(m7star.mV,3)+' & '+roundfloat(ms_binary.mV_combined,3)+'\\\\\n')
+    t.write('$m_{g}$       & '+roundfloat(m3star.mg,3)+' & '+roundfloat(m7star.mg,3)+' & '+roundfloat(ms_binary.mg_combined,3)+'\\\\\n')
+    t.write('$m_{r}$       & '+roundfloat(m3star.mr,3)+' & '+roundfloat(m7star.mr,3)+' & '+roundfloat(ms_binary.mr_combined,3)+'\\\\\n')
+    t.write('$m_{i}$       & '+roundfloat(m3star.mi,3)+' & '+roundfloat(m7star.mi,3)+' & '+roundfloat(ms_binary.mi_combined,3)+'\\\\\n')
+    t.write('$m_{J}$       & '+roundfloat(m3star.mJ,3)+' & '+roundfloat(m7star.mJ,3)+' & '+roundfloat(ms_binary.mJ_combined,3)+'\\\\\n')
+    t.write('$m_{H}$       & '+roundfloat(m3star.mH,3)+' & '+roundfloat(m7star.mH,3)+' & '+roundfloat(ms_binary.mH_combined,3)+'\\\\\n')
+    t.write('$m_{Ks}$      & '+roundfloat(m3star.mKs,3)+' & '+roundfloat(m7star.mKs,3)+' & '+roundfloat(ms_binary.mKs_combined,3)+'\\\\\n')
     t.write('\hline\n')
-    t.write('$m_{V,corr}$  & '+roundfloat(kstar.mV_corr,3)+' & '+roundfloat(mstar.mV_corr,3)+' & '+roundfloat(wd_cool.mV_corr,3)+' & '+roundfloat(wd_mid.mV_corr,3)+' & '+roundfloat(wd_hot.mV_corr,3)+' & '+roundfloat(ms_binary.mV_combined_corr,3)+' & '+roundfloat(k_wd_binary.mV_combined_corr,3)+' & '+roundfloat(m_wd_binary.mV_combined_corr,3)+'\\\\\n')
-    t.write('$(B-V)_{corr}$& '+roundfloat(kstar.BV_corr,3)+' & '+roundfloat(mstar.BV_corr,3)+' & '+roundfloat(wd_cool.BV_corr,3)+' & '+roundfloat(wd_mid.BV_corr,3)+' & '+roundfloat(wd_hot.BV_corr,3)+' & '+roundfloat(ms_binary.BV_combined_corr,3)+' & '+roundfloat(k_wd_binary.BV_combined_corr,3)+' & '+roundfloat(m_wd_binary.BV_combined_corr,3)+'\\\\\n')
-    t.write('$m_{g,corr}$  & '+roundfloat(kstar.mg_corr,3)+' & '+roundfloat(mstar.mg_corr,3)+' & '+roundfloat(wd_cool.mg_corr,3)+' & '+roundfloat(wd_mid.mg_corr,3)+' & '+roundfloat(wd_hot.mg_corr,3)+' & '+roundfloat(ms_binary.mg_combined_corr,3)+' & '+roundfloat(k_wd_binary.mg_combined_corr,3)+' & '+roundfloat(m_wd_binary.mg_combined_corr,3)+'\\\\\n')
-    t.write('$m_{r,corr}$  & '+roundfloat(kstar.mr_corr,3)+' & '+roundfloat(mstar.mr_corr,3)+' & '+roundfloat(wd_cool.mr_corr,3)+' & '+roundfloat(wd_mid.mr_corr,3)+' & '+roundfloat(wd_hot.mr_corr,3)+' & '+roundfloat(ms_binary.mr_combined_corr,3)+' & '+roundfloat(k_wd_binary.mr_combined_corr,3)+' & '+roundfloat(m_wd_binary.mr_combined_corr,3)+'\\\\\n')
-    t.write('$m_{i,corr}$  & '+roundfloat(kstar.mi_corr,3)+' & '+roundfloat(mstar.mi_corr,3)+' & '+roundfloat(wd_cool.mi_corr,3)+' & '+roundfloat(wd_mid.mi_corr,3)+' & '+roundfloat(wd_hot.mi_corr,3)+' & '+roundfloat(ms_binary.mi_combined_corr,3)+' & '+roundfloat(k_wd_binary.mi_combined_corr,3)+' & '+roundfloat(m_wd_binary.mi_combined_corr,3)+'\\\\\n')
-    t.write('$(g-r)_{corr}$& '+roundfloat(kstar.gr_corr,3)+' & '+roundfloat(mstar.gr_corr,3)+' & '+roundfloat(wd_cool.gr_corr,3)+' & '+roundfloat(wd_mid.gr_corr,3)+' & '+roundfloat(wd_hot.gr_corr,3)+' & '+roundfloat(ms_binary.gr_combined_corr,3)+' & '+roundfloat(k_wd_binary.gr_combined,3)+' & '+roundfloat(m_wd_binary.gr_combined_corr,3)+'\\\\\n')
-    t.write('$(r-i)_{corr}$& '+roundfloat(kstar.ri_corr,3)+' & '+roundfloat(mstar.ri_corr,3)+' & '+roundfloat(wd_cool.ri_corr,3)+' & '+roundfloat(wd_mid.ri_corr,3)+' & '+roundfloat(wd_hot.ri_corr,3)+' & '+roundfloat(ms_binary.ri_combined_corr,3)+' & '+roundfloat(k_wd_binary.ri_combined,3)+' & '+roundfloat(m_wd_binary.ri_combined_corr,3)+'\\\\\n')
+    t.write('$m_{V,corr}$  & '+roundfloat(m3star.mV_corr,3)+' & '+roundfloat(m7star.mV_corr,3)+' & '+roundfloat(ms_binary.mV_combined_corr,3)+'\\\\\n')
+    t.write('$(B-V)_{corr}$& '+roundfloat(m3star.BV_corr,3)+' & '+roundfloat(m7star.BV_corr,3)+' & '+roundfloat(ms_binary.BV_combined_corr,3)+'\\\\\n')
+    t.write('$m_{g,corr}$  & '+roundfloat(m3star.mg_corr,3)+' & '+roundfloat(m7star.mg_corr,3)+' & '+roundfloat(ms_binary.mg_combined_corr,3)+'\\\\\n')
+    t.write('$m_{r,corr}$  & '+roundfloat(m3star.mr_corr,3)+' & '+roundfloat(m7star.mr_corr,3)+' & '+roundfloat(ms_binary.mr_combined_corr,3)+'\\\\\n')
+    t.write('$m_{i,corr}$  & '+roundfloat(m3star.mi_corr,3)+' & '+roundfloat(m7star.mi_corr,3)+' & '+roundfloat(ms_binary.mi_combined_corr,3)+'\\\\\n')
+    t.write('$(g-r)_{corr}$& '+roundfloat(m3star.gr_corr,3)+' & '+roundfloat(m7star.gr_corr,3)+' & '+roundfloat(ms_binary.gr_combined_corr,3)+'\\\\\n')
+    t.write('$(r-i)_{corr}$& '+roundfloat(m3star.ri_corr,3)+' & '+roundfloat(m7star.ri_corr,3)+' & '+roundfloat(ms_binary.ri_combined_corr,3)+'\\\\\n')
     t.write('\hline\n')
     t.write('\end{tabular}\n')
     t.write('\end{table}\n')
