@@ -3,6 +3,7 @@
 Created on Tue Jan 15 10:09:36 2019
 
 @author: rstreet
+Based on pyLIMA and additional code from E. Bachelet
 """
 
 from sys import argv
@@ -15,6 +16,11 @@ import data_handling_utils
 from pyLIMA import event
 from pyLIMA import microlfits
 from pyLIMA import microlmodels
+from pyLIMA import microloutputs
+from matplotlib.ticker import MaxNLocator, MultipleLocator
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes 
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+from mpl_toolkits.axes_grid.inset_locator import inset_axes
 
 def plot_event_lightcurve():
     """Function to plot an event lightcurve with a model overplotted from
@@ -39,6 +45,13 @@ def plot_event_lightcurve():
     
     residual_lcs = generate_residual_lcs(current_event,params)
     
+    lc_data = []
+    for d in params['data']:
+        
+        lc_data.append(d.tel.lightcurve_magnitude)
+
+    plot_lcs(current_event,params)
+    
 def get_params():
     
     params = {}
@@ -59,7 +72,7 @@ def get_params():
     flines = open(input_file,'r').readlines()
     
     datasets = []
-    phot_params = {}
+    phot_params = []
     
     for line in flines:
         key = line.replace('\n','').split()[0]
@@ -70,32 +83,18 @@ def get_params():
             ddict = {'name': entries[0], 'filter': entries[1], 
                      'data_file': entries[2], 'gamma': float(entries[3])}
             datasets.append(ddict)
+            phot_params.append(float(entries[4]))
+            phot_params.append(float(entries[5]))
         
-        if key in ['name','output','error_scaling_file','survey','model_type']:
+        if key in ['name','output','error_scaling_file','survey','model_type',\
+                    'binary_origin']:
             entries = line.replace(key.upper(),'').replace('\n','').split()
             params[key] = entries[0]
         
         if key in ['ra', 'dec', 'to', 'uo', 'te', 'rho', 'logs', 'logq', \
-                    'alpha', 'pien', 'piee', 'dsdt', 'dalphadt']:
+                    'alpha', 'pien', 'piee', 'sdsdt', 'dalphadt','chisq','topar']:
             entries = line.replace(key.upper(),'').replace('\n','').split()
             params[key] = float(entries[0])
-        
-        if 'fs_' in key or 'fb_' in key:
-            
-            name = key.replace('fs_','').replace('fb_','')
-            value = float(line.replace('\n','').split()[-1])
-            
-            if name in phot_params.keys():
-                p = phot_params[name]
-            else:
-                p = {}
-            
-            if 'fs_' in key:
-                p['fs'] = value
-            else:
-                p['fb'] = value
-            
-            phot_params[name] = p
             
     params['datasets'] = datasets
     params['phot_params'] = phot_params
@@ -190,21 +189,21 @@ def create_model(current_event,params,diagnostics=False):
         
     if params['pien'] != None and params['piee'] != None:
         
-        parallax_params = ['Full', params['to']]
+        parallax_params = ['Full', params['topar']]
         model_params.append('piEN')
         model_params.append('piEE')
-
+        
     if 'sdsdt' in params.keys() and 'dalphadt' in params.keys() and 'sdszdt' in params.keys():
         
-        orbital_params = ['3D', params['to']]
+        orbital_params = ['3D', params['topar']]
         model_params.append('sdsdt')
         model_params.append('dalphadt')
         model_params.append('sdszdt')
     
-    elif 'dsdt' in params.keys() and 'dalphadt' in params.keys():
+    elif 'sdsdt' in params.keys() and 'dalphadt' in params.keys():
         
-        orbital_params = ['2D', params['to']]
-        model_params.append('dsdt')
+        orbital_params = ['2D', params['topar']]
+        model_params.append('sdsdt')
         model_params.append('dalphadt')
         
     params['model_params'] = model_params
@@ -214,7 +213,7 @@ def create_model(current_event,params,diagnostics=False):
                                   orbital_motion=orbital_params,
                                   blend_flux_ratio = False)
     
-    if 'binary origin' in params.keys():
+    if 'binary_origin' in params.keys():
         model.binary_origin  = params['binary_origin']
         
     model.define_model_parameters()
@@ -245,7 +244,7 @@ def create_model(current_event,params,diagnostics=False):
 
 def generate_residual_lcs(current_event,params):
     
-    f = e.fits[-1]
+    f = current_event.fits[-1]
     model = f.model
     
     pylima_params = model.compute_pyLIMA_parameters(params['fitted_model_params'])
@@ -266,27 +265,110 @@ def generate_residual_lcs(current_event,params):
     
     return residual_lcs
     
-def plot_lcs(lc_data):
+def plot_lcs(current_event,params):
+    
+    f = current_event.fits[-1]
+    
+    norm_lcs = microltoolbox.align_the_data_to_the_reference_telescope(f)
+    
+    (fig,fig_axes) = initialize_plot_lightcurve(f)
+    
+    for i,lc in enumerate(norm_lcs):
+        fig_axes[0].errorbar(lc[:,0],lc[:,1],yerr=lc[:,2],fmt='.',
+                            label=params['data'][i].name)
+    
+    microloutputs.LM_plot_model(f, fig_axes[0])
+    
+    use_legend = True
+    if use_legend:
+        fig_axes[0].legend(loc='upper left', 
+               fontsize = 12,
+               bbox_to_anchor=(0.025, 0.95))
+               
+    add_inset_box(current_event,fig_axes[0])
+    
+    microloutputs.LM_plot_residuals(f, fig_axes[1])
 
-    fig = plt.figure(1,(10,10))
+    plt.tight_layout()
     
-    for i,lc in enumerate(lc_data):
-        plt.errorbar(lc[:,0],lc[:,1],yerr=lc[:,2],fmt='.')
+    plt.savefig(path.join(params['output'],'lightcurve.png'))
     
-    plt.xlabel('HJD')
-    plt.ylabel('Magnitude')
+
+def initialize_plot_lightcurve(fit,title=None):
+    """Function to initialize the lightcurve plot, based on the function 
+    from pyLIMA.microloutputs by E. Bachelet
+
+    :param object fit: a fit object. See the microlfits for more details.
+
+    :return: a matplotlib figure  and the corresponding matplotlib axes
+    :rtype: matplotlib_figure,matplotlib_axes
+
+    """
+    font_size = 18
     
-    rev_yaxis = True
-    if rev_yaxis:
-        [xmin,xmax,ymin,ymax] = plt.axis()
-        plt.axis([xmin,xmax,ymax,ymin])
+    fig_size = [10, 10]
+    figure, figure_axes = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
+                                       figsize=(fig_size[0], fig_size[1]), dpi=75)
+    plt.subplots_adjust(top=0.9, bottom=0.15, left=0.15, right=0.99, wspace=0.2, hspace=0.1)
+    figure_axes[0].grid()
+    figure_axes[1].grid()
+    # fig_size = plt.rcParams["figure.figsize"]
+    if title != None:
+        figure.suptitle(fit.event.name, fontsize=30 * fig_size[0] / len(fit.event.name))
+
+    #figure_axes[0].set_ylabel('Mag', fontsize=5 * fig_size[1] * 3 / 4.0)
+    figure_axes[0].set_ylabel('Mag', fontsize=font_size)
+    figure_axes[0].yaxis.set_major_locator(MaxNLocator(4))
+    #figure_axes[0].tick_params(axis='y', labelsize=3.5 * fig_size[1] * 3 / 4.0)
+    figure_axes[0].tick_params(axis='y', labelsize=font_size)
+
+    #figure_axes[1].set_xlabel('HJD', fontsize=5 * fig_size[0] * 3 / 4.0)
+    figure_axes[1].set_xlabel('HJD', fontsize=font_size)
+    figure_axes[1].xaxis.set_major_locator(MaxNLocator(6))
+    figure_axes[1].yaxis.set_major_locator(MaxNLocator(4))
+    figure_axes[1].xaxis.get_major_ticks()[0].draw = lambda *args: None
+
+    figure_axes[1].ticklabel_format(useOffset=False, style='plain')
+    #figure_axes[1].set_ylabel('Residuals', fontsize=5 * fig_size[1] * 3 / 4.0)
+    figure_axes[1].tick_params(axis='x', labelsize=3.5 * fig_size[0] * 3 / 4.0)
+    figure_axes[1].tick_params(axis='y', labelsize=3.5 * fig_size[1] * 3 / 4.0)
+    figure_axes[1].set_ylabel('Residuals', fontsize=font_size)
+    figure_axes[1].tick_params(axis='x', labelsize=font_size)
+    figure_axes[1].tick_params(axis='y', labelsize=font_size)
+
+    return figure, figure_axes
+
+def add_inset_box(current_event,ax):
+    """Add an inset box to the lightcurve box giving a zoom-in around a 
+    selected feature. 
+    Based on code by E. Bachelet
+    """
     
+    inset_axfig1 = inset_axes(ax, width="25%", height="40%", 
+                              loc=1, borderpad=5)
+                              
+    microloutputs.LM_plot_model(current_event.fits[0],inset_axfig1)
+    microloutputs.LM_plot_align_data(current_event.fits[0],inset_axfig1)
+    
+    inset_axfig1.legend_.remove()
+    inset_axfig1.texts[0].set_visible(False)
+
+    x1, x2, y1, y2 = 2458225.0,2458250.0,13.25,11.0 # specify the limits
+    inset_axfig1.set_xlim(x1, x2) # apply the x-limits
+    inset_axfig1.set_ylim(y1, y2) # apply the y-limits
+    
+    patch,pp1,pp2 = mark_inset(ax, inset_axfig1, 
+                               loc1=2, loc2=4, fc="none", ec="0.5")
+    pp1.loc1 = 1
+    pp1.loc2 = 3
+    pp2.loc1 = 4
+    pp2.loc2 = 2
+    inset_axfig1.get_xaxis().get_major_formatter().set_useOffset(False)
+    #inset_axfig1.set_xticks([2457084,2457085.2])
+    inset_axfig1.tick_params(axis='both',labelsize=10)
+    plt.xticks(rotation=30)
     plt.grid()
-    plt.savefig('lc_test.png')
     
-    plt.close(1)
-
- 
 def generate_model_lightcurve(e,ts=None,diagnostics=False):
     """Function to produce a model lightcurve based on a parameter set
     fitted by pyLIMA
