@@ -297,7 +297,20 @@ class Lens:
         if log!=None:
             log.info('Binary lens ratio of KE/PE = '+\
                     str(self.kepe)+' +/- '+str(self.sig_kepe))
+    
+    def calc_rel_proper_motion(self,log=None):
         
+        self.mu_rel = self.thetaE / self.tE
+        self.sig_mu_rel = np.sqrt((self.sig_thetaE/self.thetaE)**2 + \
+                                    (self.sig_tE/self.tE)**2) * self.mu_rel
+        
+        self.mu_rel = self.mu_rel * 365.24 / 1000.0
+        self.sig_mu_rel = self.sig_mu_rel * 365.24 / 1000.0
+        
+        if log!=None:
+            log.info('Relative source-lens proper motion = '+\
+                    str(self.mu_rel)+' +/- '+str(self.sig_mu_rel)+'mas yr^-1')
+                    
 if __name__ == '__main__':
     
     l = Lens()

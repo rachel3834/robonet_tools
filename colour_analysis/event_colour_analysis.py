@@ -1485,6 +1485,8 @@ def calc_lens_parameters(params, source, RC, log):
     
     lens.calc_masses(log)
     
+    lens.calc_projected_separation(log)
+    
     if params['dsdt'] != None and params['dalphadt'] != None:
         lens.dsdt = params['dsdt']
         lens.sig_dsdt = params['sig_dsdt']
@@ -1492,7 +1494,9 @@ def calc_lens_parameters(params, source, RC, log):
         lens.sig_dalphadt = params['sig_dalphadt']
     
         lens.calc_orbital_energies(log)
-        
+    
+    lens.calc_rel_proper_motion(log)
+    
     return lens
     
 def output_red_clump_data_latex(params,RC,log):
@@ -1595,6 +1599,9 @@ def output_lens_parameters_latex(params,source,lens,log):
     t.write('$M_{L,1}$          & $M_{\\odot}$ & '+str(round(lens.M1,3))+'$\pm$'+str(round(lens.sig_M1,3))+'\\\\\n')
     t.write('$M_{L,2}$          & $M_{\\odot}$ & '+str(round(lens.M2,3))+'$\pm$'+str(round(lens.sig_M2,3))+'\\\\\n')
     t.write('$D_{L}$            & Kpc         & '+str(round(lens.D,3))+'$\pm$'+str(round(lens.sig_D,3))+'\\\\\n')
+    t.write('$a_{\\perp}$       & AU          & '+str(round(lens.a_proj,3))+'$\pm$'+str(round(lens.sig_a_proj,3))+'\\\\\n')
+    t.write('KE/PE              &             & '+str(round(lens.kepe,3))+'$\pm$'+str(round(lens.sig_kepe,3))+'\\\\\n')
+    t.write('$\mu_{rel}$        & mas yr$^{-1}$ & '+str(round(lens.mu_rel,2))+'$\pm$'+str(round(lens.sig_mu_rel,2))+'\\\\\n')
     t.write('\\hline\n')
     t.write('\\end{tabular}\n')
     t.write('\\end{table}\n')

@@ -155,6 +155,23 @@ def test_calc_orbital_energies():
     
     assert round(lens.kepe,2) == 0.08
     assert round(lens.sig_kepe,2) == 0.05
+
+def test_calc_rel_proper_motion():
+    
+    lens = test_lens()
+    
+    thetaS = 9.143
+    sig_thetaS = 0.792
+    
+    lens.calc_angular_einstein_radius(thetaS, sig_thetaS)
+    
+    lens.calc_rel_proper_motion(log=None)
+    
+    print('Relative source-lens proper motion = '+\
+                    str(lens.mu_rel)+' +/- '+str(lens.sig_mu_rel)+'mas yr^-1')
+    
+    assert round(lens.mu_rel,2) == 4.57
+    assert round(lens.sig_mu_rel,1) == 0.4
     
 if __name__ == '__main__':
     
@@ -169,4 +186,6 @@ if __name__ == '__main__':
     test_calc_orbital_energies()
     print('\n')
     test_calc_distance_modulus()
+    print('\n')
+    test_calc_rel_proper_motion()
     

@@ -43,13 +43,6 @@ def plot_event_lightcurve():
 
     (current_event,params) = create_model(current_event,params)
     
-    residual_lcs = generate_residual_lcs(current_event,params)
-    
-    lc_data = []
-    for d in params['data']:
-        
-        lc_data.append(d.tel.lightcurve_magnitude)
-
     plot_lcs(current_event,params)
     
 def get_params():
