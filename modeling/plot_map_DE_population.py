@@ -31,7 +31,7 @@ def map_DE_population(input_file):
     """
     
     map_data = np.loadtxt(input_file)
-    map_data = map_data[map_data[:,-1].argsort(),]
+    map_data_sort = map_data[map_data[:,-1].argsort(),]
     
     fig = plt.figure(1,(10,5))
         
@@ -41,7 +41,8 @@ def map_DE_population(input_file):
     
     plt.subplot(121)
     
-    plt.hist2d(map_data[index,4],map_data[index,5],norm=LogNorm(),bins=(30,30))
+    plt.hist2d(map_data_sort[index,4],map_data_sort[index,5],
+               norm=LogNorm(),bins=(30,30))
     
     plt.title('N DE samples')
     plt.xlabel('$log_{10}(s)$')
