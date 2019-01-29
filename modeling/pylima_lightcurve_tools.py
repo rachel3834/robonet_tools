@@ -260,17 +260,37 @@ def generate_residual_lcs(current_event,params):
     
 def plot_lcs(current_event,params):
     
+    MARKER_SYMBOLS = np.array([['o', '.', '*', 'v', '^', '<', '>', 's', 'p', 'd', 'x'] * 10])
+
     f = current_event.fits[-1]
     
     norm_lcs = microltoolbox.align_the_data_to_the_reference_telescope(f)
     
     (fig,fig_axes) = initialize_plot_lightcurve(f)
     
+    xmin = 1e9
+    xmax = -1e9
+    ymin = 1e6
+    ymax = -1.6
     for i,lc in enumerate(norm_lcs):
-        fig_axes[0].errorbar(lc[:,0],lc[:,1],yerr=lc[:,2],fmt='.',
-                            label=params['data'][i].name)
-    
+        fig_axes[0].errorbar(lc[:,0],lc[:,1],yerr=lc[:,2],ls='None', markersize=7.5,
+                            marker=str(MARKER_SYMBOLS[0][i]), capsize=0.0,
+                            label=current_event.telescopes[i].name)
+        xmin = min(xmin, lc[:,0].min())
+        xmax = max(xmax, lc[:,0].max())
+        ymin = min(ymin, lc[:,1].min())
+        ymax = max(ymax, lc[:,1].max())
+        
     microloutputs.LM_plot_model(f, fig_axes[0])
+    
+    set_ticks = True
+    if set_ticks:
+        xticks = np.arange(xmin,xmax,20)
+        yticks = np.arange(ymin,ymax,0.2)
+        fig_axes[0].set_xticks(xticks, minor=True)
+        fig_axes[0].set_yticks(yticks, minor=True)
+    
+    plt.axis([xmin,xmax,ymax,ymin])
     
     use_legend = True
     if use_legend:
@@ -281,6 +301,14 @@ def plot_lcs(current_event,params):
     add_inset_box(current_event,fig_axes[0])
     
     microloutputs.LM_plot_residuals(f, fig_axes[1])
+
+    set_ticks = False
+    if set_ticks:
+        [xmin,xmax,ymin,ymax] = plt.axis()
+        xticks = np.arange(xmin,xmax,20)
+        yticks = np.arange(ymin,ymax,2)
+        fig_axes[1].set_xticks(xticks, minor=True)
+        fig_axes[1].set_yticks(yticks, minor=True)
 
     plt.tight_layout()
     
@@ -337,8 +365,10 @@ def add_inset_box(current_event,ax):
     Based on code by E. Bachelet
     """
     
-    inset_axfig1 = inset_axes(ax, width="25%", height="40%", 
-                              loc=1, borderpad=5)
+    inset_axfig1 = inset_axes(ax, width="25%", height="40%",
+                              bbox_to_anchor=(-0.35, -0.15, 1.0, 1.2),
+                              borderpad=5,
+                              bbox_transform=ax.transAxes)
                               
     microloutputs.LM_plot_model(current_event.fits[0],inset_axfig1)
     microloutputs.LM_plot_align_data(current_event.fits[0],inset_axfig1)
