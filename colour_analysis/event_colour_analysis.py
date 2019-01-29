@@ -769,6 +769,12 @@ def plot_colour_mag_diagram(params,mags, colours, local_mags, local_colours,
     
     plt.axis([xmin,xmax,ymax,ymin])
     
+    xticks = np.arange(xmin,xmax,0.1)
+    yticks = np.arange(ymin,ymax,0.2)
+    
+    ax.set_xticks(xticks,minor=True)
+    ax.set_yticks(yticks,minor=True)
+        
     plot_file = path.join(params['red_dir'],'colour_magnitude_diagram_'+\
                                             yaxis_filter+'_vs_'+blue_filter+red_filter\
                                             +'.png')
@@ -942,8 +948,15 @@ def plot_colour_colour_diagram(params,star_catalog,catalog_header,
         plot_file = path.join(params['red_dir'],'colour_colour_diagram.png')
         
         plt.axis([-1.0,2.0,-1.0,1.0])
-    
+        
         plt.grid()
+        
+        xticks = np.arange(-1.0,2.0,0.1)
+        yticks = np.arange(-1.0,1.0,0.1)
+        
+        ax.set_xticks(xticks, minor=True)
+        ax.set_yticks(yticks, minor=True)
+    
         
         box = ax.get_position()
         ax.set_position([box.x0, box.y0 + box.height * -0.025,
