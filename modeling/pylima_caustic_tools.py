@@ -85,8 +85,10 @@ def plot_lens_plane(current_event,params):
     
     ax.tick_params(axis='both',labelsize=18)
     
-    #ax.set_xticks([-0.05,0.0,0.05,0.1])
-    #ax.set_yticks([-0.04,0.0,0.04])
+    ticks = np.arange(-1.5,1.5,0.1)
+    
+    ax.set_xticks(ticks, minor=True)
+    ax.set_yticks(ticks, minor=True)
     
     ax.set_xlabel(r'X ${\rm  [\theta_E]}$',fontsize=20+5)
     ax.set_ylabel(r'Y ${\rm  [\theta_E]}$',fontsize=20+5)
@@ -111,6 +113,7 @@ def plot_lens_plane(current_event,params):
                                  color='y')
         ax.add_artist(source_disk)
 
+    plt.grid()
     plt.tight_layout()
     #plt.show()
     fig.savefig(path.join(params['output'],'lens_plane_caustics.png'),dpi=fig.dpi)
