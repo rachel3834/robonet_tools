@@ -266,7 +266,7 @@ def plot_lcs(current_event,params):
     
     norm_lcs = microltoolbox.align_the_data_to_the_reference_telescope(f)
     
-    (fig,fig_axes) = initialize_plot_lightcurve(f)
+    (fig,fig_axes) = initialize_plot_lightcurve(f,title=params['name'])
     
     xmin = 1e9
     xmax = -1e9
@@ -366,7 +366,7 @@ def add_inset_box(current_event,ax):
     """
     
     inset_axfig1 = inset_axes(ax, width="25%", height="40%",
-                              bbox_to_anchor=(-0.35, -0.15, 1.0, 1.2),
+                              bbox_to_anchor=(-0.35, -0.2, 1.0, 1.2),
                               borderpad=5,
                               bbox_transform=ax.transAxes)
                               
