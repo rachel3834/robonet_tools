@@ -209,10 +209,10 @@ def get_args():
     
     if len(argv) != 5:
         
-        dataset.gdir = raw_input('Please enter the path to the reduction directory for SDSS-g data: ')
-        dataset.rdir = raw_input('Please enter the path to the reduction directory for SDSS-r data: ')
-        dataset.idir = raw_input('Please enter the path to the reduction directory for SDSS-i data: ')
-        dataset.outdir = raw_input('Please enter the path to the output directory: ')
+        dataset.gdir = input('Please enter the path to the reduction directory for SDSS-g data: ')
+        dataset.rdir = input('Please enter the path to the reduction directory for SDSS-r data: ')
+        dataset.idir = input('Please enter the path to the reduction directory for SDSS-i data: ')
+        dataset.outdir = input('Please enter the path to the output directory: ')
         
     else:
         
