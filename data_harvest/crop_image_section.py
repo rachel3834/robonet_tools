@@ -114,12 +114,14 @@ def crop_image(image_file,target,params,crop_half_width_pix):
             if bpm != None:
                 bpm.data = bpm.data[ylimits[0]:ylimits[1],xlimits[0]:xlimits[1]]
                 
-            header['NAXIS1'] = data.shape[0]
-            header['NAXIS2'] = data.shape[1]
+            header['NAXIS1'] = new_data.shape[0]
+            header['NAXIS2'] = new_data.shape[1]
             header['RA'] = params['target_ra']
             header['DEC'] = params['target_dec']
             header['CRPIX1'] = header['NAXIS1']/2.0
             header['CRPIX2'] = header['NAXIS2']/2.0
+            header['CRVAL1'] = image_centre.ra.deg
+            header['CRVAL2'] = image_centre.dec.deg
             
             new_image_file = image_file.replace('.fits','_crop.fits')
             
@@ -127,7 +129,10 @@ def crop_image(image_file,target,params,crop_half_width_pix):
             new_hdu.append(fits.PrimaryHDU(data=new_data, header=header))
             
             if cat != None:
-                new_hdu.append(fits.BinTableHDU(data=cat.data, header=cat.header))
+                try:
+                    new_hdu.append(fits.BinTableHDU(data=cat.data, header=cat.header))
+                except TypeError:
+                    pass
 
             if bpm != None:
                 new_hdu.append(fits.ImageHDU(data=bpm.data, header=bpm.header))
@@ -146,17 +151,17 @@ def get_args():
     
     if len(sys.argv) == 1:
         
-        params['dir_path'] = raw_input('Please enter the path to the image directory: ')
-        params['target_ra'] = raw_input('Please enter the target RA: ')    
-        params['target_dec'] = raw_input('Please enter the target Dec: ')
-        params['option'] = raw_input('Specify width of cropped image in arcmin or pixels? [arcmin,pixels]: ')
+        params['dir_path'] = input('Please enter the path to the image directory: ')
+        params['target_ra'] = input('Please enter the target RA: ')
+        params['target_dec'] = input('Please enter the target Dec: ')
+        params['option'] = input('Specify width of cropped image in arcmin or pixels? [arcmin,pixels]: ')
         params['option'] = str(params['option']).lower()
         if params['option'] == 'arcmin':
-            params['sub_image_width_arcmin'] = float(raw_input('Please enter the width of the cropped image [arcmin]: '))
+            params['sub_image_width_arcmin'] = float(input('Please enter the width of the cropped image [arcmin]: '))
         else:
-            params['sub_image_width_pixels'] = float(raw_input('Please enter the width of the cropped image [pixels]: '))
-        params['xoffset'] = float(raw_input('Please enter the box offset in the X-axis: '))
-        params['yoffset'] = float(raw_input('Please enter the box offset in the Y-axis: '))
+            params['sub_image_width_pixels'] = float(input('Please enter the width of the cropped image [pixels]: '))
+        params['xoffset'] = float(input('Please enter the box offset in the X-axis: '))
+        params['yoffset'] = float(input('Please enter the box offset in the Y-axis: '))
         
     else:
         
