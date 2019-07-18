@@ -7,7 +7,7 @@ Created on Fri Feb 23 14:52:49 2018
 import os
 import sys
 import glob
-from commands import getstatusoutput
+import subprocess
 
 def compress_pydandia_reduced_dataset(dataset_dir):
     """Function to prepare a dataset process by pyDANDIA for archive storage.
@@ -31,7 +31,7 @@ def compress_pydandia_reduced_dataset(dataset_dir):
         data_path = os.path.join(dataset_dir,d)
         
         if os.path.isdir(data_path):
-            fpack_image_dir(d)
+            bzip2_image_dir(d)
     
     if os.path.isfile(os.path.join(dataset_dir,'vphas_catalog.fits')):
         os.remove(os.path.join(dataset_dir,'vphas_catalog.fits'))
@@ -80,22 +80,37 @@ def fpack_image_dir(dir_path):
     for f in file_list:
         
         if os.path.isfile(f+'.fz') == False:
-            
-            (iexec,output) = getstatusoutput('fpack -q 64 '+f)
-    
-            if len(output.replace(' ','').replace('\n','')) > 0:
                 
-                print(output)
+            args = ['fpack', '-q', '64', f]
             
+            p = subprocess.Popen(args, stdout=subprocess.PIPE)
+            p.wait()
+            
+            if os.path.isfile(f+'.fz'):
+                os.remove(f)
             else:
+                print('WARNING: Cannot find compressed data product '+f+'.fz, so skipping delete of original')
                 
-                if os.path.isfile(f+'.fz'):
-                
-                    os.remove(f)
-            
         else:
             print('Skipping compression of '+f+' (compressed product already exists)')
 
+def bzip2_image_dir(dir_path):
+    """Function to bzip2 compress all FITS images within a specified directory"""
+    
+    file_list = glob.glob( os.path.join(dir_path,'*.fits') )
+    
+    for f in file_list:
+        
+        if os.path.isfile(f+'.fz') == False:
+                
+            args = ['bzip2', f]
+            
+            p = subprocess.Popen(args, stdout=subprocess.PIPE)
+            p.wait()
+            
+        else:
+            print('Skipping compression of '+f+' (compressed product already exists)')
+    
 def tar_directory(dir_path,event_dir):
     """Function to build a tarball of all files within a given directory"""
     
