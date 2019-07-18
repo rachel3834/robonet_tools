@@ -104,7 +104,7 @@ def bzip2_image_dir(dir_path):
     if len(file_list) > 0:
         for f in file_list:
             
-            if os.path.isfile(f+'.fz') == False:
+            if os.path.isfile(f+'.bz2') == False:
                     
                 args = ['bzip2', f]
                 
@@ -115,7 +115,25 @@ def bzip2_image_dir(dir_path):
                 print('Skipping compression of '+f+' (compressed product already exists)')
         
         print(' -> Completed compression of fits files in '+dir_path)
+
+def bunzip2_dir(dir_path):
+    """Function to uncompress all files compressed with bzip2 within a 
+    specified directory"""
     
+    file_list = glob.glob( os.path.join(dir_path,'*.bz2') )
+    
+    print(' -> Found '+str(len(file_list))+' compressed files in '+dir_path)
+    
+    if len(file_list) > 0:
+        for f in file_list:
+            
+            args = ['bunzip2', f]
+                
+            p = subprocess.Popen(args, stdout=subprocess.PIPE)
+            p.wait()
+                
+        print(' -> Completed decompression of files in '+dir_path)
+        
 def tar_directory(dir_path,event_dir):
     """Function to build a tarball of all files within a given directory"""
     
@@ -137,22 +155,81 @@ def tar_directory(dir_path,event_dir):
 
         print(tarball)
         print(coutput)
+
+def prepare_pydandia_reduced_dataset_for_archive(dir_path,output_dir):
+    """Function to build a tarball of data products from a pyDANDIA reduction
+    of a single dataset ready for archiving.  This will not include the raw
+    data files."""
     
+    sub_dir_list = [ 'diffim', 'kernel', 'ref', 'resampled' ]
+    
+    data_list = ["*.dat", "*.log", "pyDANDIA_metadata.fits*", "*.png",
+                 "diffim/*", "kernel/*", "ref/*", "resampled/*"]
+    
+    start_dir = os.getcwd()
+    
+    if os.path.isdir(dir_path):
+        
+        os.chdir(os.path.join(dir_path,'..'))
+        
+        if os.path.isdir(output_dir):
+            
+            tar_file = os.path.join(output_dir,os.path.basename(dir_path)+'.tar')
+            
+            for d in sub_dir_list:
+                
+                subd = os.path.join(os.path.basename(dir_path),d)
+                
+                if os.path.isdir(subd):
+                    bzip2_image_dir(subd)
+            
+            args = ['tar', '-cvf', tar_file]
+            
+            for entry in data_list:
+                
+                files = glob.glob(os.path.join(os.path.basename(dir_path),entry))
+                
+                args += files
+            
+            p = subprocess.Popen(args, stdout=subprocess.PIPE)
+            p.wait()
+        
+        else:
+            raise IOError('Cannot find output directory '+output_dir)
+        
+        os.chdir(start_dir)
+        
+    else:
+        raise IOError('Cannot find input directory '+dir_path)
+
+def uncompress_pydandia_archived_dataset(dir_path):
+    """Function to decompress a pyDANDIA-reduced dataset that has been archived"""
+    
+    for sub_dir in os.walk(dir_path):
+        
+        print('Decompressing '+sub_dir[0]+'...')
+        
+        bunzip2_dir(sub_dir[0])
+        
 def get_args():
     """Function to acquire the necessary commandline arguments"""
     
     if len(sys.argv) == 1:
         
-        event_dir = raw_input('Please enter the path to the directory of reduced data [DanDIA-format]:')
+        dir_path = input('Please enter the path to the directory of a reduced dataset:')
+        output_dir = input('Please enter the directory path for output: ')
         
     else:
         
-        event_dir = sys.argv[1]
+        dir_path = sys.argv[1]
+        output_dir = sys.argv[2]
     
-    return event_dir
+    return dir_path, output_dir
     
 if __name__ == '__main__':
     
-    event_dir = get_args()    
+    (dir_path,output_dir) = get_args()    
     
-    compress_dandia_reduced_data_products(event_dir)
+    #compress_dandia_reduced_data_products(event_dir)
+    #prepare_pydandia_reduced_dataset_for_archive(dir_path,output_dir)
+    uncompress_pydandia_archived_dataset(dir_path)

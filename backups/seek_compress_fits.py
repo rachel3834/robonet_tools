@@ -15,8 +15,6 @@ def seek_and_compress_fits(top_level_dir):
     """Function to walk over every subdirectory of the directory given to 
     identify FITS files and compress them using fpack"""
     
-    dir_listing = os.walk(top_level_dir)
-    
     for sub_dir in os.walk(top_level_dir):
         
         print('Searching '+sub_dir[0]+'...')
