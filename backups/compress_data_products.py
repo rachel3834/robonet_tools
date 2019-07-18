@@ -9,6 +9,33 @@ import sys
 import glob
 from commands import getstatusoutput
 
+def compress_pydandia_reduced_dataset(dataset_dir):
+    """Function to prepare a dataset process by pyDANDIA for archive storage.
+
+    This function will compress all image data and data products using
+    fpack -q 64 compression to avoid losses.  
+    
+    Input:
+        dataset_dir  string  full path to the directory of reduced data
+    """
+    
+    if not os.path.isdir(dataset_dir):
+        
+        print('ERROR: Cannot find the directory of data products '+event_dir)
+        sys.exit()
+        
+    image_dirs = [ 'data', 'diffim', 'kernel', 'ref', 'resampled' ]
+
+    for d in image_dirs:
+        
+        data_path = os.path.join(dataset_dir,d)
+        
+        fpack_image_dir(d)
+    
+    for f in ['pyDANDIA_metadata.fits', 'vphas_catalog.fits']:
+        
+        if os.path.isfile( os.path.join(dataset_dir,f+'.fz') ) == False:
+            
 def compress_dandia_reduced_data_products(event_dir):
     """Function to prepare a dataset processed by DanDIA for archive storage.
     

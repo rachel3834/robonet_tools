@@ -30,7 +30,12 @@ def query_coords_in_rome(ra_str, dec_str, debug=False):
     
     response = requests.get(url, headers=headers, timeout=20)
     
-    print(response.text)
+    lines = response.text.split('\n')
+    for l in lines:
+        if len(l) > 0:
+            result = l
+    
+    print(result)
     
 if __name__ == '__main__':
     
