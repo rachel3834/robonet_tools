@@ -111,6 +111,8 @@ def bzip2_image_dir(dir_path):
         else:
             print('Skipping compression of '+f+' (compressed product already exists)')
     
+    print(' -> Completed compression of fits files in '+dir_path)
+    
 def tar_directory(dir_path,event_dir):
     """Function to build a tarball of all files within a given directory"""
     

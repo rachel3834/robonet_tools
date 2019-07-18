@@ -19,8 +19,9 @@ def seek_and_compress_fits(top_level_dir):
     
     for sub_dir in os.walk(top_level_dir):
         
-        compress_data_products.bzip2_image_dir(sub_dir[0])
+        print('Searching '+sub_dir[0]+'...')
         
+        compress_data_products.bzip2_image_dir(sub_dir[0])
 
 if __name__ == '__main__':
     
