@@ -99,19 +99,22 @@ def bzip2_image_dir(dir_path):
     
     file_list = glob.glob( os.path.join(dir_path,'*.fits') )
     
-    for f in file_list:
-        
-        if os.path.isfile(f+'.fz') == False:
-                
-            args = ['bzip2', f]
-            
-            p = subprocess.Popen(args, stdout=subprocess.PIPE)
-            p.wait()
-            
-        else:
-            print('Skipping compression of '+f+' (compressed product already exists)')
+    print(' -> Found '+str(len(file_list))+' fits files in '+dir_path)
     
-    print(' -> Completed compression of fits files in '+dir_path)
+    if len(file_list) > 0:
+        for f in file_list:
+            
+            if os.path.isfile(f+'.fz') == False:
+                    
+                args = ['bzip2', f]
+                
+                p = subprocess.Popen(args, stdout=subprocess.PIPE)
+                p.wait()
+                
+            else:
+                print('Skipping compression of '+f+' (compressed product already exists)')
+        
+        print(' -> Completed compression of fits files in '+dir_path)
     
 def tar_directory(dir_path,event_dir):
     """Function to build a tarball of all files within a given directory"""
