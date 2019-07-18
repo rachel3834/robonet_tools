@@ -30,12 +30,12 @@ def compress_pydandia_reduced_dataset(dataset_dir):
         
         data_path = os.path.join(dataset_dir,d)
         
-        fpack_image_dir(d)
+        if os.path.isdir(data_path):
+            fpack_image_dir(d)
     
-    for f in ['pyDANDIA_metadata.fits', 'vphas_catalog.fits']:
-        
-        if os.path.isfile( os.path.join(dataset_dir,f+'.fz') ) == False:
-            
+    if os.path.isfile(os.path.join(dataset_dir,'vphas_catalog.fits')):
+        os.remove(os.path.join(dataset_dir,'vphas_catalog.fits'))
+    
 def compress_dandia_reduced_data_products(event_dir):
     """Function to prepare a dataset processed by DanDIA for archive storage.
     
