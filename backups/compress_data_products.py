@@ -98,6 +98,7 @@ def bzip2_image_dir(dir_path):
     """Function to bzip2 compress all FITS images within a specified directory"""
     
     file_list = glob.glob( os.path.join(dir_path,'*.fits') )
+    file_list += glob.glob( os.path.join(dir_path,'*.fts') )
     
     print(' -> Found '+str(len(file_list))+' fits files in '+dir_path)
     
