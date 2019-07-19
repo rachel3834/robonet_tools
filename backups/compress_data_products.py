@@ -99,6 +99,7 @@ def bzip2_image_dir(dir_path):
     
     file_list = glob.glob( os.path.join(dir_path,'*.fits') )
     file_list += glob.glob( os.path.join(dir_path,'*.fts') )
+    file_list += glob.glob( os.path.join(dir_path,'*.fit') )
     
     print(' -> Found '+str(len(file_list))+' fits files in '+dir_path)
     
