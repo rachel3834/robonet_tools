@@ -231,5 +231,5 @@ if __name__ == '__main__':
     (dir_path,output_dir) = get_args()    
     
     #compress_dandia_reduced_data_products(event_dir)
-    #prepare_pydandia_reduced_dataset_for_archive(dir_path,output_dir)
-    uncompress_pydandia_archived_dataset(dir_path)
+    prepare_pydandia_reduced_dataset_for_archive(dir_path,output_dir)
+    #uncompress_pydandia_archived_dataset(dir_path)
