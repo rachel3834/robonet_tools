@@ -163,6 +163,8 @@ def prepare_pydandia_reduced_dataset_for_archive(dir_path,output_dir):
     of a single dataset ready for archiving.  This will not include the raw
     data files."""
     
+    build_tarball = False
+    
     sub_dir_list = [ 'diffim', 'kernel', 'ref', 'resampled' ]
     
     data_list = ["*.dat", "*.log", "pyDANDIA_metadata.fits*", "*.png",
@@ -176,8 +178,6 @@ def prepare_pydandia_reduced_dataset_for_archive(dir_path,output_dir):
         
         if os.path.isdir(output_dir):
             
-            tar_file = os.path.join(output_dir,os.path.basename(dir_path)+'.tar')
-            
             for d in sub_dir_list:
                 
                 subd = os.path.join(os.path.basename(dir_path),d)
@@ -185,16 +185,19 @@ def prepare_pydandia_reduced_dataset_for_archive(dir_path,output_dir):
                 if os.path.isdir(subd):
                     bzip2_image_dir(subd)
             
-            args = ['tar', '-cvf', tar_file]
-            
-            for entry in data_list:
+            if build_tarball:
+                tar_file = os.path.join(output_dir,os.path.basename(dir_path)+'.tar')
                 
-                files = glob.glob(os.path.join(os.path.basename(dir_path),entry))
+                args = ['tar', '-cvf', tar_file]
                 
-                args += files
-            
-            p = subprocess.Popen(args, stdout=subprocess.PIPE)
-            p.wait()
+                for entry in data_list:
+                    
+                    files = glob.glob(os.path.join(os.path.basename(dir_path),entry))
+                    
+                    args += files
+                
+                p = subprocess.Popen(args, stdout=subprocess.PIPE)
+                p.wait()
         
         else:
             raise IOError('Cannot find output directory '+output_dir)
