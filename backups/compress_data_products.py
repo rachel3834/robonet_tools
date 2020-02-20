@@ -199,8 +199,6 @@ def tar_lightcurves(event_dir, red_filter):
         if stdoutput:
             print(stdoutput)
 
-        print(' '.join(args))
-
 def prepare_pydandia_reduced_dataset_for_archive(dir_path,output_dir):
     """Function to build a tarball of data products from a pyDANDIA reduction
     of a single dataset ready for archiving.  This will not include the raw
