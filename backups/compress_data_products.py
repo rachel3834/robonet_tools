@@ -192,7 +192,7 @@ def tar_lightcurves(event_dir, red_filter):
 
         cl = ['tar', '-cvf',tarball, '-T', lc_list]
 
-        print(' '.join(args))
+        print(' '.join(cl))
         p = subprocess.Popen(cl)
         stdoutput = p.communicate()[0]
 
