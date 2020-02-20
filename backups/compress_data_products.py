@@ -190,13 +190,16 @@ def tar_lightcurves(event_dir, red_filter):
             f.write(file+'\n')
         f.close()
 
-        args = ['tar', '-cvf',tarball, '-T', lc_list]
+        cl = ['tar', '-cvf',tarball, '-T', lc_list]
 
         print(' '.join(args))
-        #p = subprocess.Popen(args, stdout=subprocess.PIPE)
-        #p.wait()
+        p = subprocess.Popen(cl)
+        stdoutput = p.communicate()[0]
 
-        #print(tarball)
+        if stdoutput:
+            print(stdoutput)
+
+        print(' '.join(args))
 
 def prepare_pydandia_reduced_dataset_for_archive(dir_path,output_dir):
     """Function to build a tarball of data products from a pyDANDIA reduction
