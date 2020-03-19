@@ -2,6 +2,7 @@ from os import path, getcwd, remove
 from sys import argv
 import glob
 import compress_data_products
+import upload_aws
 import logging
 
 def process_datasets():
