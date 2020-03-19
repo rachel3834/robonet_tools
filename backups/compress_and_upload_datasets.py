@@ -67,7 +67,7 @@ def compress_data_for_all_cameras(red_dir,log):
             for event_dir in camera_dir_list:
                 log.info(' -> Processing '+event_dir)
 
-                #compress_data_products.compress_dandia_reduced_data_products(event_dir)
+                compress_data_products.compress_dandia_reduced_data_products(event_dir)
 
             log.info(' -> Completed compression of '+camera_class+' datasets')
 
