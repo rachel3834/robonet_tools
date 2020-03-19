@@ -84,7 +84,7 @@ def start_log():
     # To capture the logging stream from the whole script, create
     # a log instance together with a console handler.
     # Set formatting as appropriate.
-    log = logging.getLogger( stage_name )
+    log = logging.getLogger( 'datasets_compressed_uploaded' )
 
     if len(log.handlers) == 0:
         log.setLevel( logging.INFO )
