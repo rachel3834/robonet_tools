@@ -34,7 +34,7 @@ def get_args(log):
         raise IOError('Cannot find input list of datasets to process')
 
     datasets = []
-    file_lines = open(file_path,'r')
+    file_lines = open(file_path,'r').readlines()
     log.info('Read list of '+str(len(file_lines))+' datasets to process:')
 
     for l in file_lines:
