@@ -61,7 +61,7 @@ def compress_data_for_all_cameras(red_dir,log):
         if path.isdir(camera_dir):
             log.info(' -> Found data for camera class '+camera_class)
 
-            camera_dir_list = glob.glob(camera_dir,'*')
+            camera_dir_list = glob.glob(path.join(camera_dir,'*'))
 
             for event_dir in camera_dir_list:
                 log.info(' -> Processing '+dir)
