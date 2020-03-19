@@ -64,7 +64,7 @@ def compress_data_for_all_cameras(red_dir,log):
             camera_dir_list = glob.glob(path.join(camera_dir,'*'))
 
             for event_dir in camera_dir_list:
-                log.info(' -> Processing '+dir)
+                log.info(' -> Processing '+event_dir)
 
                 #compress_data_products.compress_dandia_reduced_data_products(event_dir)
 
