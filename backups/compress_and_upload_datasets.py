@@ -18,6 +18,8 @@ def process_datasets():
 
         upload_aws.upload_directory(data_set, local_root, aws_root)
 
+        log.info('Completed upload of '+data_set)
+        
     close_log(log)
 
 def get_args(log):
