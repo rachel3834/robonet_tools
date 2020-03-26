@@ -114,9 +114,9 @@ def compress_image_dir(dir_path):
                 p = subprocess.run(args, stdout=subprocess.PIPE)
                 #p.wait()
                 print(os.path.isfile(f+'.fz'), os.path.isfile(f+'.bz2'))
-            if os.path.isfile(f+'.fz') or os.path.isfile(f+'.bz2'):
+            if os.path.isfile(f+'.fz'):
                 os.remove(f)
-            else:
+            elif not os.path.isfile(f+'.fz') and not os.path.isfile(f+'.bz2'):
                 print('WARNING: Cannot find compressed data product '+f+'.fz or .bz2, so skipping delete of original')
 
         else:
