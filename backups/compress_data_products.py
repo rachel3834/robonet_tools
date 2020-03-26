@@ -107,12 +107,14 @@ def compress_image_dir(dir_path):
             #p.wait()
 
             if 'error' in str(p.stdout).lower() and not os.path.isfile(f+'.fz'):
+                print('-> Issue with fpack compression, attempting bzip2 instead')
+
                 args = ['bzip2', f]
 
                 p = subprocess.run(args, stdout=subprocess.PIPE)
                 #p.wait()
-
-            if os.path.isfile(f+'.fz') or os.path.isfile(f+'.bz2') :
+                print(os.path.isfile(f+'.fz'), os.path.isfile(f+'.bz2'))
+            if os.path.isfile(f+'.fz') or os.path.isfile(f+'.bz2'):
                 os.remove(f)
             else:
                 print('WARNING: Cannot find compressed data product '+f+'.fz or .bz2, so skipping delete of original')
