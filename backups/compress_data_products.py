@@ -105,7 +105,7 @@ def compress_image_dir(dir_path):
             p = subprocess.Popen(args, stdout=subprocess.PIPE)
             p.wait()
 
-            if 'error' in p.stout and not os.path.isfile(f+'.fz'):
+            if 'error' in p.stdout and not os.path.isfile(f+'.fz'):
                 args = ['bzip2', f]
 
                 p = subprocess.Popen(args, stdout=subprocess.PIPE)
