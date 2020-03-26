@@ -104,13 +104,13 @@ def compress_image_dir(dir_path):
 
             p = subprocess.run(args, stdout=subprocess.PIPE)
             print(p.stdout)
-            p.wait()
+            #p.wait()
 
             if 'error' in p.stdout and not os.path.isfile(f+'.fz'):
                 args = ['bzip2', f]
 
                 p = subprocess.run(args, stdout=subprocess.PIPE)
-                p.wait()
+                #p.wait()
 
             if os.path.isfile(f+'.fz') or os.path.isfile(f+'.bz2') :
                 os.remove(f)
