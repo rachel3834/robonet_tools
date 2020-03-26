@@ -102,14 +102,14 @@ def compress_image_dir(dir_path):
 
             args = ['fpack', '-q', '64', f]
 
-            p = subprocess.Popen(args, stdout=subprocess.PIPE)
+            p = subprocess.run(args, stdout=subprocess.PIPE)
             print(p.stdout)
             p.wait()
 
             if 'error' in p.stdout and not os.path.isfile(f+'.fz'):
                 args = ['bzip2', f]
 
-                p = subprocess.Popen(args, stdout=subprocess.PIPE)
+                p = subprocess.run(args, stdout=subprocess.PIPE)
                 p.wait()
 
             if os.path.isfile(f+'.fz') or os.path.isfile(f+'.bz2') :
