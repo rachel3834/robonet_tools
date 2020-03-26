@@ -63,7 +63,7 @@ def compress_dandia_reduced_data_products(event_dir):
 
     for d in image_dirs:
 
-        fpack_image_dir(d)
+        compress_image_dir(d)
 
     dir_list = [ os.path.join('imred',red_filter),
                  os.path.join('gimred',red_filter),
@@ -90,8 +90,9 @@ def identify_reduction_filter(dir_path):
 
     return red_filter
 
-def fpack_image_dir(dir_path):
-    """Function to fpack compress all FITS images within a specified directory"""
+def compress_image_dir(dir_path):
+    """Function to compress all FITS images within a specified directory,
+    ideally with fpack but using bzip2 if that fails"""
 
     file_list = glob.glob( os.path.join(dir_path,'*.fits') )
 
