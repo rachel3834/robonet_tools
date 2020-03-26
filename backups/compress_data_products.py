@@ -104,10 +104,16 @@ def fpack_image_dir(dir_path):
             p = subprocess.Popen(args, stdout=subprocess.PIPE)
             p.wait()
 
-            if os.path.isfile(f+'.fz'):
+            if 'error' in p.stout and not os.path.isfile(f+'.fz'):
+                args = ['bzip2', f]
+
+                p = subprocess.Popen(args, stdout=subprocess.PIPE)
+                p.wait()
+
+            if os.path.isfile(f+'.fz') or os.path.isfile(f+'.bz2') :
                 os.remove(f)
             else:
-                print('WARNING: Cannot find compressed data product '+f+'.fz, so skipping delete of original')
+                print('WARNING: Cannot find compressed data product '+f+'.fz or .bz2, so skipping delete of original')
 
         else:
             print('Skipping compression of '+f+' (compressed product already exists)')
