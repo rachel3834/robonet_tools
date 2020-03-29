@@ -192,7 +192,7 @@ def tar_lightcurves(event_dir, red_filter):
     dir_path = os.path.join('lc',red_filter,'rawlc')
     lc_list = os.path.join(dir_path,'..','lc_list.txt')
 
-    if os.path.isfile(tarball) == False:
+    if os.path.isfile(tarball) == False and os.path.isdir(dir_path):
         flist = glob.glob( os.path.join(dir_path,'*') )
 
         f = open(lc_list,'w')
