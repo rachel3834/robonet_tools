@@ -197,7 +197,8 @@ def tar_lightcurves(event_dir, red_filter):
 
         f = open(lc_list,'w')
         for file in flist:
-            f.write(file+'\n')
+            if os.path.isfile(file):
+                f.write(file+'\n')
         f.close()
 
         cl = ['tar', '-cvf',tarball, '-T', lc_list]
