@@ -22,7 +22,7 @@ def backup_field_photometry_products(params):
     for dir in red_dirs:
         dset = os.path.basename(dir)
         staging_dir = os.path.join(params['output_dir'],dset)
-        if not os.path.dir(staging_dir):
+        if not os.path.isdir(staging_dir):
             os.mkdir(staging_dir)
 
         phot_source_file = os.path.join(dir,'photometry.hdf5')
