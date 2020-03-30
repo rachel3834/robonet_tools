@@ -21,14 +21,25 @@ def backup_field_photometry_products(params):
 
     for dir in red_dirs:
         dset = os.path.basename(dir)
+        staging_dir = os.path.join(params['output_dir'],dset)
+        if not os.path.dir(staging_dir):
+            os.mkdir(staging_dir)
+
         phot_source_file = os.path.join(dir,'photometry.hdf5')
-        phot_dest_file = os.path.join(params['output_dir'], dset+'_photometry.hdf5')
+        phot_dest_file = os.path.join(staging_dir, 'photometry.hdf5')
         if os.path.isfile(phot_source_file):
             rsync_file(phot_source_file, phot_dest_file)
         else:
             print('WARNING: Could not find photometry file '+phot_source_file)
 
-    print('Backed-up field photometric data products to '+params['output_dir'])
+        meta_source_file = os.path.join(dir,'pyDANDIA_metadata.fits')
+        meta_dest_file = os.path.join(staging_dir, 'pyDANDIA_metadata.fits')
+        if os.path.isfile(meta_source_file):
+            rsync_file(meta_source_file, meta_dest_file)
+        else:
+            print('WARNING: Could not find metadata file '+meta_source_file)
+
+        print('Backed-up data products for '+dset+' to '+staging_dir)
 
     upload_aws.upload_directory(params['output_dir'], local_root, aws_root)
 
@@ -37,7 +48,7 @@ def backup_field_photometry_products(params):
 def rsync_file(file_source_path, file_dest_path):
 
     print('Rsyncing '+file_source_path+' to '+file_dest_path)
-    
+
     cl = ['rsync', '-av', file_source_path, file_dest_path]
 
     p = subprocess.Popen(cl)
