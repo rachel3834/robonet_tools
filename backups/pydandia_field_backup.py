@@ -41,7 +41,9 @@ def backup_field_photometry_products(params):
 
         print('Backed-up data products for '+dset+' to '+staging_dir)
 
-    upload_aws.upload_directory(params['output_dir'], local_root, aws_root)
+    upload_aws.upload_directory(params['output_dir'],
+                                params['local_root'],
+                                params['aws_root'])
 
     print('Backed-up field photometric data products to AWS Cloud')
 
