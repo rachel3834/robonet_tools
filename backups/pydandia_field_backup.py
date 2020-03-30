@@ -36,6 +36,8 @@ def backup_field_photometry_products(params):
 
 def rsync_file(file_source_path, file_dest_path):
 
+    print('Rsyncing '+file_source_path+' to '+file_dest_path)
+    
     cl = ['rsync', '-av', file_source_path, file_dest_path]
 
     p = subprocess.Popen(cl)
