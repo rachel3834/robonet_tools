@@ -62,6 +62,14 @@ def rsync_file(file_source_path, file_dest_path):
 def get_args():
     """Function to acquire the necessary commandline arguments"""
 
+    def verify_path_slashes(dir_path):
+
+        if not dir_path[0:1] == '/':
+            dir_path = '/' + dir_path
+
+        if not dir_path[-1:] == '/':
+            dir_path = dir_path + '/'
+
     params = {}
 
     if len(sys.argv) == 1:
@@ -82,6 +90,9 @@ def get_args():
         params['local_root'] = sys.argv[5]
         params['aws_root'] = sys.argv[6]
 
+    params['local_root'] = verify_path_slashes(params['local_root'])
+    params['aws_root'] = verify_path_slashes(params['aws_root'])
+    
     return params
 
 if __name__ == '__main__':
