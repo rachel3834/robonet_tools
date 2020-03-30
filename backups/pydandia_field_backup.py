@@ -21,8 +21,8 @@ def backup_field_photometry_products(params):
 
     for dir in red_dirs:
         dset = os.path.basename(dir)
-        phot_source_file = os.path.join(dir,'photometry.hd5')
-        phot_dest_file = os.path.join(params['output_dir'], dset+'_photometry.hd5')
+        phot_source_file = os.path.join(dir,'photometry.hdf5')
+        phot_dest_file = os.path.join(params['output_dir'], dset+'_photometry.hdf5')
         if os.path.isfile(phot_source_file):
             rsync_file(phot_source_file, phot_dest_file)
         else:
@@ -30,7 +30,7 @@ def backup_field_photometry_products(params):
 
     print('Backed-up field photometric data products to '+params['output_dir'])
 
-    upload_aws.upload_directory(data_set, local_root, aws_root)
+    upload_aws.upload_directory(params['output_dir'], local_root, aws_root)
 
     print('Backed-up field photometric data products to AWS Cloud')
 
