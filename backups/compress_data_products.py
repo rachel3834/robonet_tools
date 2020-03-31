@@ -113,7 +113,7 @@ def compress_image_dir(dir_path):
 
                 p = subprocess.run(args, stdout=subprocess.PIPE)
                 #p.wait()
-                print(os.path.isfile(f+'.fz'), os.path.isfile(f+'.bz2'))
+
             if os.path.isfile(f+'.fz'):
                 os.remove(f)
             elif not os.path.isfile(f+'.fz') and not os.path.isfile(f+'.bz2'):
@@ -207,7 +207,7 @@ def tar_lightcurves(event_dir, red_filter):
         p = subprocess.Popen(cl)
         stdoutput = p.communicate()[0]
 
-        if stdoutput:
+        if stdoutput and len(str(stdoutput)) > 0:
             print(stdoutput)
 
 def prepare_pydandia_reduced_dataset_for_archive(dir_path,output_dir):
