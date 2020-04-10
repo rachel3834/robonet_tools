@@ -14,9 +14,7 @@ def checksum_phot_products(red_dir, log_path):
     data_products = glob.glob(path.join(red_dir, '*'))
 
     for product in data_products:
-        if path.isfile(product):
-            calc_blake2_checksum(product, log)
-        else:
+        if not path.isfile(product):
             dataset_products = glob.glob(path.join(product, '*'))
 
             for dproduct in dataset_products:
