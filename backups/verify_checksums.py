@@ -13,7 +13,7 @@ def verify_checksum_phot_products(red_dir, log_path):
         local_path = path.join(red_dir, dataset, product[0])
 
         if path.isfile(local_path):
-            local_sum = calc_checksums.calc_blake2_checksum(file_path)
+            local_sum = calc_checksums.calc_blake2_checksum(local_path)
 
             if str(local_sum) != str(product[1]):
                 print('WARNING: '+dataset+' '+product[0]+' fails checksum test')
@@ -22,7 +22,7 @@ def verify_checksum_phot_products(red_dir, log_path):
 
         else:
             print('WARNING: Cannot find expected data product '+dataset+' '+product[0])
-            
+
 def read_checksum_log(log_path):
 
     if path.isfile(log_path) == False:
