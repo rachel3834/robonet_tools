@@ -24,10 +24,10 @@ def checksum_phot_products(red_dir, log_path):
                 sum = calc_blake2_checksum(dproduct)
 
                 log.write(dataset+'  '+file_name+'  '+str(sum)+'\n')
-                
+
     log.close()
 
-def calc_blake2_checksum(file_path,log):
+def calc_blake2_checksum(file_path):
     """Function to calculate the checksum of a file using the BLAKE2b algorithm.
     Note that this algorithm must read data in binary bytes format.
     The read function appears to be able to handle regular file types and HDF5
