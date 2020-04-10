@@ -2,7 +2,7 @@ from os import path
 from sys import argv
 import subprocess
 import glob
-
+import hashlib
 
 def checksum_phot_products(red_dir, log_path):
 
@@ -15,14 +15,22 @@ def checksum_phot_products(red_dir, log_path):
 
     for product in data_products:
         if path.isfile(product):
-            calc_checksum(product, log)
+            calc_blake2_checksum(product, log)
         else:
             dataset_products = glob.glob(path.join(product, '*'))
 
             for dproduct in dataset_products:
-                calc_checksum(dproduct, log)
+                calc_blake2_checksum(dproduct, log)
 
     log.close()
+
+def calc_blake2_checksum(file_path,log):
+
+    with open(file_path) as f:
+
+        file_data = f.read()
+        sum = hashlib.blake2b(data).hexdigest()
+        print(sum)
 
 def calc_checksum(file_path, log):
 
@@ -34,8 +42,6 @@ def calc_checksum(file_path, log):
     if stdoutput:
         log.write(stdoutput+'\n')
         import pdb; pdb.set_trace()
-    else:
-        print(file_path)
 
 if __name__ == '__main__':
 
