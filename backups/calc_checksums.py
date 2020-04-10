@@ -26,9 +26,10 @@ def checksum_phot_products(red_dir, log_path):
 
 def calc_blake2_checksum(file_path,log):
 
+    print(file_path)
     with open(file_path) as f:
-
         file_data = f.read()
+
         sum = hashlib.blake2b(data).hexdigest()
         print(sum)
 
