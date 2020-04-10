@@ -2,7 +2,6 @@ from os import path
 from sys import argv
 import glob
 import hashlib
-import h5py
 
 def checksum_phot_products(red_dir, log_path):
 
