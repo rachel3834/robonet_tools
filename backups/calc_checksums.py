@@ -10,15 +10,13 @@ def checksum_phot_products(red_dir):
         raise IOError('Cannot find input photometry directory')
 
     data_products = glob.glob(path.join(red_dir, '*'))
-    print(data_products)
 
     for product in data_products:
-        print(product)
         if path.isfile(product):
             calc_checksum(product)
         else:
             dataset_products = glob.glob(path.join(product, '*'))
-            print(dataset_products)
+
             for dproduct in dataset_products:
                 calc_checksum(dproduct)
 
@@ -40,4 +38,3 @@ if __name__ == '__main__':
         red_dir = argv[1]
 
     checksum_phot_products(red_dir)
-    
