@@ -32,7 +32,6 @@ def calc_checksum(file_path, log):
     stdoutput = p.communicate()[0]
 
     if stdoutput:
-        print(stdoutput)
         log.write(stdoutput+'\n')
     else:
         print(file_path)
