@@ -33,6 +33,7 @@ def calc_checksum(file_path, log):
 
     if stdoutput:
         log.write(stdoutput+'\n')
+        import pdb; pdb.set_trace()
     else:
         print(file_path)
 
