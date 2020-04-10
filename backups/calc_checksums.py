@@ -14,11 +14,17 @@ def checksum_phot_products(red_dir, log_path):
 
     for product in data_products:
         if not path.isfile(product):
+            dataset = path.basename(product)
+
             dataset_products = glob.glob(path.join(product, '*'))
 
             for dproduct in dataset_products:
-                calc_blake2_checksum(dproduct, log)
+                file_name = path.basename(dproduct)
 
+                sum = calc_blake2_checksum(dproduct)
+
+                log.write(dataset+'  '+file_name+'  '+str(sum)+'\n')
+                
     log.close()
 
 def calc_blake2_checksum(file_path,log):
@@ -32,10 +38,11 @@ def calc_blake2_checksum(file_path,log):
 
     sum = hashlib.blake2b(file_data).hexdigest()
 
-    log.write(file_path+'  '+str(sum)+'\n')
     print(file_path +'  '+str(sum))
 
     f.close()
+
+    return sum
 
 if __name__ == '__main__':
 
