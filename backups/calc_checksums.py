@@ -2,6 +2,7 @@ from os import path
 from sys import argv
 import glob
 import hashlib
+import h5py
 
 def checksum_phot_products(red_dir, log_path):
 
@@ -22,13 +23,20 @@ def checksum_phot_products(red_dir, log_path):
     log.close()
 
 def calc_blake2_checksum(file_path,log):
+    """Function to calculate the checksum of a file using the BLAKE2b algorithm.
+    Note that this algorithm must read data in binary bytes format.
+    The read function appears to be able to handle regular file types and HDF5
+    this way but not SQLITE3 DB, so this function necessarily skips that file"""
 
-    file_data = open(file_path,'rb').read()
+    with open(file_path,'rb') as f:
+        file_data = f.read()
 
     sum = hashlib.blake2b(file_data).hexdigest()
 
     log.write(file_path+'  '+str(sum)+'\n')
     print(file_path +'  '+str(sum))
+
+    f.close()
 
 if __name__ == '__main__':
 
