@@ -31,8 +31,11 @@ def calc_checksum(file_path, log):
     p = subprocess.Popen(cl)
     stdoutput = p.communicate()[0]
 
-    print(stdoutput)
-    log.write(stdoutput+'\n')
+    if stdoutput:
+        print(stdoutput)
+        log.write(stdoutput+'\n')
+    else:
+        print(file_path)
 
 if __name__ == '__main__':
 
