@@ -1,6 +1,5 @@
 from os import path
 from sys import argv
-import subprocess
 import glob
 import hashlib
 
@@ -30,17 +29,6 @@ def calc_blake2_checksum(file_path,log):
 
     log.write(file_path+'  '+str(sum)+'\n')
     print(file_path +'  '+str(sum))
-
-def calc_checksum(file_path, log):
-
-    cl = ['md5sum', file_path]
-
-    p = subprocess.Popen(cl)
-    stdoutput = p.communicate()[0]
-
-    if stdoutput:
-        log.write(stdoutput+'\n')
-        import pdb; pdb.set_trace()
 
 if __name__ == '__main__':
 
