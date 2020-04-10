@@ -38,3 +38,6 @@ if __name__ == '__main__':
         red_dir = input('Please enter the path to the top-level photometry archive directory: ')
     else:
         red_dir = argv[1]
+
+    checksum_phot_products(red_dir)
+    
