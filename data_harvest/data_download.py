@@ -3,7 +3,8 @@ from sys import argv
 import requests
 import json
 from datetime import datetime, timedelta
-import logging
+import log_utils
+import config_utils
 
 CONFIG_FILE = '/data/omega/configs/data_download_config.json'
 if path.isfile(CONFIG_FILE) == False:
@@ -53,9 +54,9 @@ class Frame:
 
 def search_archive_for_data():
 
-    config = get_config()
+    config = config_utils.get_config(CONFIG_FILE)
 
-    log = start_day_log(config)
+    log = log_utils.start_day_log(config,'data_download')
 
     downloaded_frames = read_frame_list(config, log)
 
@@ -70,32 +71,8 @@ def search_archive_for_data():
 
     output_frame_list(config, downloaded_frames, log)
 
-    close_log(log)
+    log_utils.close_log(log)
 
-
-def get_config():
-
-    if path.isfile(CONFIG_FILE) == False:
-        raise IOError("No config file found at given location: "+CONFIG_FILE)
-
-    f = open(CONFIG_FILE,'r')
-
-    config_dict = json.load(f)
-
-    f.close()
-
-    for key, value in config_dict.items():
-        if '[' in value and ']' in value and ',' in value:
-            entries = value.replace('[','').replace(']','').split(',')
-            l = []
-            for e in entries:
-                try:
-                    l.append(float(e))
-                except:
-                    l.append(e)
-            config_dict[key] = l
-
-    return config_dict
 
 def read_frame_list(config, log):
     """Function to read the list of previously-downloaded frames"""
