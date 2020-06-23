@@ -5,9 +5,10 @@ import json
 from datetime import datetime, timedelta
 import logging
 
-CONFIG_FILE = path.join(path.expanduser('~'), 'software', 'robonet_tools',
+CONFIG_FILE = '/data/omega/configs/data_download_config.json'
+if path.isfile(CONFIG_FILE) == False:
+    CONFIG_FILE = path.join(path.expanduser('~'), 'software', 'robonet_tools',
                         'configs', 'data_download_config.json')
-#CONFIG_FILE = '/data/omega/configs/data_download_config.json'
 
 class Frame:
 
