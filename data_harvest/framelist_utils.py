@@ -124,6 +124,19 @@ def output_frame_list(config, frame_list, log=None):
     if log!=None:
         log.info('Updated list of downloaded data')
 
+def retrieve_image_header(file_path):
+    """Images occasionally decompress with two image headers instead of one.
+    This code selects the correct one"""
+
+    hdu = fits.open(file_path)
+
+    if len(hdu[0].header) > 100:
+        header = hdu[0].header
+    else:
+        header = hdu[1].header
+
+    return header
+
 def refresh_frame_list():
 
     if len(argv) == 1:
@@ -137,7 +150,7 @@ def refresh_frame_list():
 
     file_list = glob.glob(path.join(config['data_download_dir'],'*.fits'))
     for file_path in file_list:
-        header = fits.getheader(file_path)
+        header = retrieve_image_header(file_path)
         f = Frame(header=header)
         print(f.summary(),file_path)
         frames_dict[path.basename(file_path)] = f
@@ -147,7 +160,7 @@ def refresh_frame_list():
         if path.isdir(dir) and path.isdir(path.join(dir,'data')):
             file_list = glob.glob(path.join(dir,'data','*.fits'))
             for file_path in file_list:
-                header = fits.getheader(file_path)
+                header = retrieve_image_header(file_path)
                 f = Frame(header=header)
                 print(f.summary(), file_path)
                 if path.basename(file_path) not in frames_dict.keys():
