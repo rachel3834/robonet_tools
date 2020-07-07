@@ -145,7 +145,7 @@ def download_new_frames(config,new_frames,downloaded_frames,log):
 
         if frame.filename not in downloaded_frames.keys() and \
             not framelist_utils.is_frame_calibration_data(frame.filename) and \
-            frame.proposal_ids in config['proposal_ids']:
+            frame.proposalid in config['proposal_ids']:
             response = requests.get(frame.url)
 
             dframe = open(path.join(config['data_download_dir'],frame.filename),'wb')
