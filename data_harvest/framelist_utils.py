@@ -1,0 +1,151 @@
+from os import path
+from sys import argv
+import json
+import log_utils
+import config_utils
+from astropy.io import fits
+import glob
+
+class Frame:
+
+    def __init__(self, params = None, header = None):
+        self.filename = None
+        self.url = None
+        self.dateobs = None
+        self.proposalid = None
+        self.site = None
+        self.telescope = None
+        self.instrument = None
+        self.filter = None
+        self.exptime = None
+        self.object = None
+        self.reqnum = None
+
+        self.param_mapping = {'url': 'url',
+                            'filename': 'filename',
+                            'DATE_OBS': 'dateobs',
+                            'PROPID': 'proposalid',
+                            'INSTRUME': 'instrument',
+                            'OBJECT': 'object',
+                            'SITEID': 'site',
+                            'TELID': 'telescope',
+                            'EXPTIME': 'exptime',
+                            'FILTER': 'filter',
+                            'REQNUM': 'reqnum'}
+
+        self.header_mapping = {'url': 'url',
+                            'ORIGNAME': 'filename',
+                            'DATE-OBS': 'dateobs',
+                            'PROPID': 'proposalid',
+                            'INSTRUME': 'instrument',
+                            'OBJECT': 'object',
+                            'SITEID': 'site',
+                            'TELID': 'telescope',
+                            'EXPTIME': 'exptime',
+                            'FILTER': 'filter',
+                            'REQNUM': 'reqnum'}
+        if params != None:
+            self.set_params(params)
+
+        if header != None:
+            self.set_header_params(header)
+
+    def set_params(self, params):
+
+        for key, attribute in self.param_mapping.items():
+            if key in params.keys():
+                setattr(self,attribute,params[key])
+
+    def set_header_params(self, header):
+
+        for key, attribute in self.header_mapping.items():
+            if key not in ['url']:
+                try:
+                    setattr(self,attribute,header[key])
+                except KeyError:
+                    pass
+
+    def summary(self):
+        try:
+            return self.filename+' '+self.object+' '+self.dateobs+' '+self.proposalid+' '+\
+                    self.site+' '+self.telescope+' '+self.instrument+' '+\
+                    self.filter+' '+str(self.exptime)+' '+str(self.reqnum)
+        except:
+            for key,attribute in self.param_mapping.items():
+                print(key, getattr(self,attribute))
+
+def is_frame_calibration_data(filename):
+    """Function to determine whether or not a given frame is a calibration or
+    science frame, based on its filename"""
+
+    search_keys = [ 'bias', 'dark', 'flat', 'skyflat' ]
+
+    status = False
+    for key in search_keys:
+        if key in filename:
+            status = True
+            continue
+
+    return status
+
+def build_frame_list(config,query_results, proposal, new_frames, log):
+    """Function to add new frames to a list of frames to be downloaded,
+    excluding certain data types such as calibration frames"""
+
+    fcount = 0
+    for entry in query_results['results']:
+        if entry['PROPID'] in config['proposal_ids'] and \
+            not is_frame_calibration_data(entry['filename']):
+            f = Frame(params=entry)
+            new_frames.append(f)
+            fcount += 1
+
+    log.info('Found '+str(fcount)+' frame(s) available from proposal '+proposal)
+
+    return new_frames
+
+def output_frame_list(config, frame_list, log=None):
+
+    f = open(config['frame_list'],'w')
+    f.write('# Filename  date-obs   proposal  site  telescope  instrument filter exptime[s] object  reqnum\n')
+    for fname,frame in frame_list.items():
+        f.write(frame.summary()+'\n')
+    f.close()
+
+    if log!=None:
+        log.info('Updated list of downloaded data')
+
+def refresh_frame_list():
+
+    if len(argv) == 1:
+        configfile = input('Please enter the path to the configuration file: ')
+    else:
+        configfile = argv[1]
+
+    config = config_utils.get_config(configfile)
+
+    frames_dict = {}
+
+    file_list = glob.glob(path.join(config['data_download_dir'],'*.fits'))
+    for file_path in file_list:
+        header = fits.getheader(file_path)
+        f = Frame(header=header)
+        frames_dict[path.basename(file_path)] = f
+
+    dir_list = glob.glob(path.join(config['data_reduction_dir'],'*'))
+    for dir in dir_list:
+        if path.isdir(dir) and path.isdir(path.join(dir,'data')):
+            file_list = glob.glob(path.join(dir,'data','*.fits'))
+            for file_path in file_list:
+                header = fits.getheader(file_path)
+                f = Frame(header=header)
+                if path.basename(file_path) not in frames_dict.keys():
+                    frames_dict[path.basename(file_path)] = f
+
+    args = {'frame_list': 'updated_frame_list.txt'}
+    output_frame_list(args, frames_dict, log=None)
+
+    print('Updated frame list output to ./updated_frame_list.txt')
+
+if __name__ == '__main__':
+    refresh_frame_list()

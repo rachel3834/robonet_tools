@@ -5,52 +5,12 @@ import json
 from datetime import datetime, timedelta
 import log_utils
 import config_utils
+import framelist_utils
 
 CONFIG_FILE = '/data/omega/configs/data_download_config.json'
 if path.isfile(CONFIG_FILE) == False:
     CONFIG_FILE = path.join(path.expanduser('~'), 'software', 'robonet_tools',
                         'configs', 'data_download_config.json')
-
-class Frame:
-
-    def __init__(self, params = None):
-        self.filename = None
-        self.url = None
-        self.dateobs = None
-        self.proposalid = None
-        self.site = None
-        self.telescope = None
-        self.instrument = None
-        self.filter = None
-        self.exptime = None
-        self.object = None
-        self.reqnum = None
-
-        if params != None:
-            self.set_params(params)
-
-    def set_params(self, params):
-
-        param_mapping = {'url': 'url',
-                            'filename': 'filename',
-                            'DATE_OBS': 'dateobs',
-                            'PROPID': 'proposalid',
-                            'INSTRUME': 'instrument',
-                            'OBJECT': 'object',
-                            'SITEID': 'site',
-                            'TELID': 'telescope',
-                            'EXPTIME': 'exptime',
-                            'FILTER': 'filter',
-                            'REQNUM': 'reqnum'}
-
-        for key, attribute in param_mapping.items():
-            if key in params.keys():
-                setattr(self,attribute,params[key])
-
-    def summary(self):
-        return self.filename+' '+self.object+' '+self.dateobs+' '+self.proposalid+' '+\
-                    self.site+' '+self.telescope+' '+self.instrument+' '+\
-                    self.filter+' '+str(self.exptime)+' '+str(self.reqnum)
 
 def search_archive_for_data():
 
@@ -66,13 +26,15 @@ def search_archive_for_data():
 
     downloaded_frames = download_new_frames(config,new_frames,downloaded_frames,log)
 
-    output_frame_list(config, downloaded_frames, log)
+    framelist_utils.output_frame_list(config, downloaded_frames, log)
 
     log_utils.close_log(log)
 
 def set_date_range(config, log):
     """Function to set the search date range from the configuration or to
-    the last 24hrs"""
+    the last 24hrs
+
+    Expected date-time format is %Y-%m-%d %H:%M"""
 
     if 'none' not in str(config['start_datetime']).lower() and \
         'none' not in str(config['end_datetime']).lower():
@@ -98,7 +60,7 @@ def read_frame_list(config, log):
 
         for line in lines:
             if '#' not in line[0:1]:
-                f = Frame()
+                f = framelist_utils.Frame()
                 entry = line.replace('\n','').split()
                 if len(entry) == 10:
                     f.filename = entry[0]
@@ -113,6 +75,7 @@ def read_frame_list(config, log):
                     f.reqnum = entry[9]
 
                     downloaded_frames[f.filename] = f
+
                 elif entry[2] == 'calibrate':
                     log.info('Skipped calibrate frame '+entry[0])
                 else:
@@ -137,13 +100,7 @@ def fetch_new_frames(config, start_time, end_time, log):
 
         results = talk_to_lco_archive(config, ur, 'frames', 'GET')
 
-        fcount = 0
-        for entry in results['results']:
-            f = Frame(params=entry)
-            new_frames.append(f)
-            fcount += 1
-
-        log.info('Found '+str(fcount)+' frame(s) available from proposal '+proposal)
+        new_frames = framelist_utils.build_frame_list(config, results, proposal, new_frames, log)
 
     return new_frames
 
@@ -233,16 +190,6 @@ def start_day_log(config):
 def close_log(log):
     log.info( 'Processing complete\n' )
     logging.shutdown()
-
-def output_frame_list(config, downloaded_frames, log):
-
-    f = open(config['frame_list'],'w')
-    f.write('# Filename  date-obs   proposal  site  telescope  instrument filter exptime[s] object  reqnum\n')
-    for fname,frame in downloaded_frames.items():
-        f.write(frame.summary()+'\n')
-    f.close()
-
-    log.info('Updated list of downloaded data')
 
 if __name__ == '__main__':
     search_archive_for_data()
