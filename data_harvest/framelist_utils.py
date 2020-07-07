@@ -157,6 +157,7 @@ def refresh_frame_list():
             for file_path in file_list:
                 header = retrieve_image_header(file_path)
                 f = Frame(header=header)
+                f.filename = path.basename(file_path).replace('.fz','')
                 if path.basename(file_path) not in frames_dict.keys():
                     frames_dict[path.basename(file_path)] = f
 
