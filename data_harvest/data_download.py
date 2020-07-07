@@ -129,9 +129,8 @@ def fetch_new_frames(config, start_time, end_time, log):
         ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d %H:%M"),
                                     'end': end_time.strftime("%Y-%m-%d %H:%M"),
                                     'RLEVEL': 91 }
-        print(ur)
+
         results = talk_to_lco_archive(config, ur, 'frames', 'GET')
-        print(results)
 
         fcount = 0
         for entry in results['results']:
