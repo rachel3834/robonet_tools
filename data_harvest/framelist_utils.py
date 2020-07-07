@@ -54,20 +54,28 @@ class Frame:
 
         for key, attribute in self.param_mapping.items():
             if key in params.keys():
-                setattr(self,attribute,params[key])
+                if attribute == 'filename':
+                    value = str(params[key]).replace('.fz','')
+                else:
+                    value = params[key]
+                setattr(self,attribute,value)
 
     def set_header_params(self, header):
 
         for key, attribute in self.header_mapping.items():
             if key not in ['url']:
                 try:
-                    setattr(self,attribute,header[key])
+                    if attribute == 'filename':
+                        value = str(header[key]).replace('.fz','')
+                    else:
+                        value = header[key]
+                    setattr(self,attribute,value)
                 except KeyError:
                     pass
 
     def summary(self):
         # Filename  date-obs   proposal  site  telescope  instrument filter exptime[s] object  reqnum
-        return self.filename+' '+self.dateobs+' '+self.proposalid+' '+\
+        return str(self.filename).replace('.fz','')+' '+self.dateobs+' '+self.proposalid+' '+\
                     self.site+' '+self.telescope+' '+self.instrument+' '+\
                     self.filter+' '+str(self.exptime)+' '+self.object+' '+str(self.reqnum)
 
