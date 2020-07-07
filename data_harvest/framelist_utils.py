@@ -82,7 +82,7 @@ class Frame:
         except:
             for key, attribute in self.param_mapping.items():
                 print(attribute, getattr(self,attribute))
-                
+
 def is_frame_calibration_data(filename):
     """Function to determine whether or not a given frame is a calibration or
     science frame, based on its filename"""
@@ -139,6 +139,7 @@ def refresh_frame_list():
     for file_path in file_list:
         header = fits.getheader(file_path)
         f = Frame(header=header)
+        print(f.summary())
         frames_dict[path.basename(file_path)] = f
 
     dir_list = glob.glob(path.join(config['data_reduction_dir'],'*'))
@@ -148,6 +149,7 @@ def refresh_frame_list():
             for file_path in file_list:
                 header = fits.getheader(file_path)
                 f = Frame(header=header)
+                print(f.summary())
                 if path.basename(file_path) not in frames_dict.keys():
                     frames_dict[path.basename(file_path)] = f
 
