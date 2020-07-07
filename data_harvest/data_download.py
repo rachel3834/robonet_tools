@@ -50,7 +50,10 @@ def set_date_range(config, log):
     return start_time, end_time
 
 def read_frame_list(config, log):
-    """Function to read the list of previously-downloaded frames"""
+    """Function to read the list of previously-downloaded frames
+    Columns are:
+    Filename  date-obs   proposal  site  telescope  instrument filter exptime[s] object  reqnum
+    """
 
     downloaded_frames = {}
     if path.isfile(config['frame_list']):

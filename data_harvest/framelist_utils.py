@@ -66,13 +66,10 @@ class Frame:
                     pass
 
     def summary(self):
-        try:
-            return self.filename+' '+self.object+' '+self.dateobs+' '+self.proposalid+' '+\
+        # Filename  date-obs   proposal  site  telescope  instrument filter exptime[s] object  reqnum
+        return self.filename+' '+self.dateobs+' '+self.proposalid+' '+\
                     self.site+' '+self.telescope+' '+self.instrument+' '+\
-                    self.filter+' '+str(self.exptime)+' '+str(self.reqnum)
-        except:
-            for key,attribute in self.param_mapping.items():
-                print(key, getattr(self,attribute))
+                    self.filter+' '+str(self.exptime)+' '+self.object+' '+str(self.reqnum)
 
 def is_frame_calibration_data(filename):
     """Function to determine whether or not a given frame is a calibration or
