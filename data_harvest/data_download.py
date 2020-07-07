@@ -60,10 +60,7 @@ def search_archive_for_data():
 
     downloaded_frames = read_frame_list(config, log)
 
-    end_time = datetime.utcnow()
-    start_time = end_time - timedelta(days=1)
-    log.info('Searching for data taken between '+start_time.strftime("%Y-%m-%d")+\
-                ' and '+end_time.strftime("%Y-%m-%d"))
+    (start_time, end_time) = set_date_range(config, log)
 
     new_frames = fetch_new_frames(config, start_time, end_time, log)
 
@@ -73,6 +70,22 @@ def search_archive_for_data():
 
     log_utils.close_log(log)
 
+def set_date_range(config, log):
+    """Function to set the search date range from the configuration or to
+    the last 24hrs"""
+
+    if 'none' not in str(config['start_datetime']).lower() and \
+        'none' not in str(config['end_datetime']).lower():
+        start_time = datetime.strptime(config['start_datetime'],'%Y-%m-%d %H:%M')
+        end_time = datetime.strptime(config['end_datetime'],'%Y-%m-%d %H:%M')
+    else:
+        end_time = datetime.utcnow()
+        start_time = end_time - timedelta(days=1)
+
+    log.info('Searching for data taken between '+start_time.strftime("%Y-%m-%d %H:%M")+\
+                ' and '+end_time.strftime("%Y-%m-%d %H:%M"))
+
+    return start_time, end_time
 
 def read_frame_list(config, log):
     """Function to read the list of previously-downloaded frames"""
@@ -113,10 +126,12 @@ def fetch_new_frames(config, start_time, end_time, log):
     new_frames = []
     for proposal in config['proposal_ids']:
 
-        ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d"),
-                                    'end': end_time.strftime("%Y-%m-%d") }
-
+        ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d %H:%M"),
+                                    'end': end_time.strftime("%Y-%m-%d %H:%M"),
+                                    'RLEVEL': 91 }
+        print(ur)
         results = talk_to_lco_archive(config, ur, 'frames', 'GET')
+        print(results)
 
         fcount = 0
         for entry in results['results']:

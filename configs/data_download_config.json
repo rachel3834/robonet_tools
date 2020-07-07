@@ -4,5 +4,7 @@
     "proposal_ids": "[KEY2020A-003, LCO2020A-002]",
     "log_dir": "/Users/rstreet1/OMEGA",
     "frame_list": "/Users/rstreet1/OMEGA/omega_frame_list.txt",
-    "data_download_dir": "/Users/rstreet1/OMEGA/incoming"
+    "data_download_dir": "/Users/rstreet1/OMEGA/incoming",
+    "start_datetime": "None",
+    "end_datetime": "None"
 }
