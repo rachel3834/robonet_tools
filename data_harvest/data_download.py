@@ -113,9 +113,11 @@ def read_frame_list(config, log):
                     f.reqnum = entry[9]
 
                     downloaded_frames[f.filename] = f
+                elif entry[2] == 'calibrate':
+                    log.info('Skipped calibrate frame '+entry[0])
                 else:
                     log.info('ERROR processing frame log entry: '+line)
-                    
+
         log.info('Read list of '+str(len(downloaded_frames))+' frame(s)')
     else:
         log.info('No list of existing frames found')
