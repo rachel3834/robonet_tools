@@ -100,19 +100,22 @@ def read_frame_list(config, log):
             if '#' not in line[0:1]:
                 f = Frame()
                 entry = line.replace('\n','').split()
-                f.filename = entry[0]
-                f.dateobs = entry[1]
-                f.proposalid = entry[2]
-                f.site = entry[3]
-                f.telescope = entry[4]
-                f.instrument = entry[5]
-                f.filter = entry[6]
-                f.exptime = entry[7]
-                f.object = entry[8]
-                f.reqnum = entry[9]
+                if len(entry) == 10:
+                    f.filename = entry[0]
+                    f.dateobs = entry[1]
+                    f.proposalid = entry[2]
+                    f.site = entry[3]
+                    f.telescope = entry[4]
+                    f.instrument = entry[5]
+                    f.filter = entry[6]
+                    f.exptime = entry[7]
+                    f.object = entry[8]
+                    f.reqnum = entry[9]
 
-                downloaded_frames[f.filename] = f
-
+                    downloaded_frames[f.filename] = f
+                else:
+                    log.info('ERROR processing frame log entry: '+line)
+                    
         log.info('Read list of '+str(len(downloaded_frames))+' frame(s)')
     else:
         log.info('No list of existing frames found')
