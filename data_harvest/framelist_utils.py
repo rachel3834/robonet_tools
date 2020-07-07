@@ -75,10 +75,14 @@ class Frame:
 
     def summary(self):
         # Filename  date-obs   proposal  site  telescope  instrument filter exptime[s] object  reqnum
-        return str(self.filename).replace('.fz','')+' '+self.dateobs+' '+self.proposalid+' '+\
+        try:
+            return str(self.filename).replace('.fz','')+' '+self.dateobs+' '+self.proposalid+' '+\
                     self.site+' '+self.telescope+' '+self.instrument+' '+\
                     self.filter+' '+str(self.exptime)+' '+self.object+' '+str(self.reqnum)
-
+        except:
+            for key, attribute in self.param_mapping.items():
+                print(attribute, getattr(self,attribute))
+                
 def is_frame_calibration_data(filename):
     """Function to determine whether or not a given frame is a calibration or
     science frame, based on its filename"""
