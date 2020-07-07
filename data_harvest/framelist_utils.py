@@ -139,7 +139,7 @@ def refresh_frame_list():
     for file_path in file_list:
         header = fits.getheader(file_path)
         f = Frame(header=header)
-        print(f.summary())
+        print(f.summary(),file_path)
         frames_dict[path.basename(file_path)] = f
 
     dir_list = glob.glob(path.join(config['data_reduction_dir'],'*'))
@@ -149,7 +149,7 @@ def refresh_frame_list():
             for file_path in file_list:
                 header = fits.getheader(file_path)
                 f = Frame(header=header)
-                print(f.summary())
+                print(f.summary(), file_path)
                 if path.basename(file_path) not in frames_dict.keys():
                     frames_dict[path.basename(file_path)] = f
 
