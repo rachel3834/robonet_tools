@@ -75,13 +75,9 @@ class Frame:
 
     def summary(self):
         # Filename  date-obs   proposal  site  telescope  instrument filter exptime[s] object  reqnum
-        try:
-            return str(self.filename).replace('.fz','')+' '+self.dateobs+' '+self.proposalid+' '+\
+        return str(self.filename).replace('.fz','')+' '+self.dateobs+' '+self.proposalid+' '+\
                     self.site+' '+self.telescope+' '+self.instrument+' '+\
                     self.filter+' '+str(self.exptime)+' '+self.object+' '+str(self.reqnum)
-        except:
-            for key, attribute in self.param_mapping.items():
-                print(attribute, getattr(self,attribute))
 
 def is_frame_calibration_data(filename):
     """Function to determine whether or not a given frame is a calibration or
@@ -152,7 +148,6 @@ def refresh_frame_list():
     for file_path in file_list:
         header = retrieve_image_header(file_path)
         f = Frame(header=header)
-        print(f.summary(),file_path)
         frames_dict[path.basename(file_path)] = f
 
     dir_list = glob.glob(path.join(config['data_reduction_dir'],'*'))
@@ -162,7 +157,6 @@ def refresh_frame_list():
             for file_path in file_list:
                 header = retrieve_image_header(file_path)
                 f = Frame(header=header)
-                print(f.summary(), file_path)
                 if path.basename(file_path) not in frames_dict.keys():
                     frames_dict[path.basename(file_path)] = f
 
