@@ -25,4 +25,6 @@ def get_args():
 
     return params
 
+
 if __name__ == '__main__':
+    set_psf_dimensions()
