@@ -11,8 +11,10 @@ def backup_field_photometry_products(params):
     if not os.path.isdir(params['output_dir']):
         raise IOError('Cannot find output directory '+params['output_dir'])
 
-    if os.path.isfile(params['db_path']):
+    if params['db_path'] and os.path.isfile(params['db_path']):
         rsync_file(params['db_path'], os.path.join(params['output_dir'], os.path.basename(params['db_path'])))
+    elif not params['db_path']:
+        print('No photometry DB to be backed up')
     else:
         print('WARNING: Could not find field database at '+params['db_path'])
 
@@ -72,25 +74,31 @@ def get_args():
 
         return dir_path
 
-    params = {}
+    params = {'db_path': None}
 
     if len(sys.argv) == 1:
 
         params['dir_path'] = input('Please enter the path to the directory of a reduced dataset:')
         params['field_name'] = input('Please give the name of field: ')
-        params['db_path'] = input('Please give the path to the photometry DB: ')
+        params['db_path'] = input('Please give the path to the photometry DB or None: ')
         params['output_dir'] = input('Please enter the directory path for output: ')
         params['local_root'] = input('Please enter the local root path (will be stripped off the path uploaded to AWS): ')
         params['aws_root'] = input('Please enter the AWS root path (will be prefixed to the path uploaded to AWS): ')
+
+        if 'none' in str(params['db_path']).lower():
+            params['db_path'] = None
 
     else:
 
         params['dir_path'] = sys.argv[1]
         params['field_name'] = sys.argv[2]
-        params['db_path'] = sys.argv[3]
-        params['output_dir'] = sys.argv[4]
-        params['local_root'] = sys.argv[5]
-        params['aws_root'] = sys.argv[6]
+        params['output_dir'] = sys.argv[3]
+        params['local_root'] = sys.argv[4]
+        params['aws_root'] = sys.argv[5]
+
+        for a in sys.argv:
+            if 'db_path=' in a:
+                params['db_path'] = str(a).split('=')[-1]
 
     params['local_root'] = verify_path_slashes(params['local_root'])
     params['aws_root'] = verify_path_slashes(params['aws_root'])
