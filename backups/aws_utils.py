@@ -2,7 +2,7 @@ import os
 import sys
 import aws_cloud_config
 
-def list_aws_dir(aws_dir_path):
+def list_aws_dir(aws_config,aws_dir_path):
 
     aws_path = os.path.join(aws_config.bucket, aws_dir_path)
 
@@ -18,4 +18,5 @@ def list_aws_dir(aws_dir_path):
 if __name__ == '__main__':
 
     aws_dir_path = 'ROMEREA/reduced_data/fields/'
-    list_aws_dir(aws_dir_path)
+    aws_config = aws_cloud_config.get_aws_config()
+    list_aws_dir(aws_config,aws_dir_path)
