@@ -1,3 +1,5 @@
+import os
+import argv
 import aws_cloud_config
 
 def list_aws_dir(aws_dir_path):
@@ -17,4 +19,3 @@ if __name__ == '__main__':
 
     aws_dir_path = 'ROMEREA/reduced_data/fields/'
     list_aws_dir(aws_dir_path)
-    
