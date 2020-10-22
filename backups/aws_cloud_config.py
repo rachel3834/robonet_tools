@@ -5,6 +5,7 @@ Created on Fri Oct 12 17:18:37 2018
 @author: rstreet
 """
 import os
+import sys
 import socket
 
 class AWSConfig():
@@ -64,7 +65,7 @@ def get_config_path():
 
     if 'rachel' in str(host_name).lower():
 
-        config_file_path = '/Users/rstreet/ROMEREA/configs/aws.xml'
+        config_file_path = '/Users/rstreet1/ROMEREA/configs/aws.xml'
 
     elif 'einstein' in str(host_name).lower():
 
