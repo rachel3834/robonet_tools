@@ -1,5 +1,5 @@
 import os
-import argv
+import sys
 import aws_cloud_config
 
 def list_aws_dir(aws_dir_path):
