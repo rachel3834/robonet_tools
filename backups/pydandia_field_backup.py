@@ -8,7 +8,7 @@ def backup_field_photometry_products(params):
     """Function to gather all the photometric data products for all datasets
     for a given field and back them up to another disk"""
 
-    if not os.path.isdir(params['output_dir']):
+    if params['output_dir'] and not os.path.isdir(params['output_dir']):
         raise IOError('Cannot find output directory '+params['output_dir'])
 
     if params['db_path'] and os.path.isfile(params['db_path']):
@@ -95,6 +95,9 @@ def get_args():
         params['output_dir'] = sys.argv[3]
         params['local_root'] = sys.argv[4]
         params['aws_root'] = sys.argv[5]
+
+        if 'none' in str(params['db_path']).lower():
+            params['db_path'] = None
 
         for a in sys.argv:
             if 'db_path=' in a:
