@@ -93,9 +93,10 @@ def get_args():
 
         params['dir_path'] = sys.argv[1]
         params['field_name'] = sys.argv[2]
-        params['output_dir'] = sys.argv[3]
-        params['local_root'] = sys.argv[4]
-        params['aws_root'] = sys.argv[5]
+        params['db_path'] = sys.argv[3]
+        params['output_dir'] = sys.argv[4]
+        params['local_root'] = sys.argv[5]
+        params['aws_root'] = sys.argv[6]
 
         if 'none' in str(params['db_path']).lower():
             params['db_path'] = None
