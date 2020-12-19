@@ -1,6 +1,7 @@
 import numpy as np
 from os import path
 from sys import argv
+from astropy import table
 
 def select_stars_by_photometry():
 
@@ -17,20 +18,20 @@ def output_image_regions(params,photometry,star_index, colour='green'):
     f = open(params['region_file'], 'w')
 
     for j in star_index:
-        f.write('circle '+str(photometry['x'][j])+' '+str(photometry['y'][j])+
+        f.write('point '+str(photometry['x_pix'][j])+' '+str(photometry['y_pix'][j])+
                 ' # color='+colour+'\n')
 
     f.close()
-    
+
 def select_stars(params, photometry):
 
-    xdata = photometry[params['xcol']]
-    ydata = photometry[params['ycol']]
+    xdata = photometry[params['xcol']].data
+    ydata = photometry[params['ycol']].data
 
-    xdx1 = np.where(xdata >= params['xcol_min'])
-    xdx2 = np.where(xdata <= params['xcol_max'])
-    ydx1 = np.where(ydata >= params['ycol_min'])
-    ydx2 = np.where(ydata <= params['ycol_max'])
+    xdx1 = np.where(xdata >= params['xcol_min'])[0]
+    xdx2 = np.where(xdata <= params['xcol_max'])[0]
+    ydx1 = np.where(ydata >= params['ycol_min'])[0]
+    ydx2 = np.where(ydata <= params['ycol_max'])[0]
     idx = set(xdx1).intersection(set(xdx2))
     idx = idx.intersection(set(ydx1))
     star_index = list(idx.intersection(set(ydx2)))
@@ -58,7 +59,7 @@ def read_colour_photometry_file(params):
 
     table_data = []
 
-    for i, name in headers:
+    for i, name in enumerate(headers):
         table_data.append(table.Column(name=name, data=data[:,i]))
 
     photometry = table.Table(data=table_data)
@@ -71,18 +72,22 @@ def get_args():
         params['phot_file'] = argv[1]
         params['region_file'] = argv[2]
         params['xcol'] = argv[3]
-        params['xcol_min'] = argv[4]
-        params['xcol_max'] = argv[5]
+        params['xcol_min'] = float(argv[4])
+        params['xcol_max'] = float(argv[5])
         params['ycol'] = argv[6]
-        params['ycol_min'] = argv[7]
-        params['ycol_max'] = argv[8]
+        params['ycol_min'] = float(argv[7])
+        params['ycol_max'] = float(argv[8])
     else:
         params['phot_file'] = input('Please enter the path to the colour photometry file: ')
         params['region_file'] = input('Please enter the path to the output region file: ')
         params['xcol'] = input('Please enter the data column to use for selection in the x-axis: ')
-        params['xcol_min'] = input('Please enter the minimum acceptable value for the x-value: ')
-        params['xcol_max'] = input('Please enter the maximum acceptable value for the x-value: ')
+        params['xcol_min'] = float(input('Please enter the minimum acceptable value for the x-value: '))
+        params['xcol_max'] = float(input('Please enter the maximum acceptable value for the x-value: '))
         params['ycol'] = input('Please enter the data column to use for selection in the y-axis: ')
-        params['ycol_min'] = input('Please enter the minimum acceptable value for the y-value: ')
-        params['ycol_max'] = input('Please enter the maximum acceptable value for the y-value: ')
+        params['ycol_min'] = float(input('Please enter the minimum acceptable value for the y-value: '))
+        params['ycol_max'] = float(input('Please enter the maximum acceptable value for the y-value: '))
     return params
+
+
+if __name__ == '__main__':
+    select_stars_by_photometry()
