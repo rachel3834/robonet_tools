@@ -51,7 +51,7 @@ def backup_field_photometry_products(params):
         ref_dest_file = os.path.join(staging_dir, 'ref', mdata.data_architecture[1]['REF_IMAGE'][0])
 
         if not os.path.isdir(os.path.join(staging_dir,'ref')):
-            os.mkdir(os.path.join(staging_dir,'ref')
+            os.mkdir(os.path.join(staging_dir,'ref'))
         if os.path.isfile(ref_source_file):
             rsync_file(ref_source_file, ref_dest_file)
         else:
