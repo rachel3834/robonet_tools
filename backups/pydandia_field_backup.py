@@ -3,6 +3,7 @@ import sys
 import glob
 import subprocess
 import upload_aws
+from pyDANDIA import metadata
 
 def backup_field_photometry_products(params):
     """Function to gather all the photometric data products for all datasets
@@ -27,6 +28,7 @@ def backup_field_photometry_products(params):
         if not os.path.isdir(staging_dir):
             os.mkdir(staging_dir)
 
+        # Backup the main photometry file
         phot_source_file = os.path.join(dir,'photometry.hdf5')
         phot_dest_file = os.path.join(staging_dir, 'photometry.hdf5')
         if os.path.isfile(phot_source_file):
@@ -34,6 +36,7 @@ def backup_field_photometry_products(params):
         else:
             print('WARNING: Could not find photometry file '+phot_source_file)
 
+        # Backup the metadata
         meta_source_file = os.path.join(dir,'pyDANDIA_metadata.fits')
         meta_dest_file = os.path.join(staging_dir, 'pyDANDIA_metadata.fits')
         if os.path.isfile(meta_source_file):
@@ -41,9 +44,29 @@ def backup_field_photometry_products(params):
         else:
             print('WARNING: Could not find metadata file '+meta_source_file)
 
+        # Backup the reference image
+        mdata = metadata.MetaData()
+        mdata.load_a_layer_from_file(dir, 'pyDANDIA_metadata.fits', 'data_architecture')
+        ref_source_file = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],mdata.data_architecture[1]['REF_IMAGE'][0])
+        ref_dest_file = os.path.join(staging_dir, 'ref', mdata.data_architecture[1]['REF_IMAGE'][0])
+        if not os.path.isdir(os.path.join(staging_dir,'ref'):
+            os.mkdir(os.path.join(staging_dir,'ref')
+        if os.path.isfile(ref_source_file):
+            rsync_file(ref_source_file, ref_dest_file)
+        else:
+            print('WARNING: Could not find reference image '+ref_source_file)
+
+        # Compress reference image
+        if os.path.isfile(ref_dest_file+'.bz2') == False:
+            args = ['bzip2', ref_dest_file]
+            p = subprocess.Popen(args, stdout=subprocess.PIPE)
+            p.wait()
+        else:
+            print('Skipping compression of '+ref_dest_file+' (compressed product already exists)')
+
         print('Backed-up data products for '+dset+' to '+staging_dir)
 
-    upload_aws.upload_directory(params['output_dir'],
+    upload_aws.upload_directory_nochecks(params['output_dir'],
                                 params['local_root'],
                                 params['aws_root'])
 

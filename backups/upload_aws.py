@@ -60,6 +60,21 @@ def upload_directory(dir_path, local_root, aws_root):
                 if 'fits' in local_file_path:
                     print('-> Uploaded')
 
+def upload_directory_nochecks(dir_path, local_root, aws_root):
+    """Function to upload the contents of a data directory to AWS,
+    including all files and sub-directories.
+    """
+
+    aws_config = aws_cloud_config.get_aws_config()
+
+    for root, dirs, files in os.walk(dir_path):
+
+        for name in files:
+
+            local_file_path = os.path.join(root,name)
+
+            aws_cp(aws_config,local_file_path,local_root,aws_root)
+
 def check_for_tarballs(dir_path):
     """Function to check for the existance of a tarball of data from a directory"""
 

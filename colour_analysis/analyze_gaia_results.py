@@ -82,7 +82,7 @@ def search_gaia_source_catalog(params):
 
             source = GaiaSource(params=data[key])
 
-    print '\n'+source.summary()
+    print('\n'+source.summary())
 
     return source
 
