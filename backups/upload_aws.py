@@ -140,4 +140,4 @@ if __name__ == '__main__':
 
         aws_root = sys.argv[3]
 
-    upload_directory(dir_path, local_root, aws_root)
+    upload_directory_nochecks(dir_path, local_root, aws_root)
