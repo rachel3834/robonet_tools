@@ -21,9 +21,18 @@ def checksum_phot_products(red_dir, log_path):
             for dproduct in dataset_products:
                 file_name = path.basename(dproduct)
 
-                sum = calc_blake2_checksum(dproduct)
+                if path.isfile(dproduct):
+                    sum = calc_blake2_checksum(dproduct)
+                    log.write(dataset+'  '+file_name+'  '+str(sum)+'\n')
 
-                log.write(dataset+'  '+file_name+'  '+str(sum)+'\n')
+                if path.isdir(dproduct):
+                    subdir_products = glob.glob(path.join(dproduct, '*'))
+
+                    for sproduct in subdir_products:
+                        file_name2 = path.basename(dproduct)
+                        if path.isfile(dproduct):
+                            sum = calc_blake2_checksum(dproduct)
+                            log.write(dataset+'  '+file_name2+'  '+str(sum)+'\n')
 
     log.close()
 
