@@ -75,7 +75,7 @@ def backup_field_photometry_products(params):
 
         refpngs = glob.glob(os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'ref','*.png'))
         for f_source in refpngs:
-            f_dest = os.path.join(staging_dir, 'ref', os.path.basename(f_source)
+            f_dest = os.path.join(staging_dir, 'ref', os.path.basename(f_source))
             rsync_file(f_source, f_dest)
 
         # Backup the DS9 overlay datafiles
