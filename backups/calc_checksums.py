@@ -25,6 +25,7 @@ def checksum_phot_products(red_dir, log_path):
                     sum = calc_blake2_checksum(dproduct)
                     log.write(dataset+'  '+file_name+'  '+str(sum)+'\n')
 
+                print(dproduct, path.isdir(dproduct))
                 if path.isdir(dproduct):
                     subdir_products = glob.glob(path.join(dproduct, '*'))
 
