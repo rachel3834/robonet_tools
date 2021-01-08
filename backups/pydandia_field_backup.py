@@ -81,7 +81,7 @@ def backup_field_photometry_products(params):
         # Backup the DS9 overlay datafiles
         overlays = glob.glob(os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'*.reg'))
         for f_source in overlays:
-            f_dest = os.path.join(staging_dir, 'ref', os.path.basename(f_source)
+            f_dest = os.path.join(staging_dir, 'ref', os.path.basename(f_source))
             rsync_file(f_source, f_dest)
 
         # Compress reference image
