@@ -44,28 +44,78 @@ def backup_field_photometry_products(params):
         else:
             print('WARNING: Could not find metadata file '+meta_source_file)
 
-        # Backup the reference image
-        mdata = metadata.MetaData()
-        mdata.load_a_layer_from_file(dir, 'pyDANDIA_metadata.fits', 'data_architecture')
-        ref_source_file = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],mdata.data_architecture[1]['REF_IMAGE'][0])
-        ref_dest_file = os.path.join(staging_dir, 'ref', mdata.data_architecture[1]['REF_IMAGE'][0])
-
+        # Backup the reference directory image data
         if not os.path.isdir(os.path.join(staging_dir,'ref')):
             os.mkdir(os.path.join(staging_dir,'ref'))
-        if os.path.isfile(ref_source_file):
-            rsync_file(ref_source_file, ref_dest_file)
-        else:
-            print('WARNING: Could not find reference image '+ref_source_file)
+
+        mdata = metadata.MetaData()
+        mdata.load_a_layer_from_file(dir, 'pyDANDIA_metadata.fits', 'data_architecture')
+        source_files = []
+        dest_files = []
+        ref_source_file = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],mdata.data_architecture[1]['REF_IMAGE'][0])
+        dref_source_file = ref_source_file.replace('.fits', '_res.fits'))
+        psfstamp_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'final_psf_master_stamp.fits')
+        psfstampvar_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'final_psf_master_stamp_varience.fits')
+        mask_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'master_mask.fits')
+        maskedref_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'masked_ref_image.fits')
+        psfmodel_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'psf_model.fits')
+        psfmodelnorm_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'psf_model_normalized.fits')
+        psfmodelres_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'psf_model_residuals.fits')
+        flist = [ref_source_file, dref_source_file,
+                psfstamp_source, psfstampvar_source,
+                mask_source, maskedref_source,
+                psfmodel_source, psfmodelnorm_source, psfmodelres_source]
+
+        for f in flist:
+            source_files.append(f)
+            dest_files.append(os.path.join(staging_dir, 'ref', os.path.basename(f)))
+
+        for i,f in enumerate(source_files):
+            rsync_file(f, dest_files[i])
+
+        refpngs = glob.glob(os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'ref','*.png'))
+        for f_source in refpngs:
+            f_dest = os.path.join(staging_dir, 'ref', os.path.basename(f_source)
+            rsync_file(f_source, f_dest)
+
+        # Backup the DS9 overlay datafiles
+        overlays = glob.glob(os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'*.reg'))
+        for f_source in overlays:
+            f_dest = os.path.join(staging_dir, 'ref', os.path.basename(f_source)
+            rsync_file(f_source, f_dest)
 
         # Compress reference image
-        if os.path.isfile(ref_dest_file+'.bz2') == False:
-            args = ['bzip2', ref_dest_file]
-            p = subprocess.Popen(args, stdout=subprocess.PIPE)
-            p.wait()
-        else:
-            print('Skipping compression of '+ref_dest_file+' (compressed product already exists)')
+        for image in glob.glob(os.path.join(staging_dir, 'ref', '*.fits')):
+            if os.path.isfile(image+'.bz2') == False:
+                args = ['bzip2', image]
+                p = subprocess.Popen(args, stdout=subprocess.PIPE)
+                p.wait()
+            else:
+                print('Skipping compression of '+image+' (compressed product already exists)')
 
-        print('Backed-up data products for '+dset+' to '+staging_dir)
+        # Backup the reduction logs
+        log_list = glob.glob(os.path.join(dir,'*.log'))
+        for log_source in log_list:
+            log_dest = os.path.join(staging_dir,os.path.basename(log_source))
+            rsync_file(log_source, log_dest)
+
+        # Backup the output plots
+        png_list = glob.glob(os.path.join(dir,'*.png'))
+        for png_source in png_list:
+            png_dest = os.path.join(staging_dir,os.path.basename(png_source))
+            rsync_file(png_source, png_dest)
+
+    # Backup the configuration directory
+    config_source = os.path.join(params['dir_path'],'configs')
+    config_dest = os.path.join(params['output_dir'],'configs')
+    rsync_file(config_source, config_dest)
+
+    # Backup the logs directory
+    logs_source = os.path.join(params['dir_path'],'logs')
+    logs_dest = os.path.join(params['output_dir'],'logs')
+    rsync_file(logs_source, logs_dest)
+
+    print('Backed-up data products for '+dset+' to '+staging_dir)
 
     upload_aws.upload_directory_nochecks(params['output_dir'],
                                 params['local_root'],
