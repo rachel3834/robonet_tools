@@ -53,7 +53,7 @@ def backup_field_photometry_products(params):
         source_files = []
         dest_files = []
         ref_source_file = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],mdata.data_architecture[1]['REF_IMAGE'][0])
-        dref_source_file = ref_source_file.replace('.fits', '_res.fits'))
+        dref_source_file = ref_source_file.replace('.fits', '_res.fits')
         psfstamp_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'final_psf_master_stamp.fits')
         psfstampvar_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'final_psf_master_stamp_varience.fits')
         mask_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'master_mask.fits')
