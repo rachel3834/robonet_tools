@@ -48,41 +48,42 @@ def backup_field_photometry_products(params):
         if not os.path.isdir(os.path.join(staging_dir,'ref')):
             os.mkdir(os.path.join(staging_dir,'ref'))
 
-        mdata = metadata.MetaData()
-        mdata.load_a_layer_from_file(dir, 'pyDANDIA_metadata.fits', 'data_architecture')
-        source_files = []
-        dest_files = []
-        ref_source_file = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],mdata.data_architecture[1]['REF_IMAGE'][0])
-        dref_source_file = ref_source_file.replace('.fits', '_res.fits')
-        psfstamp_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'final_psf_master_stamp.fits')
-        psfstampvar_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'final_psf_master_stamp_varience.fits')
-        mask_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'master_mask.fits')
-        maskedref_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'masked_ref_image.fits')
-        psfmodel_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'psf_model.fits')
-        psfmodelnorm_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'psf_model_normalized.fits')
-        psfmodelres_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'psf_model_residuals.fits')
-        flist = [ref_source_file, dref_source_file,
-                psfstamp_source, psfstampvar_source,
-                mask_source, maskedref_source,
-                psfmodel_source, psfmodelnorm_source, psfmodelres_source]
+        if os.path.isfile(meta_source_file):
+            mdata = metadata.MetaData()
+            mdata.load_a_layer_from_file(dir, 'pyDANDIA_metadata.fits', 'data_architecture')
+            source_files = []
+            dest_files = []
+            ref_source_file = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],mdata.data_architecture[1]['REF_IMAGE'][0])
+            dref_source_file = ref_source_file.replace('.fits', '_res.fits')
+            psfstamp_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'final_psf_master_stamp.fits')
+            psfstampvar_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'final_psf_master_stamp_varience.fits')
+            mask_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'master_mask.fits')
+            maskedref_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'masked_ref_image.fits')
+            psfmodel_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'psf_model.fits')
+            psfmodelnorm_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'psf_model_normalized.fits')
+            psfmodelres_source = os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'psf_model_residuals.fits')
+            flist = [ref_source_file, dref_source_file,
+                    psfstamp_source, psfstampvar_source,
+                    mask_source, maskedref_source,
+                    psfmodel_source, psfmodelnorm_source, psfmodelres_source]
 
-        for f in flist:
-            source_files.append(f)
-            dest_files.append(os.path.join(staging_dir, 'ref', os.path.basename(f)))
+            for f in flist:
+                source_files.append(f)
+                dest_files.append(os.path.join(staging_dir, 'ref', os.path.basename(f)))
 
-        for i,f in enumerate(source_files):
-            rsync_file(f, dest_files[i])
+            for i,f in enumerate(source_files):
+                rsync_file(f, dest_files[i])
 
-        refpngs = glob.glob(os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'ref','*.png'))
-        for f_source in refpngs:
-            f_dest = os.path.join(staging_dir, 'ref', os.path.basename(f_source))
-            rsync_file(f_source, f_dest)
+            refpngs = glob.glob(os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'ref','*.png'))
+            for f_source in refpngs:
+                f_dest = os.path.join(staging_dir, 'ref', os.path.basename(f_source))
+                rsync_file(f_source, f_dest)
 
-        # Backup the DS9 overlay datafiles
-        overlays = glob.glob(os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'*.reg'))
-        for f_source in overlays:
-            f_dest = os.path.join(staging_dir, 'ref', os.path.basename(f_source))
-            rsync_file(f_source, f_dest)
+            # Backup the DS9 overlay datafiles
+            overlays = glob.glob(os.path.join(mdata.data_architecture[1]['REF_PATH'][0],'*.reg'))
+            for f_source in overlays:
+                f_dest = os.path.join(staging_dir, 'ref', os.path.basename(f_source))
+                rsync_file(f_source, f_dest)
 
         # Compress reference image
         for image in glob.glob(os.path.join(staging_dir, 'ref', '*.fits')):
