@@ -106,13 +106,13 @@ def backup_field_photometry_products(params):
             rsync_file(png_source, png_dest)
 
     # Backup the configuration directory
-    config_source = os.path.join(params['dir_path'],'configs')
-    config_dest = os.path.join(params['output_dir'],'configs')
+    config_source = os.path.join(params['dir_path'],'config')
+    config_dest = params['output_dir']
     rsync_file(config_source, config_dest)
 
     # Backup the logs directory
     logs_source = os.path.join(params['dir_path'],'logs')
-    logs_dest = os.path.join(params['output_dir'],'logs')
+    logs_dest = params['output_dir']
     rsync_file(logs_source, logs_dest)
 
     print('Backed-up data products for '+dset+' to '+staging_dir)
