@@ -48,7 +48,7 @@ def backup_field_photometry_products(params):
         if not os.path.isdir(os.path.join(staging_dir,'ref')):
             os.mkdir(os.path.join(staging_dir,'ref'))
 
-        if os.path.isfile(meta_source_file):
+        if os.path.isfile(meta_source_file) and os.path.isdir(os.path.join(dir, 'ref')):
             mdata = metadata.MetaData()
             mdata.load_a_layer_from_file(dir, 'pyDANDIA_metadata.fits', 'data_architecture')
             source_files = []
