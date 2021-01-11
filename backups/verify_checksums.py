@@ -23,6 +23,8 @@ def verify_checksum_phot_products(red_dir, log_path):
         else:
             print('WARNING: Cannot find expected data product '+dataset+' '+product[0])
 
+    print('Completed verification of all checksums')
+    
 def read_checksum_log(log_path):
 
     if path.isfile(log_path) == False:
