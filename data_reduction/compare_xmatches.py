@@ -75,7 +75,7 @@ def compare_gaia_ids(params, matched_data, log):
     log.info('-> Found '+str(len(gaia_ids1))+' stars with Gaia IDs only in catalogue 1')
     log.info('-> Found '+str(len(gaia_ids2))+' stars with Gaia IDs only in catalogue 2')
 
-    idx = np.where(delta_ids != 0)
+    idx = np.where(delta_ids != 0)[0]
 
     log.info('Found '+str(len(idx))+' stars with different identifications')
     log.info('Found '+str(len(delta_ids)-len(idx))+' stars with consistent identifications')
