@@ -23,7 +23,7 @@ def compare_catalog_xmatch_between_reductions():
     log.info('Loaded metadata from '+params['red_dir2'])
 
     # Crossmatch the catalogs by x, y pixel positions
-    (meta1_matches, meta2_matches) = crossmatch_pixel_positions(meta1, meta2,
+    (meta1_matches, meta2_matches) = crossmatch_pixel_positions_per_star(meta1, meta2,
                                                         log, threshold=1.0)
 
     matched_data = build_matched_arrays(meta1, meta2, meta1_matches,
@@ -42,28 +42,48 @@ def compare_coordinates(params, matched_data, log):
     fig = plt.figure(1,(10,10))
     plt.rcParams.update({'font.size': 18})
 
-    plt.hist(matched_data['separations'])
-    plt.xlabel('Angular separation [deg]')
+    plt.hist(matched_data['separations']*3600, bins=100)
+    plt.xlabel('Angular separation [arcsec]')
     plt.ylabel('Frequency')
     plt.title('Separation between world coordinates of matched stars')
 
     plt.grid()
     plt.savefig(path.join(params['log_dir'],'angular_separations_matched_stars.png'))
     log.info('Plotted the separation between world coordinates of matched stars')
+    log.info('Maximum separation = '+str(matched_data['separations'].max())+' deg')
+    log.info('Mean separation = '+str(matched_data['separations'].mean())+' deg')
+    log.info('Std. dev. of separation = '+str(matched_data['separations'].std())+' deg')
 
 def compare_gaia_ids(params, matched_data, log):
 
-    delta_id = matched_data['gaia_id1'] - matched_data['gaia_id2']
-    idx = np.where(delta_id != 0)
-
     log.info('Comparing identifications of Gaia source IDs')
+
+    gaia_ids1 = []
+    gaia_ids2 = []
+    delta_ids = []
+    for entry in matched_data:
+        id1 = str(entry['gaia_id1']).lower()
+        id2 = str(entry['gaia_id2']).lower()
+        if 'none' not in id1 and 'none' not in id2:
+            delta_ids.append(int(id1) - int(id2))
+        elif 'none' not in id1 and 'none' in id2:
+            gaia_ids1.append(int(id1))
+        elif 'none' in id1 and 'none' not in id2:
+            gaia_ids2.append(int(id2))
+
+    log.info('-> Found '+str(len(delta_ids))+' stars matched with Gaia source in both catalogues')
+    log.info('-> Found '+str(len(gaia_ids1))+' stars with Gaia IDs only in catalogue 1')
+    log.info('-> Found '+str(len(gaia_ids2))+' stars with Gaia IDs only in catalogue 2')
+
+    idx = np.where(delta_ids != 0)
+
     log.info('Found '+str(len(idx))+' stars with different identifications')
-    log.info('Found '+str(len(matched_data)-len(idx))+' stars with consistent identifications')
+    log.info('Found '+str(len(delta_ids)-len(idx))+' stars with consistent identifications')
 
     fig = plt.figure(1,(10,10))
     plt.rcParams.update({'font.size': 18})
 
-    plt.hist(delta_id)
+    plt.hist(delta_ids)
     plt.xlabel('Difference in Gaia ID')
     plt.ylabel('Frequency')
     plt.title('Difference in Gaia ID strings from same data release')
@@ -93,17 +113,14 @@ def crossmatch_pixel_positions(meta1, meta2, log, threshold=None):
     xv1 = np.full( (nstars2, nstars1), x1)
     yv1 = np.full( (nstars2, nstars1), y1)
     idx2 = np.full( (nstars1, nstars2), index2 )
-    print('Got here')
     idx2 = np.transpose(idx2)
     xv2 = np.full( (nstars1, nstars2), x2)
     xv2 = np.transpose(xv2)
     yv2 = np.full( (nstars1, nstars2), y2)
     yv2 = np.transpose(yv2)
-    print('Got here 2')
 
     separations = np.sqrt( (xv1-xv2)**2 + (yv1-yv2)**2 )
-    print('Got here 3')
-    
+
     if threshold:
         min_seps = np.where( separations <= threshold )
     else:
@@ -111,6 +128,51 @@ def crossmatch_pixel_positions(meta1, meta2, log, threshold=None):
 
     meta1_matches = idx1[min_seps]
     meta2_matches = idx2[min_seps]
+    log.info('-> Found '+str(len(meta1_matches))+' matching entries')
+
+    return meta1_matches, meta2_matches
+
+def crossmatch_pixel_positions_per_star(meta1, meta2, log, threshold=None):
+    """Function to crossmatch cartesian pixel positions for each star in
+    the first catalog individually.
+    Returns two indices of corresponding matched stars: the first is
+    the index for the first catalog
+
+    This function is used when the number of stars to be cross-matched
+    exceeds the memory limit of the machine when both catalogues are loaded
+    into a single array.
+    """
+
+    matched_stars = match_utils.StarMatchIndex()
+    meta1_matches = []
+    meta2_matches = []
+
+    x2 = meta2.star_catalog[1]['x']
+    y2 = meta2.star_catalog[1]['y']
+
+    for j in range(0,len(meta1.star_catalog[1]),1):
+    #for j in range(0,1000,1):
+        x1 = meta1.star_catalog[1]['x'][j]
+        y1 = meta1.star_catalog[1]['y'][j]
+
+        log.info('Cross-matching star '+str(j)+' at ('+str(x1)+', '+str(y1)+')')
+
+        separations = np.sqrt( (x1-x2)**2 + (y1-y2)**2 )
+
+        idx = np.where(separations == separations.min())[0][0]
+
+        if threshold:
+            if separations[idx] <= threshold:
+                log.info('-> Found matching entry '+str(idx)+' at ('+str(x2[idx])+', '+\
+                        str(y2[idx])+'), separation '+str(separations[idx])+' pixels')
+                meta1_matches.append(j)
+                meta2_matches.append(idx)
+        else:
+            log.info('-> Found nearest entry '+str(idx)+' at ('+str(x2[idx])+', '+\
+                    str(y2[idx])+'), separation '+str(separations[idx])+' pixels')
+            meta1_matches.append(j)
+            meta2_matches.append(idx)
+
     log.info('-> Found '+str(len(meta1_matches))+' matching entries')
 
     return meta1_matches, meta2_matches

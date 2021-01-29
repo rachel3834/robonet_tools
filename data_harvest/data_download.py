@@ -8,6 +8,7 @@ import config_utils
 import framelist_utils
 
 CONFIG_FILE = '/data/omega/configs/data_download_config.json'
+CONFIG_FILE = '/Users/rstreet1/ROMEREA/test_data/config/data_download_config.json'
 if path.isfile(CONFIG_FILE) == False:
     CONFIG_FILE = path.join(path.expanduser('~'), 'software', 'robonet_tools',
                         'configs', 'data_download_config.json')

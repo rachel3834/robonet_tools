@@ -55,7 +55,8 @@ class Frame:
         for key, attribute in self.param_mapping.items():
             if key in params.keys():
                 if attribute == 'filename':
-                    value = str(params[key]).replace('.fz','')
+                    #value = str(params[key]).replace('.fz','')
+                    value = str(params[key])
                 else:
                     value = params[key]
                 setattr(self,attribute,value)
