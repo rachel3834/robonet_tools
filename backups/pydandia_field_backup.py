@@ -19,7 +19,7 @@ def backup_field_photometry_products(params):
     else:
         print('WARNING: Could not find field database at '+params['db_path'])
 
-    red_dirs = glob.glob(os.path.join(params['dir_path'],params['field_name']+'*'))
+    red_dirs = glob.glob(os.path.join(params['dir_path'],params['field_name']+'_???-dom?-1m0-??-f???_??'))
     print('Found '+str(len(red_dirs))+' reduction directories')
 
     for dir in red_dirs:

@@ -22,6 +22,7 @@ def aws_cp(aws_config, local_file_path, local_root, aws_root):
     cl = ['aws', '--profile='+aws_config.profile,'s3','cp',local_file_path,aws_path]
 
     print(local_file_path+' -->  '+aws_root)
+    print(cl)
     # WARNING: Cannot use stdout-> pipe as the cl output of awscli for larger
     # files can deadline the child process.
     p = subprocess.Popen(cl)
