@@ -146,6 +146,24 @@ def bzip2_image_dir(dir_path):
 
         print(' -> Completed compression of fits files in '+dir_path)
 
+def bzip2_file(file_path):
+    """Function to bzip2 compress a single file, given it's full path.
+    Returns the full compressed file path"""
+
+    if os.path.isfile(file_path):
+        args = ['bzip2', file_path]
+
+        p = subprocess.Popen(args, stdout=subprocess.PIPE)
+        p.wait()
+        print(' -> Compressed file '+file_path)
+        output_file_path = file_path+'.bz'
+
+    else:
+        print('WARNING: Could not compress, file not found: '+file_path)
+        output_file_path = None
+
+    return output_file_path
+
 def bunzip2_dir(dir_path):
     """Function to uncompress all files compressed with bzip2 within a
     specified directory"""

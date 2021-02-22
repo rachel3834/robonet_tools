@@ -3,6 +3,7 @@ import sys
 import glob
 import subprocess
 import upload_aws
+import compress_data_products
 from pyDANDIA import metadata
 
 def backup_field_photometry_products(params):
@@ -33,6 +34,7 @@ def backup_field_photometry_products(params):
         phot_dest_file = os.path.join(staging_dir, 'photometry.hdf5')
         if os.path.isfile(phot_source_file):
             rsync_file(phot_source_file, phot_dest_file)
+            comp_phot_dest_file = compress_data_products.bzip2_file(phot_dest_file)
         else:
             print('WARNING: Could not find photometry file '+phot_source_file)
 
@@ -117,6 +119,8 @@ def backup_field_photometry_products(params):
     logs_dest = params['output_dir']
     for f in source_files:
         rsync_file(f, logs_dest)
+        if '.fits' in f:
+            comp_file = compress_data_products.bzip2_file(os.path.join(logs_dest, os.path.basename(f)))
 
     # Backup the field photometry files:
     source_files = []
@@ -125,6 +129,7 @@ def backup_field_photometry_products(params):
     logs_dest = params['output_dir']
     for f in source_files:
         rsync_file(f, logs_dest)
+        comp_file = compress_data_products.bzip2_file(os.path.join(logs_dest, os.path.basename(f)))
 
     # Backup the logs directory
     logs_source = os.path.join(params['dir_path'],'logs')
