@@ -115,7 +115,8 @@ def backup_field_photometry_products(params):
 
     # Backup the field crossmatch file and log:
     source_files = [ os.path.join(params['dir_path'], params['field_name']+'_field_crossmatch.fits'),
-                     os.path.join(params['dir_path'], 'crossmatch.log') ]
+                     os.path.join(params['dir_path'], 'crossmatch.log'),
+                     os.path.join(params['dir_path'], 'crossmatch_gaia.log'), ]
     logs_dest = params['output_dir']
     for f in source_files:
         rsync_file(f, logs_dest)
