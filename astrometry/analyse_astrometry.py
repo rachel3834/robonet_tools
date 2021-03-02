@@ -38,7 +38,7 @@ def plot_angular_separations(output_dir, separations, masked_ra, masked_dec):
             ' and Dec='+str(masked_dec.min())+' - '+str(masked_dec.max()))
 
     binned_stat = binned_statistic_2d(masked_ra, masked_dec,
-                                      separations*3600,
+                                      separations,
                                       statistic='median',
                                       bins = [nxbins,nybins],
                                       range=[[masked_ra.min(), masked_ra.max()],
@@ -119,12 +119,18 @@ def calc_astrometric_residuals_spherical(gaia_positions, rome_positions, mask,
         separations = np.sqrt( (delta_ra*np.cos(rome_positions.dec.value))**2 +
                                 delta_dec*delta_dec )
 
+    # Ensure units in arcsec
+    separations = separations * 3600
+
     return separations
 
 def calc_astrometric_residuals_cartesian(gaia_positions, rome_positions, mask):
 
     separations = np.sqrt( (xmatch.stars['ra'][mask] - xmatch.stars['gaia_ra'][mask])**2 +
                         (xmatch.stars['dec'][mask] - xmatch.stars['gaia_dec'][mask])**2 )
+
+    # Ensure units in arcsec
+    separations = separations * 3600
 
     return separations
 
