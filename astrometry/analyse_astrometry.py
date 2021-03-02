@@ -38,7 +38,7 @@ def plot_angular_separations(output_dir, separations, masked_ra, masked_dec):
             ' and Dec='+str(masked_dec.min())+' - '+str(masked_dec.max()))
 
     binned_stat = binned_statistic_2d(masked_ra, masked_dec,
-                                      separations,
+                                      separations*3600,
                                       statistic='median',
                                       bins = [nxbins,nybins],
                                       range=[[masked_ra.min(), masked_ra.max()],
@@ -70,7 +70,7 @@ def plot_angular_separations(output_dir, separations, masked_ra, masked_dec):
     #ax1.set_xticklabels(np.round(binned_stat.x_edge,3))
     #ax1.set_yticklabels(np.round(binned_stat.y_edge,3))
 
-    cb = fig.colorbar(im, ax = ax1, label = 'Distance WCS - Gaia match [deg]')
+    cb = fig.colorbar(im, ax = ax1, label = 'Distance WCS - Gaia match [arcsec]')
     plt.xlabel('RA [deg]')
     plt.ylabel('Dec [deg]')
     plt.savefig(path.join(output_dir,'ang_separations.png'))
