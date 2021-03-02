@@ -12,7 +12,7 @@ from matplotlib.ticker import LinearLocator
 
 def run_analysis():
 
-    (option, input_file) = get_args()
+    (option, input_file, output_dir) = get_args()
 
     if option == 'C':
         xmatch = read_crossmatch_data(input_file)
@@ -27,16 +27,16 @@ def run_analysis():
 
         (separations, masked_ra, masked_dec) = calc_astrometric_residuals_metadata(meta)
 
-    plot_angular_separations(separations, masked_ra, masked_dec)
+    plot_angular_separations(output_dir, separations, masked_ra, masked_dec)
 
-def plot_angular_separations(separations, masked_ra, masked_dec):
+def plot_angular_separations(output_dir, separations, masked_ra, masked_dec):
     """Based on code from Markus Hundertmark"""
 
     nxbins = 50
     nybins = 50
     print('Plotting stars between RA='+str(masked_ra.min())+' - '+str(masked_ra.max())+\
             ' and Dec='+str(masked_dec.min())+' - '+str(masked_dec.max()))
-            
+
     binned_stat = binned_statistic_2d(masked_ra, masked_dec,
                                       separations,
                                       statistic='median',
@@ -73,7 +73,7 @@ def plot_angular_separations(separations, masked_ra, masked_dec):
     cb = fig.colorbar(im, ax = ax1, label = 'Distance WCS - Gaia match [deg]')
     plt.xlabel('RA [deg]')
     plt.ylabel('Dec [deg]')
-    plt.savefig('ang_separations.png')
+    plt.savefig(path.join(output_dir,'ang_separations.png'))
 
 def calc_astrometric_residuals_xmatch(xmatch):
 
@@ -149,7 +149,9 @@ def get_args():
         option = str(option).upper()
         input_file = argv[2]
 
-    return option, input_file
+    output_dir = path.dirname(input_file)
+
+    return option, input_file, output_dir
 
 if __name__ == '__main__':
     if len(argv) > 1:
