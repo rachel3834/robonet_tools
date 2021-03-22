@@ -13,7 +13,7 @@ from sys import argv
 import glob
 from shutil import move
 
-def sort_data(data_dir):
+def sort_data(data_dir, option):
     """Function to sort a directory of FITS frames into per-target, per-filter
     sub-directories"""
 
@@ -21,7 +21,7 @@ def sort_data(data_dir):
 
     for image in image_list:
 
-        ds = get_image_dataset(image)
+        ds = get_image_dataset(image,option)
 
         sort_image_to_dataset(image,ds,data_dir)
 
@@ -61,7 +61,7 @@ class Dataset():
         else:
             self.id_code = str(self.target)+ '_' + self.filter
 
-def get_image_dataset(image):
+def get_image_dataset(image,option):
     """Function to identify what dataset an image belongs to, based on the
     target, instrument and filter information from its FITS header.
 
@@ -85,7 +85,7 @@ def get_image_dataset(image):
 
     ds.parse_telescope()
 
-    ds.get_dataset_code()
+    ds.get_dataset_code(separate_instruments=option)
 
     return ds
 
@@ -126,9 +126,16 @@ if __name__ == '__main__':
 
     if len(argv) == 1:
       	data_dir = raw_input('Please enter data directory path: ')
+        option = raw_input('Combine all data for a given target from multiple instruments?  T or F: ')
     else:
       	data_dir = argv[1]
+        option = argv[2]
 
-    sort_data(data_dir)
+    if 't' in str(option).lower():
+        option = True
+    else:
+        option = False
+
+    sort_data(data_dir, option)
 
     print('Completed data sorting')
