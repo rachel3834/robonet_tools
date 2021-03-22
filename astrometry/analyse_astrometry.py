@@ -83,7 +83,7 @@ def calc_astrometric_residuals_xmatch(xmatch):
     rome_positions = SkyCoord(xmatch.stars['ra'][mask], xmatch.stars['dec'][mask],
                                 frame='icrs', unit=(u.deg,u.deg))
 
-    separations = calc_astrometric_residuals_spherical(gaia_positions, rome_positions, mask)
+    separations = calc_astrometric_residuals_spherical(gaia_positions, rome_positions)
 
     return separations, xmatch.stars['ra'][mask].data, xmatch.stars['dec'][mask].data
 
@@ -95,11 +95,11 @@ def calc_astrometric_residuals_metadata(meta):
     rome_positions = SkyCoord(meta.star_catalog[1]['ra'][mask], meta.star_catalog[1]['dec'][mask],
                                 frame='icrs', unit=(u.deg,u.deg))
 
-    separations = calc_astrometric_residuals_spherical(gaia_positions, rome_positions, mask)
+    separations = calc_astrometric_residuals_spherical(gaia_positions, rome_positions)
 
     return separations, meta.star_catalog[1]['ra'][mask].data, meta.star_catalog[1]['dec'][mask].data
 
-def calc_astrometric_residuals_spherical(gaia_positions, rome_positions, mask,
+def calc_astrometric_residuals_spherical(gaia_positions, rome_positions,
                                         small_angles=True):
 
     if not small_angles:
@@ -124,10 +124,10 @@ def calc_astrometric_residuals_spherical(gaia_positions, rome_positions, mask,
 
     return separations
 
-def calc_astrometric_residuals_cartesian(gaia_positions, rome_positions, mask):
+def calc_astrometric_residuals_cartesian(gaia_positions, rome_positions):
 
-    separations = np.sqrt( (xmatch.stars['ra'][mask] - xmatch.stars['gaia_ra'][mask])**2 +
-                        (xmatch.stars['dec'][mask] - xmatch.stars['gaia_dec'][mask])**2 )
+    separations = np.sqrt( (rome_positions.ra.value - gaia_positions.ra.value)**2 +
+                        (rome_positions.dec.value - gaia_positions.dec.value)**2 )
 
     # Ensure units in arcsec
     separations = separations * 3600
