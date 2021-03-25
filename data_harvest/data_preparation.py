@@ -10,7 +10,6 @@ import subprocess
 def prepare_data_for_reduction(CONFIG_FILE):
 
     config = config_utils.get_config(CONFIG_FILE)
-    print(config)
     
     log = log_utils.start_day_log(config, 'data_preparation')
 
