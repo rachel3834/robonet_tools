@@ -7,12 +7,7 @@ import config_utils
 import log_utils
 import subprocess
 
-CONFIG_FILE = '/data/omega/configs/data_preparation_config.json'
-if path.isfile(CONFIG_FILE) == False:
-    CONFIG_FILE = path.join(path.expanduser('~'), 'software', 'robonet_tools',
-                        'configs', 'data_preparation_config.json')
-
-def prepare_data_for_reduction():
+def prepare_data_for_reduction(CONFIG_FILE):
 
     config = config_utils.get_config(CONFIG_FILE)
 
@@ -119,4 +114,10 @@ def transfer_to_reduction_directory(config, log, dataset_dir):
             rmtree(dataset_dir)
 
 if __name__ == '__main__':
-    prepare_data_for_reduction()
+
+    if len(argv) == 1:
+        CONFIG_FILE = input('Please enter the path to the configuration file: ')
+    else:
+        CONFIG_FILE = argv[1]
+
+    prepare_data_for_reduction(CONFIG_FILE)
