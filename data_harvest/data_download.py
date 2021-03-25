@@ -7,13 +7,7 @@ import log_utils
 import config_utils
 import framelist_utils
 
-CONFIG_FILE = '/data/omega/configs/data_download_config.json'
-CONFIG_FILE = '/Users/rstreet1/ROMEREA/test_data/config/data_download_config.json'
-if path.isfile(CONFIG_FILE) == False:
-    CONFIG_FILE = path.join(path.expanduser('~'), 'software', 'robonet_tools',
-                        'configs', 'data_download_config.json')
-
-def search_archive_for_data():
+def search_archive_for_data(CONFIG_FILE):
 
     config = config_utils.get_config(CONFIG_FILE)
 
@@ -198,4 +192,10 @@ def close_log(log):
     logging.shutdown()
 
 if __name__ == '__main__':
-    search_archive_for_data()
+
+    if len(argv) == 1:
+        CONFIG_FILE = input('Please enter the path to the configuration file: ')
+    else:
+        CONFIG_FILE = argv[1]
+
+    search_archive_for_data(CONFIG_FILE)
