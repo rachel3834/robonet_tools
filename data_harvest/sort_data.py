@@ -125,10 +125,10 @@ def sort_image_to_dataset(image,ds,data_dir):
 if __name__ == '__main__':
 
     if len(argv) == 1:
-      	data_dir = raw_input('Please enter data directory path: ')
-        option = raw_input('Combine all data for a given target from multiple instruments?  T or F: ')
+        data_dir = input('Please enter data directory path: ')
+        option = input('Combine all data for a given target from multiple instruments?  T or F: ')
     else:
-      	data_dir = argv[1]
+        data_dir = argv[1]
         option = argv[2]
 
     if 't' in str(option).lower():
