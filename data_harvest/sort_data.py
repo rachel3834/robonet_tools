@@ -17,6 +17,7 @@ def sort_data(data_dir, option):
     """Function to sort a directory of FITS frames into per-target, per-filter
     sub-directories"""
 
+    print(option)
     image_list = make_image_list(data_dir)
 
     for image in image_list:
@@ -50,7 +51,7 @@ class Dataset():
             self.network = 'EXTN'
 
     def get_dataset_code(self, separate_instruments=False):
-
+        print(separate_instruments)
         if separate_instruments:
             self.id_code = str(self.target)+'_' + \
                     str(self.site).lower()+'-'+\
