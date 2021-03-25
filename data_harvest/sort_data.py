@@ -17,7 +17,6 @@ def sort_data(data_dir, option):
     """Function to sort a directory of FITS frames into per-target, per-filter
     sub-directories"""
 
-    print(option)
     image_list = make_image_list(data_dir)
 
     for image in image_list:

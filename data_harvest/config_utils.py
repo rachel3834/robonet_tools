@@ -23,4 +23,18 @@ def get_config(CONFIG_FILE):
                     l.append(e)
             config_dict[key] = l
 
+    config_dict = parse_booleans(config_dict)
+
+    return config_dict
+
+def parse_booleans(config_dict):
+
+    for key, value in config_dict.items():
+        if str(value).lower() in ['true', 'false']:
+            if "true" in str(value).lower():
+                value = True
+            elif "false" in str(value).lower():
+                value = False
+            config_dict[key] = value
+
     return config_dict

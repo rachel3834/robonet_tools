@@ -24,7 +24,7 @@ def prepare_data_for_reduction():
 
         decompressed_frames = decompress_new_frames(config, log, compressed_frames)
 
-        sort_data.sort_data(config['data_download_dir'],log=log)
+        sort_data.sort_data(config['data_download_dir'],config['separate_instruments'],log=log)
 
         datasets = get_dataset_list(config, log)
 
