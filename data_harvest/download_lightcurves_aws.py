@@ -30,7 +30,6 @@ def get_credentials(config):
     home_dir = path.expanduser("~")
 
     credentials = open(path.join(home_dir, '.aws', 'credentials')).readlines()
-    print(credentials)
 
     for i,line in enumerate(credentials):
         if config['awsid'] in line:
@@ -40,8 +39,6 @@ def get_credentials(config):
 
     if 'aws_access_key_id' not in config.keys():
         raise IOError('No AWS credentials found for user ID '+config['awsid'])
-
-    print(config)
 
     return config
 
