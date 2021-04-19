@@ -1,0 +1,5 @@
+{
+  "awsid": "my_aws_uid",
+  "local_data_dir": "local_directory_path",
+  "aws_bucket": "robonet.lco.global"
+}
