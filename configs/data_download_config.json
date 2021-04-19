@@ -1,6 +1,6 @@
 {
     "lco_archive_url": "https://archive-api.lco.global/",
-    "lco_archive_token": "6c78761f9f0821f3ac999b758eb1e987ec60217c",
+    "lco_archive_token": "foobar",
     "proposal_ids": "[KEY2020B-003, LCO2020A-002]",
     "log_dir": "/Users/rstreet1/OMEGA",
     "frame_list": "/Users/rstreet1/OMEGA/omega_frame_list.txt",
