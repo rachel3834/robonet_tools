@@ -17,5 +17,7 @@ For example, to configure and run lightcurve_download_aws.json:
 
 * To run the script, type [Unix, MacOS]:
 > python download_lightcurves_aws.py /path/to/local/lightcurve_download_aws.json
+
  or in Windows:
+
 > C:\path\to\python\installation\python.exe "C:/path/to/cloned/repository/robonet_tools/data_harvest/download_lightcurves_aws.py /path/to/local/lightcurve_download_aws.json"
