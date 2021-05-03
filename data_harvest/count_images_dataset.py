@@ -13,7 +13,7 @@ def count_image_data(params):
     log.info('# Dataset        N images')
     for subdir in datasets:
         image_list = glob.glob(path.join(subdir, 'data', '*.fits'))
-        log.info(path.dirname(subdir)+' '+str(len(image_list)))
+        log.info(path.basename(subdir)+' '+str(len(image_list)))
         nimages += len(image_list)
     log.info('Total number of images: '+str(nimages))
 
