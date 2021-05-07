@@ -6,11 +6,12 @@ from pyDANDIA import sort_data
 import config_utils
 import log_utils
 import subprocess
+from astropy.io import fits
 
 def prepare_data_for_reduction(CONFIG_FILE):
 
     config = config_utils.get_config(CONFIG_FILE)
-    
+
     log = log_utils.start_day_log(config, 'data_preparation')
 
     compressed_frames = check_for_new_frames(config, log)
@@ -18,6 +19,8 @@ def prepare_data_for_reduction(CONFIG_FILE):
     if len(compressed_frames) > 0:
 
         decompressed_frames = decompress_new_frames(config, log, compressed_frames)
+
+        transform_frames(decompressed_frames, log)
 
         sort_data.sort_data(config['data_download_dir'],config['separate_instruments'],log=log)
 
@@ -76,6 +79,19 @@ def decompress_new_frames(config, log, compressed_frames):
             move(frame, path.join(unused_dir, path.basename(frame)))
 
     return decompressed_frames
+
+def transform_frames(decompressed_frames, log):
+
+    for frame in decompressed_frames:
+        hdr = fits.getheader(frame)
+        if 'elp' in path.basename(frame):
+            hdr = fits.getheader(frame)
+            if 'WCSERR' not in hdr.keys() or hdr['WCSERR'] != 0:
+                hdu = fits.open(frame)
+                hdu[0].data = hdu[0].data[::-1,::-1]
+                hdu.writeto(frame, overwrite=True)
+                hdu.close()
+                log.info('-> Transformed ELP frame '+path.basename(frame))
 
 def get_dataset_list(config, log):
 

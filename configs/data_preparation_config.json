@@ -1,6 +1,6 @@
 {
-    "log_dir": "/Users/rstreet1/OMEGA",
-    "data_download_dir": "/Users/rstreet1/OMEGA/incoming",
-    "data_reduction_dir": "/Users/rstreet1/OMEGA/data_reduction",
+    "log_dir": "/Users/rstreet1/ROMEREA/test_data/",
+    "data_download_dir": "/Users/rstreet1/ROMEREA/test_data/incoming",
+    "data_reduction_dir": "//Users/rstreet1/ROMEREA/test_data/incoming/data_reduction",
     "separate_instruments": "False"
 }
