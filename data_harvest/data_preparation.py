@@ -84,14 +84,12 @@ def transform_frames(decompressed_frames, log):
 
     for frame in decompressed_frames:
         hdr = fits.getheader(frame)
-        if 'elp' in path.basename(frame):
-            hdr = fits.getheader(frame)
-            if 'WCSERR' not in hdr.keys() or hdr['WCSERR'] != 0:
-                hdu = fits.open(frame)
-                hdu[0].data = hdu[0].data[::-1,::-1]
-                hdu.writeto(frame, overwrite=True)
-                hdu.close()
-                log.info('-> Transformed ELP frame '+path.basename(frame))
+        if 'WCSERR' not in hdr.keys() or hdr['WCSERR'] != 0:
+            hdu = fits.open(frame)
+            hdu[0].data = hdu[0].data[::-1,::-1]
+            hdu.writeto(frame, overwrite=True)
+            hdu.close()
+            log.info('-> Transformed ELP frame '+path.basename(frame))
 
 def get_dataset_list(config, log):
 
