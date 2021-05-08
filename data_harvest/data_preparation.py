@@ -20,7 +20,7 @@ def prepare_data_for_reduction(CONFIG_FILE):
 
         decompressed_frames = decompress_new_frames(config, log, compressed_frames)
 
-        transform_frames(decompressed_frames, log)
+        #transform_frames(decompressed_frames, log)
 
         sort_data.sort_data(config['data_download_dir'],config['separate_instruments'],log=log)
 
@@ -81,18 +81,23 @@ def decompress_new_frames(config, log, compressed_frames):
     return decompressed_frames
 
 def transform_frames(decompressed_frames, log):
+    in_use = False
 
-    for frame in decompressed_frames:
-        hdr = fits.getheader(frame)
-        if 'WCSERR' not in hdr.keys() or hdr['WCSERR'] != 0:
-            hdu = fits.open(frame)
-            hdu[0].data = hdu[0].data[::-1,::-1]
-            for i in range(1,len(hdu),1):
-                if 'BPM' in hdu[i].header['EXTNAME'] or 'ERR' in hdu[i].header['EXTNAME']:
-                    hdu[i].data = hdu[i].data[::-1,::-1]
-            hdu.writeto(frame, overwrite=True)
-            hdu.close()
-            log.info('-> Transformed frame '+path.basename(frame))
+    if in_use:
+        for frame in decompressed_frames:
+            hdr = fits.getheader(frame)
+            if 'WCSERR' not in hdr.keys() or hdr['WCSERR'] != 0:
+                hdu = fits.open(frame)
+                if hdu != None:
+                    hdu[0].data = hdu[0].data[::-1,::-1]
+                    for i in range(1,len(hdu),1):
+                        if 'BPM' in hdu[i].header['EXTNAME'] or 'ERR' in hdu[i].header['EXTNAME']:
+                            hdu[i].data = hdu[i].data[::-1,::-1]
+                    hdu.writeto(frame.replace('.fits','_t.fits'), overwrite=True)
+                    hdu.close()
+                    log.info('-> Transformed frame '+path.basename(frame))
+            else:
+                log.info('No transform necessary for '+path.basename(frame))
 
 def get_dataset_list(config, log):
 
