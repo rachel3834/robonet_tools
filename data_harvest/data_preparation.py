@@ -87,9 +87,12 @@ def transform_frames(decompressed_frames, log):
         if 'WCSERR' not in hdr.keys() or hdr['WCSERR'] != 0:
             hdu = fits.open(frame)
             hdu[0].data = hdu[0].data[::-1,::-1]
+            for i in range(1,len(hdu),1):
+                if 'BPM' in hdu[i].header['EXTNAME'] or 'ERR' in hdu[i].header['EXTNAME']:
+                    hdu[i].data = hdu[i].data[::-1,::-1]
             hdu.writeto(frame, overwrite=True)
             hdu.close()
-            log.info('-> Transformed ELP frame '+path.basename(frame))
+            log.info('-> Transformed frame '+path.basename(frame))
 
 def get_dataset_list(config, log):
 
