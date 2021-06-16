@@ -2,6 +2,7 @@ from pyDANDIA import metadata
 from sys import argv
 from os import path
 import glob
+import numpy as np
 
 def verify_dataset(red_dir):
     reduction_metadata = metadata.MetaData()
