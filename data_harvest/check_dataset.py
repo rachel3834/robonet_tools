@@ -19,7 +19,7 @@ def verify_dataset(red_dir):
         if len(idx) == 0:
             print('Cannot find image '+path.basename(image)+' in metadata')
 
-if __name__ = '__main__':
+if __name__ == '__main__':
     if len(argv) > 1:
         red_dir = argv[1]
     else:
