@@ -137,7 +137,7 @@ def full_reset(params, datasets, running_processes, log):
                     for entry in file_list:
                         remove(entry)
 
-                for sub_dir in ['logs', 'ref', 'resampled', 'kernel', 'diffim', 'lightcurves']:
+                for sub_dir in ['logs', 'ref', 'resampled', 'kernel', 'diffim', 'lightcurves', 'lc']:
                     try:
                         shutil.rmtree(path.join(data_dir,sub_dir), ignore_errors=True)
                         log.info('Removed '+path.join(data_dir,sub_dir))
