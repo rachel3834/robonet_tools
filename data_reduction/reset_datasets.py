@@ -201,5 +201,5 @@ def find_entry_in_log(log_file, search_string):
 
     return found_string
 
-if __name___ == '__main__':
+if __name__ == '__main__':
     reset_pydandia_reductions()
