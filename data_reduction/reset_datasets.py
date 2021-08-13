@@ -17,7 +17,7 @@ def reset_pydandia_reductions():
 
     running_processes = automatic_pipeline.read_process_list(config,log)
 
-    datasets = read_dataset_list(params,log)
+    datasets = read_dataset_list(config, params, log)
 
     if params['reset_code'] == 'stage2_no_ref':
         reset_stage2_no_ref(params, datasets, log)
@@ -65,7 +65,7 @@ def get_dataset_list(params,log):
 
     return datasets
 
-def read_dataset_list(params,log):
+def read_dataset_list(config, params, log):
 
     if path.isfile(params['datasets_file']) == True:
 
@@ -73,15 +73,15 @@ def read_dataset_list(params,log):
 
         file_lines = open(params['datasets_file']).readlines()
 
-        datasets = {}
+        datasets = []
 
         log.info('Going to reset the following datasets:')
 
         for line in file_lines:
 
             if len(line.replace('\n','')) > 0:
-                (dataset_code, ref_status) = line.replace('\n','').split()
-                datasets[dataset_code] = ref_status
+                dataset_code = line.replace('\n','')
+                datasets.append(path.join(config['data_red_dir'],dataset_code))
 
             log.info(dataset_code)
 
