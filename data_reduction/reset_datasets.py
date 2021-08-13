@@ -17,10 +17,13 @@ def reset_pydandia_reductions():
 
     running_processes = automatic_pipeline.read_process_list(config,log)
 
-    datasets = get_dataset_list(params,log)
+    datasets = read_dataset_list(params,log)
 
     if params['reset_code'] == 'stage2_no_ref':
         reset_stage2_no_ref(params, datasets, log)
+
+    elif params['reset_code'] == 'full_reset':
+        full_reset(params, datasets, log)
 
     else:
         print('Unrecognized reset code.  No action taken.')
@@ -34,12 +37,15 @@ def get_args():
     if len(argv) == 1:
         print("""Supported reset codes:
                 stage2_no_ref: Reset reduction where stage 2 has failed to find a reference image
+                full_reset: Remove all previous reduction products
               """)
         params['config_file'] = input('Please enter the path to the auto configuration file: ')
+        params['datasets_file'] = input('Please enter the path to the file of datasets to reset: ')
         params['reset_code'] = input('Please enter the reset code: ')
     else:
         params['config_file'] = argv[1]
-        params['reset_code'] = argv[2]
+        params['datasets_file'] = argv[2]
+        params['reset_code'] = argv[3]
 
     return params
 
@@ -56,6 +62,32 @@ def get_dataset_list(params,log):
         if path.isdir(d) and d not in exclude_list:
             datasets.append(d)
             log.info(d)
+
+    return datasets
+
+def read_dataset_list(params,log):
+
+    if path.isfile(params['datasets_file']) == True:
+
+        log.info('Found the list of datasets to be reset: '+params['datasets_file'])
+
+        file_lines = open(datasets_file).readlines()
+
+        datasets = {}
+
+        log.info('Going to reset the following datasets:')
+
+        for line in file_lines:
+
+            if len(line.replace('\n','')) > 0:
+                (dataset_code, ref_status) = line.replace('\n','').split()
+                datasets[dataset_code] = ref_status
+
+            log.info(dataset_code)
+
+    else:
+
+        raise IOError('Cannot find input list of datasets.  Looking for '+params['datasets_file'])
 
     return datasets
 
@@ -84,6 +116,33 @@ def reset_stage2_no_ref(params, datasets, log):
             remove(path.join(data_dir, 'dataset.lock'))
 
             log.info(' ==> Reset reduction')
+
+def full_reset(params, datasets, log):
+
+    check = input('WARNING!  You are about to remove ALL data products.  Are you sure?  Y or n: ')
+
+    if check == 'Y':
+        for data_dir in datasets:
+
+            active_reduction = is_reduction_active(data_dir, running_processes)
+
+            log.info(path.basename(data_dir)+': ')
+            log.info(' -> Active reduction? '+repr(active_reduction))
+
+            if not active_reduction:
+
+                for extn in ['*.dat', '*.png', '*.fits', '*.log', '*.lock', '*.hdf5']:
+                    file_list = glob.glob(path.join(data_dir,extn))
+                    for entry in file_list:
+                        remove(entry)
+
+                for sub_dir in ['logs', 'ref', 'resampled', 'kernel', 'diffim', 'lightcurves']:
+                    rmdir(path.join(data_dir,sub_dir))
+
+                log.info(' ==> Reset reduction')
+    else:
+        print('Reset aborted')
+
 
 def check_no_later_stage_logs(data_dir, next_stage):
     """Function to check a reduction directory to see if stage logs exist for
