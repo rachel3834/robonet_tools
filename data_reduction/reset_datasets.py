@@ -20,10 +20,10 @@ def reset_pydandia_reductions():
     datasets = read_dataset_list(config, params, log)
 
     if params['reset_code'] == 'stage2_no_ref':
-        reset_stage2_no_ref(params, datasets, log)
+        reset_stage2_no_ref(params, datasets, running_processes, log)
 
     elif params['reset_code'] == 'full_reset':
-        full_reset(params, datasets, log)
+        full_reset(params, datasets, running_processes, log)
 
     else:
         print('Unrecognized reset code.  No action taken.')
@@ -91,7 +91,7 @@ def read_dataset_list(config, params, log):
 
     return datasets
 
-def reset_stage2_no_ref(params, datasets, log):
+def reset_stage2_no_ref(params, datasets, running_processes, log):
 
     for data_dir in datasets:
 
@@ -117,7 +117,7 @@ def reset_stage2_no_ref(params, datasets, log):
 
             log.info(' ==> Reset reduction')
 
-def full_reset(params, datasets, log):
+def full_reset(params, datasets, running_processes, log):
 
     check = input('WARNING!  You are about to remove ALL data products.  Are you sure?  Y or n: ')
 
