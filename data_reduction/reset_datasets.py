@@ -105,7 +105,7 @@ def reset_stage2_no_ref(params, datasets, log):
         log.info(' -> Reference image present? '+repr(ref_image))
 
         if not active_reduction and \
-            not later_stage_logs and
+            not later_stage_logs and \
                 not ref_image:
 
             remove(path.join(data_dir,'pyDANDIA_metadata.fits'))
