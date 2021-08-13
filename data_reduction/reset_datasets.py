@@ -71,7 +71,7 @@ def read_dataset_list(params,log):
 
         log.info('Found the list of datasets to be reset: '+params['datasets_file'])
 
-        file_lines = open(datasets_file).readlines()
+        file_lines = open(params['datasets_file']).readlines()
 
         datasets = {}
 
