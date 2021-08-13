@@ -137,8 +137,11 @@ def full_reset(params, datasets, running_processes, log):
                         remove(entry)
 
                 for sub_dir in ['logs', 'ref', 'resampled', 'kernel', 'diffim', 'lightcurves']:
-                    rmdir(path.join(data_dir,sub_dir))
-
+                    try:
+                        rmdir(path.join(data_dir,sub_dir))
+                    except OSError:
+                        pass
+                        
                 log.info(' ==> Reset reduction')
     else:
         print('Reset aborted')
