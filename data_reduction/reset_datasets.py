@@ -1,4 +1,5 @@
 from os import path, remove, rmdir
+import shutil
 from sys import argv
 import glob
 from pyDANDIA import config_utils
@@ -138,7 +139,7 @@ def full_reset(params, datasets, running_processes, log):
 
                 for sub_dir in ['logs', 'ref', 'resampled', 'kernel', 'diffim', 'lightcurves']:
                     try:
-                        rmdir(path.join(data_dir,sub_dir))
+                        shutil.rmtree(path.join(data_dir,sub_dir), ignore_errors=True)
                         log.info('Removed '+path.join(data_dir,sub_dir))
                     except OSError:
                         log.info('Problem removing '+path.join(data_dir,sub_dir))
