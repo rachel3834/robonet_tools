@@ -10,6 +10,10 @@ def review_field_reduced_datasets(top_dir, field_id):
 
     for red_dir in datasets:
         count_reduction_products(red_dir, log)
+
+    log.write('\n\n')
+
+    for red_dir in datasets:
         find_missing_frames(red_dir, log)
 
     log.close()
@@ -38,7 +42,6 @@ def find_missing_frames(red_dir, log):
     kernel_images = list_dir_fits_products(path.join(red_dir,'kernel'))
     diff_images = list_dir_fits_products(path.join(red_dir,'diffim'))
 
-    log.write('\n\n')
     log.write('Images missing from resampled data products: ')
     missing = diff_image_lists(input_images, resampled_images)
     record_missing_images(missing, log)
