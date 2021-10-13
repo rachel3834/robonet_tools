@@ -70,9 +70,15 @@ def count_kernel_stamps(dir_path, log):
         kernels_fits = glob.glob(path.join(image,'kernel_stamp_?.fits'))
         ukernels_fits = glob.glob(path.join(image,'kernel_err_stamp_?.fits'))
 
+        if len(kernels_npy) == 16 and len(kernels_fits) == 16 and \
+                len(ukernels_fits) == 16:
+            status = 'OK'
+        else:
+            status = 'Stamps missing'
+
         log.write(path.basename(image)+': Nkernels_npy='+str(len(kernels_npy))+\
                                         ' Nkernel_fits='+str(len(kernels_fits))+\
-                                        ' Nkernel_err_fits='+str(len(ukernels_fits))+'\n')
+                                        ' Nkernel_err_fits='+str(len(ukernels_fits))+' '+status+'\n')
 
 def list_dir_fits_products(dir_path):
     file_list = glob.glob(path.join(dir_path,'*.fits'))
