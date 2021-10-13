@@ -75,9 +75,9 @@ def count_kernel_stamps(dir_path, kernel_stamp_data):
     stamps_data = {}
     NOK = 0
     for image in image_list:
-        kernels_npy = glob.glob(path.join(image,'kernel_stamp_?.npy'))
-        kernels_fits = glob.glob(path.join(image,'kernel_stamp_?.fits'))
-        ukernels_fits = glob.glob(path.join(image,'kernel_err_stamp_?.fits'))
+        kernels_npy = glob.glob(path.join(image,'kernel_stamp_*.npy'))
+        kernels_fits = glob.glob(path.join(image,'kernel_stamp_*.fits'))
+        ukernels_fits = glob.glob(path.join(image,'kernel_err_stamp_*.fits'))
 
         if len(kernels_npy) == 16 and len(kernels_fits) == 16 and \
                 len(ukernels_fits) == 16:
@@ -94,7 +94,7 @@ def count_kernel_stamps(dir_path, kernel_stamp_data):
         stamps_data['%OK'] = round( (float(NOK) / float(len(image_list)))*100.0, 1)
     else:
         stamps_data['%OK'] = 0.0
-        
+
     kernel_stamp_data[path.basename(dir_path)] = stamps_data
 
     return kernel_stamp_data
