@@ -90,7 +90,11 @@ def count_kernel_stamps(dir_path, kernel_stamp_data):
                                              'Nkernel_fits': len(kernels_fits),
                                              'Nkernel_err_fits': len(ukernels_fits),
                                              'status': status}
-    stamps_data['%OK'] = round( (float(NOK) / float(len(image_list)))*100.0, 1)
+    if len(image_list) > 0:
+        stamps_data['%OK'] = round( (float(NOK) / float(len(image_list)))*100.0, 1)
+    else:
+        stamps_data['%OK'] = 0.0
+        
     kernel_stamp_data[path.basename(dir_path)] = stamps_data
 
     return kernel_stamp_data
