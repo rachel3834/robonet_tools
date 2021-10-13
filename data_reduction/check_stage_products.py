@@ -22,7 +22,7 @@ def review_field_reduced_datasets(top_dir, field_id):
 
     log.write('\n\n')
 
-    record_kernel_stamps_data(kernel_stamps_data, log)
+    record_kernel_stamp_data(kernel_stamp_data, log)
 
     log.close()
 
@@ -95,9 +95,9 @@ def count_kernel_stamps(dir_path, kernel_stamp_data):
 
     return kernel_stamp_data
 
-def record_kernel_stamps_data(kernel_stamps_data, log):
+def record_kernel_stamp_data(kernel_stamp_data, log):
 
-    for dataset,stamps_data in kernel_stamps_data.items():
+    for dataset,stamps_data in kernel_stamp_data.items():
         log.write('Kernel stamps listing for '+dataset+'\n')
 
         for key, data in stamps_data.items():
