@@ -19,11 +19,11 @@ def check_reduction_products(red_dir):
 
     n_input_images = count_dir_fits_products(path.join(red_dir,'data'))
     n_resampled = count_dir_fits_products(path.join(red_dir,'resampled'))
-    p_resampled = round( (n_resampled/n_input_images)*100.0, 0 )
+    p_resampled = round( (n_resampled/n_input_images)*100.0, 1 )
     n_kernel = count_dir_fits_products(path.join(red_dir,'kernel'))
-    p_kernel = round( (n_kernel/n_input_images)*100.0, 0 )
+    p_kernel = round( (n_kernel/n_input_images)*100.0, 1 )
     n_diffim = count_dir_fits_products(path.join(red_dir,'diffim'))
-    p_diffim = round( (n_diffim/n_input_images)*100.0, 0 )
+    p_diffim = round( (n_diffim/n_input_images)*100.0, 1 )
 
     report = path.basename(red_dir)+': Ninput_images='+str(n_input_images)+\
                                  ' Nresampled='+str(n_resampled)+'('+str(p_resampled)+'%) '+\
