@@ -72,8 +72,6 @@ def count_dir_fits_products(dir_path):
 def count_kernel_stamps(dir_path, kernel_stamp_data):
     image_list = glob.glob(path.join(dir_path,'kernel', '*.fits'))
 
-    log.write('Checking the kernel products per stamp\n')
-
     stamps_data = {}
     NOK = 0
     for image in image_list:
