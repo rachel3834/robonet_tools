@@ -37,6 +37,8 @@ def count_reduction_products(red_dir, log):
 
 def find_missing_frames(red_dir, log):
 
+    log.write('Missing frame report for '+path.basename(red_dir))
+    
     input_images = list_dir_fits_products(path.join(red_dir,'data'))
     resampled_images = list_dir_fits_products(path.join(red_dir,'resampled'))
     kernel_images = list_dir_fits_products(path.join(red_dir,'kernel'))
