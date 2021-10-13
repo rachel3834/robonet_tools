@@ -10,7 +10,8 @@ def review_field_reduced_datasets(top_dir, field_id):
 
     for red_dir in datasets:
         count_reduction_products(red_dir, log)
-
+        count_kernel_stamps(dir_path, log)
+        
     log.write('\n\n')
 
     for red_dir in datasets:
@@ -60,6 +61,20 @@ def find_missing_frames(red_dir, log):
 def count_dir_fits_products(dir_path):
     file_list = glob.glob(path.join(dir_path,'*.fits'))
     return float(len(file_list))
+
+def count_kernel_stamps(dir_path, log):
+    image_list = glob.glob(path.join(dir_path,'kernel', '*.fits'))
+
+    log.write('Checking kernel data products per stamp')
+
+    for image in image_list:
+        kernels_npy = glob.glob(path.join(image,'kernel_stamp_?.npy')))
+        kernels_fits = glob.glob(path.join(image,'kernel_stamp_?.fits')))
+        ukernels_fits = glob.glob(path.join(image,'kernel_err_stamp_?.fits')))
+
+        log.write(path.basename(image)+': Nkernels_npy='+str(len(kernels_npy))+\
+                                        ' Nkernel_fits='+str(len(kernels_fits))+\
+                                        ' Nkernel_err_fits='+str(len(ukernels_fits)))
 
 def list_dir_fits_products(dir_path):
     file_list = glob.glob(path.join(dir_path,'*.fits'))
