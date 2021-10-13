@@ -8,14 +8,21 @@ def review_field_reduced_datasets(top_dir, field_id):
 
     log = open(path.join(top_dir,'logs','data_products_report.txt'),'w')
 
+    kernel_stamp_data = {}
     for red_dir in datasets:
         count_reduction_products(red_dir, log)
-        count_kernel_stamps(red_dir, log)
+        kernel_stamp_data = count_kernel_stamps(red_dir, kernel_stamp_data)
+        stamp_data = kernel_stamp_data[path.basename(red_dir)]
+        log.write('Percentage of images with expected number of kernel stamps: '+str(stamp_data['%OK'])+'\n')
 
     log.write('\n\n')
 
     for red_dir in datasets:
         find_missing_frames(red_dir, log)
+
+    log.write('\n\n')
+
+    record_kernel_stamps_data(kernel_stamps_data, log)
 
     log.close()
 
@@ -62,9 +69,13 @@ def count_dir_fits_products(dir_path):
     file_list = glob.glob(path.join(dir_path,'*.fits'))
     return float(len(file_list))
 
-def count_kernel_stamps(dir_path, log):
+def count_kernel_stamps(dir_path, kernel_stamp_data):
     image_list = glob.glob(path.join(dir_path,'kernel', '*.fits'))
 
+    log.write('Checking the kernel products per stamp\n')
+
+    stamps_data = {}
+    NOK = 0
     for image in image_list:
         kernels_npy = glob.glob(path.join(image,'kernel_stamp_?.npy'))
         kernels_fits = glob.glob(path.join(image,'kernel_stamp_?.fits'))
@@ -73,12 +84,32 @@ def count_kernel_stamps(dir_path, log):
         if len(kernels_npy) == 16 and len(kernels_fits) == 16 and \
                 len(ukernels_fits) == 16:
             status = 'OK'
+            NOK += 1
         else:
             status = 'Stamps missing'
 
-        log.write(path.basename(image)+': Nkernels_npy='+str(len(kernels_npy))+\
-                                        ' Nkernel_fits='+str(len(kernels_fits))+\
-                                        ' Nkernel_err_fits='+str(len(ukernels_fits))+' '+status+'\n')
+        stamps_data[path.basename(image)] = {'Nkernels_npy': len(kernels_npy),
+                                             'Nkernel_fits': len(kernels_fits),
+                                             'Nkernel_err_fits': len(ukernels_fits),
+                                             'status': status}
+    stamps_data['%OK'] = round( (float(NOK) / float(len(image_list)))*100.0, 1)
+    kernel_stamp_data[path.basename(dir_path)] = stamps_data
+
+    return kernel_stamp_data
+
+def record_kernel_stamps_data(kernel_stamps_data, log):
+
+    for dataset,stamps_data in kernel_stamps_data.items():
+        log.write('Kernel stamps listing for '+dataset+'\n')
+
+        for key, data in stamps_data.items():
+            if key == '%OK':
+                log.write('Percentage of images with expected number of kernel stamps: '+str(data)+'\n')
+            else:
+                log.write(key+': Nkernels_npy='+str(data['Nkernels_npy'])+\
+                                        ' Nkernel_fits='+str(data['Nkernel_fits'])+\
+                                        ' Nkernel_err_fits='+str(data['Nkernel_err_fits'])+\
+                                        ' '+data['status']+'\n')
 
 def list_dir_fits_products(dir_path):
     file_list = glob.glob(path.join(dir_path,'*.fits'))
