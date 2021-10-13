@@ -9,13 +9,12 @@ def review_field_reduced_datasets(top_dir, field_id):
     log = open(path.join(top_dir,'logs','data_products_report.txt'),'w')
 
     for red_dir in datasets:
-        report = check_reduction_products(red_dir)
-        log.write(report+'\n')
-        print(report)
+        count_reduction_products(red_dir, log)
+        find_missing_frames(red_dir, log)
 
     log.close()
 
-def check_reduction_products(red_dir):
+def count_reduction_products(red_dir, log):
 
     n_input_images = count_dir_fits_products(path.join(red_dir,'data'))
     n_resampled = count_dir_fits_products(path.join(red_dir,'resampled'))
@@ -29,12 +28,47 @@ def check_reduction_products(red_dir):
                                  ' Nresampled='+str(n_resampled)+'('+str(p_resampled)+'%) '+\
                                  ' Nkernel='+str(n_kernel)+'('+str(p_kernel)+'%) '+\
                                  ' Ndiffim='+str(n_diffim)+'('+str(p_diffim)+'%)'
-    return report
+    log.write(report+'\n')
+    print(report)
+
+def find_missing_frames(red_dir, log):
+
+    input_images = list_dir_fits_products(path.join(red_dir,'data'))
+    resampled_images = list_dir_fits_products(path.join(red_dir,'resampled'))
+    kernel_images = list_dir_fits_products(path.join(red_dir,'kernel'))
+    diff_images = list_dir_fits_products(path.join(red_dir,'diffim'))
+
+    log.write('\n\n')
+    log.write('Images missing from resampled data products: ')
+    missing = diff_image_lists(input_images, resampled_images)
+    record_missing_images(missing, log)
+
+    log.write('Images missing from kernel data products: ')
+    missing = diff_image_lists(input_images, kernel_images)
+    record_missing_images(missing, log)
+
+    log.write('Images missing from diffim data products: ')
+    missing = diff_image_lists(input_images, diff_images)
+    record_missing_images(missing, log)
 
 def count_dir_fits_products(dir_path):
     file_list = glob.glob(path.join(dir_path,'*.fits'))
     return float(len(file_list))
 
+def list_dir_fits_products(dir_path):
+    file_list = glob.glob(path.join(dir_path,'*.fits'))
+    image_list = [path.basename(image_path) for image_path in file_list]
+    image_list.sort()
+    return image_list
+
+def diff_image_lists(data_list, red_data_list):
+    missing_entries = set(data_list) - set(red_data_list)
+    return missing_entries
+
+def record_missing_images(missing_entries, log):
+    for entry in missing_entries:
+        log.write(entry+'\n')
+    log.write('\n')
 
 if __name__ == '__main__':
     if len(argv) == 1:
