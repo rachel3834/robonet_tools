@@ -11,7 +11,7 @@ def review_field_reduced_datasets(top_dir, field_id):
     for red_dir in datasets:
         count_reduction_products(red_dir, log)
         count_kernel_stamps(dir_path, log)
-        
+
     log.write('\n\n')
 
     for red_dir in datasets:
@@ -68,9 +68,9 @@ def count_kernel_stamps(dir_path, log):
     log.write('Checking kernel data products per stamp')
 
     for image in image_list:
-        kernels_npy = glob.glob(path.join(image,'kernel_stamp_?.npy')))
-        kernels_fits = glob.glob(path.join(image,'kernel_stamp_?.fits')))
-        ukernels_fits = glob.glob(path.join(image,'kernel_err_stamp_?.fits')))
+        kernels_npy = glob.glob(path.join(image,'kernel_stamp_?.npy'))
+        kernels_fits = glob.glob(path.join(image,'kernel_stamp_?.fits'))
+        ukernels_fits = glob.glob(path.join(image,'kernel_err_stamp_?.fits'))
 
         log.write(path.basename(image)+': Nkernels_npy='+str(len(kernels_npy))+\
                                         ' Nkernel_fits='+str(len(kernels_fits))+\
