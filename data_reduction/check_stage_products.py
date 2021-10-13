@@ -26,9 +26,9 @@ def check_reduction_products(red_dir):
     p_diffim = round( (n_diffim/n_input_images)*100.0, 0 )
 
     report = path.basename(red_dir)+': Ninput_images='+str(n_input_images)+\
-                                 ' Nresampled='+str(n_resampled)+'('+str(p_resampled)+') '+\
-                                 ' Nkernel='+str(n_kernel)+'('+str(p_kernel)+') '+\
-                                 ' Ndiffim='+str(n_diffim)+'('+str(p_diffim)+')'
+                                 ' Nresampled='+str(n_resampled)+'('+str(p_resampled)+'%) '+\
+                                 ' Nkernel='+str(n_kernel)+'('+str(p_kernel)+'%) '+\
+                                 ' Ndiffim='+str(n_diffim)+'('+str(p_diffim)+'%)'
     return report
 
 def count_dir_fits_products(dir_path):
@@ -45,4 +45,3 @@ if __name__ == '__main__':
         field_id = argv[2]
 
     review_field_reduced_datasets(top_dir, field_id)
-    
