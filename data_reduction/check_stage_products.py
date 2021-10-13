@@ -10,7 +10,7 @@ def review_field_reduced_datasets(top_dir, field_id):
 
     for red_dir in datasets:
         count_reduction_products(red_dir, log)
-        count_kernel_stamps(dir_path, log)
+        count_kernel_stamps(red_dir, log)
 
     log.write('\n\n')
 
