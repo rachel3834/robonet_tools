@@ -65,8 +65,6 @@ def count_dir_fits_products(dir_path):
 def count_kernel_stamps(dir_path, log):
     image_list = glob.glob(path.join(dir_path,'kernel', '*.fits'))
 
-    log.write('Checking kernel data products per stamp')
-
     for image in image_list:
         kernels_npy = glob.glob(path.join(image,'kernel_stamp_?.npy'))
         kernels_fits = glob.glob(path.join(image,'kernel_stamp_?.fits'))
@@ -74,7 +72,7 @@ def count_kernel_stamps(dir_path, log):
 
         log.write(path.basename(image)+': Nkernels_npy='+str(len(kernels_npy))+\
                                         ' Nkernel_fits='+str(len(kernels_fits))+\
-                                        ' Nkernel_err_fits='+str(len(ukernels_fits)))
+                                        ' Nkernel_err_fits='+str(len(ukernels_fits))+'\n')
 
 def list_dir_fits_products(dir_path):
     file_list = glob.glob(path.join(dir_path,'*.fits'))
