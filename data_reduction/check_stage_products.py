@@ -92,6 +92,7 @@ def count_kernel_stamps(dir_path, kernel_stamp_data):
                                              'status': status}
     if len(image_list) > 0:
         stamps_data['%OK'] = round( (float(NOK) / float(len(image_list)))*100.0, 1)
+        print(NOK, len(image_list), stamps_data['%OK'])
     else:
         stamps_data['%OK'] = 0.0
 
