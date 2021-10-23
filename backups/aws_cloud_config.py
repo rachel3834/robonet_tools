@@ -75,4 +75,8 @@ def get_config_path():
 
         config_file_path = '/data00/robouser/romerea/configs/aws.xml'
 
+    elif 'messier' in str(host_name).lower():
+
+        config_file_path = '/data/messier/rstreet/config/aws.xml'
+        
     return config_file_path
