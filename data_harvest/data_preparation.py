@@ -139,11 +139,15 @@ def transfer_to_reduction_directory(config, log, dataset_dir):
         # left over.  These should be moved back to the incoming directory
         # where they will be picked up next time the code runs
         frames_left = glob.glob(path.join(dataset_dir,'data','*fits'))
+        log.info(str(len(frames_left))+' frames remain that cannot be moved to reduction directories yet (reductions in progress)')
+        log.info('Moving to holding area:')
         if len(frames_left) > 0:
             for f in frames_left:
-                move(f, path.join(dataset_dir, '..'))
+                dest = path.join(dataset_dir, '..')
+                move(f, dest)
+                log.info('Returned '+path.basename(f)+' to '+dest)
 
-            rmtree(dataset_dir)
+        rmtree(dataset_dir)
 
 if __name__ == '__main__':
 
