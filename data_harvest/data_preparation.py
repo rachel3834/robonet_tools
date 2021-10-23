@@ -140,7 +140,7 @@ def transfer_to_reduction_directory(config, log, dataset_dir):
         # where they will be picked up next time the code runs
         frames_left = glob.glob(path.join(dataset_dir,'data','*fits'))
         if len(frames_left) > 0:
-            for f in frames:
+            for f in frames_left:
                 move(f, path.join(dataset_dir, '..'))
 
             rmtree(dataset_dir)
