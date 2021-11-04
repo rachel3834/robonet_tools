@@ -2,6 +2,7 @@ from astropy.io import fits
 import numpy as np
 import glob
 from os import path
+from sys import argv
 import copy
 
 def update_image_structure(data_dir):
@@ -19,7 +20,7 @@ def update_image_structure(data_dir):
             new_hdu = hdu = fits.HDUList([sci,bpm])
             new_hdu.writeto(new_image, overwrite=True)
             print('Restructured '+new_image)
-            
+
 
 if __name__ == '__main__':
 
