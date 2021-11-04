@@ -16,7 +16,7 @@ def update_image_structure(data_dir):
         if len(hdu) == 1 and hdu[0].name == 'PRIMARY':
             sci = copy.copy(hdu[0])
             sci.name = 'SCI'
-            bpm = np.zeros(sci.data.shape)
+            bpm = fits.ImageHDU(np.zeros(sci.data.shape))
             new_hdu = hdu = fits.HDUList([sci,bpm])
             new_hdu.writeto(new_image, overwrite=True)
             print('Restructured '+new_image)
