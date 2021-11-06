@@ -4,7 +4,7 @@ import glob
 
 def review_field_reduced_datasets(top_dir, field_id):
 
-    datasets = glob.glob(path.join(top_dir, field_id+'*'))
+    datasets = glob.glob(path.join(top_dir, field_id+'_???-dom?-1m0-??-????_??'))
 
     log = open(path.join(top_dir,'logs','data_products_report.txt'),'w')
 
