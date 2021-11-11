@@ -21,22 +21,31 @@ def crop_sat_star_from_images():
 
     for image_path in image_list:
         hdul = fits.open(image_path)
-        col_min = find_column_bleed(params,hdul)
-        row_max = find_sat_row_limit(params,hdul)
+        col_min = find_column_bleed(params,hdul,diagnostics=False)
+        row_max = find_sat_row_limit(params,hdul,diagnostics=False)
         crop_image(params,image_path,hdul,col_min,row_max)
 
 def crop_image(params,image_path,hdul,col_min,row_max):
 
-    data = hdul[0].data[0:row_max, col_min:]
-
-    new_header = update_wcs(hdul[0].header, data.shape[0], data.shape[1])
-
-    hdu_out = fits.PrimaryHDU(data=data, header=new_header)
-
     bkup_file = path.join(params['bkup_dir'], path.basename(image_path))
     shutil.move(image_path, bkup_file)
 
-    hdu_out.writeto(image_path)
+    out_hdul = []
+    for i,hdu in enumerate(hdul):
+        if hdu.is_image:
+            data = hdu.data[0:row_max, col_min:]
+            if i == 0:
+                new_header = update_wcs(hdu.header, data.shape[0], data.shape[1])
+                new_hdu = fits.PrimaryHDU(data=data, header=new_header)
+            else:
+                new_header = hdu.header
+                new_hdu = fits.ImageHDU(data=data, header=new_header)
+            out_hdul.append(new_hdu)
+        else:
+            out_hdul.append(hdu)
+    out_hdul = fits.HDUList(out_hdul)
+
+    out_hdul.writeto(image_path)
     print('Cropped image '+path.basename(image_path))
 
 def update_wcs(header, new_naxis1, new_naxis2):
