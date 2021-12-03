@@ -1,4 +1,4 @@
-from os import path
+from os import path, rename
 from sys import argv
 import numpy as np
 from astropy.io import fits
@@ -25,7 +25,8 @@ def invert_images():
                 out_hdul.append(hdu)
         out_hdul = fits.HDUList(out_hdul)
 
-        output_image = image.replace('.fits', 'i.fits')
+        rename(image, image.replace('.fits', '_orig.fits'))
+        output_image = image
         out_hdul.writeto(output_image)
         print('Inverted image '+path.basename(output_image))
 
