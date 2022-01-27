@@ -48,8 +48,7 @@ def rename_files(data_dir):
 
     for image in image_list:
         new_image = zero_pad_filenames(image)
-        print(image, new_image)
-        #rename(image, new_image)
+        rename(image, new_image)
 
 if __name__ == '__main__':
 
