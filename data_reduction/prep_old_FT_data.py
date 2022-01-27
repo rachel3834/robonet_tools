@@ -57,5 +57,5 @@ if __name__ == '__main__':
     else:
         data_dir = input('Please enter the path to data directory: ')
 
-    #update_image_structure(data_dir)
-    rename_files(data_dir)
+    update_image_structure(data_dir)
+    #rename_files(data_dir)
