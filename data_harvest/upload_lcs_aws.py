@@ -15,8 +15,9 @@ def upload_all_lightcurves():
         if path.isdir(red_dir) and path.isdir(lc_dir):
             lc_list = glob.glob(path.join(lc_dir, '*.dat'))
             if len(lc_list) > 0:
-                aws_utils.upload_lightcurve_aws(config, lc_file, log=log)
-                
+                for lc_file in lc_list:
+                    aws_utils.upload_lightcurve_aws(config, lc_file, log=log)
+
     logs.close_log(log)
 
 if __name__ == '__main__':
