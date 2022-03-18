@@ -16,12 +16,16 @@ def fetch_realtime_lightcurves_aws():
     download_available_lightcurves(config, s3_client, file_list)
 
 def get_args():
-    if len(argv) != 2:
+    if len(argv) != 3:
         config_file = input('Please enter the path to this scripts configuration file: ')
+        search_term = input('Please enter search string to select specific targets or hit return: ')
     else:
         config_file = argv[1]
+        search_term = argv[2]
 
     config = config_utils.get_config(config_file)
+    if len(search_term.replace('\n','')) > 0:
+        config['search_term'] = search_term.replace('\n','')
 
     return config
 
@@ -58,11 +62,14 @@ def list_available_lightcurves(config, s3_client):
     aws_path = path.join(config['aws_bucket'])
     log_path = path.join(config['local_data_dir'], 'available_lightcurves.txt')
 
-    response = s3_client.list_objects(Bucket=config['aws_bucket'], Prefix='OMEGA/realtime_lightcurves')
+    paginator = s3_client.get_paginator('list_objects_v2')
+    pages = paginator.paginate(Bucket=config['aws_bucket'], Prefix='OMEGA/realtime_lightcurves')
 
     file_list = []
-    for entry in response['Contents']:
-        file_list.append(entry['Key'])
+    for page in pages:
+        for entry in page['Contents']:
+            file_list.append(entry['Key'])
+    print('Number of lightcurve files available in S3 bucket: '+str(len(entry['Key'])))
 
     return file_list
 
@@ -70,9 +77,10 @@ def download_available_lightcurves(config, s3_client, file_list):
 
     for file_object in file_list:
         file_name = path.join(config['local_data_dir'], path.basename(file_object))
-
-        with open(file_name, 'wb') as f:
-            s3_client.download_fileobj(config['aws_bucket'], file_object, f)
+        if config['search_term'] in path.basename(file_object):
+            with open(file_name, 'wb') as f:
+                print('Downloading file '+path.basename(file_object))
+                s3_client.download_fileobj(config['aws_bucket'], file_object, f)
 
 
 if __name__ == '__main__':
