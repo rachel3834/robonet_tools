@@ -39,10 +39,11 @@ class BiColourDataset:
                                       'pyDANDIA_metadata.fits',
                                       'images_stats' )
 
-            t = Table()
-            t['im_name'] = m.images_stats[1]['IM_NAME']
-            t['fwhm'] = m.images_stats[1]['FWHM']
-            t['sky'] = m.images_stats[1]['SKY']
+            t = Table([
+                    Column(name='im_name', data=m.images_stats[1]['IM_NAME'], format='string'),
+                    Column(name='fwhm', data=m.images_stats[1]['FWHM'], format='float'),
+                    Column(name='sky', data=m.images_stats[1]['SKY'], format='float')
+                    ])
 
             setattr(self, d+'_stats', t)
 
@@ -99,7 +100,7 @@ class BiColourDataset:
         if self.use_fwhm_threshold:
             idx = list((set(jdx[0]).intersection(set(ldx[0]))))
         else:
-            idx = list(jdx[0])
+            idx = list(ldx[0])
 
         self.image_table[idx,4] = '1'
 
