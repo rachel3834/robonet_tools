@@ -72,7 +72,7 @@ class BiColourDataset:
             image_table[:,i] = image_table[idx,i]
 
         self.image_table = image_table
-        print(self.image_table)
+        print('END OF make image table: ',self.image_table)
 
     def quality_control(self):
         """Function to apply quality control selection to the images"""
@@ -99,8 +99,8 @@ class BiColourDataset:
         idx = list((set(jdx[0]).intersection(set(ldx[0]))))
 
         self.image_table[idx,4] = '1'
-        print(self.image_table)
-        
+        print('POST QC: ',self.image_table)
+
     def append_image_list(self,name,f):
 
         if f == self.f1:
