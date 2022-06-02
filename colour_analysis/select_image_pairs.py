@@ -26,6 +26,7 @@ class BiColourDataset:
         self.image_pairs = []
         self.fwhm_thresh = 2.0
         self.sky_thresh = 5000.0
+        self.use_fwhm_threshold = True
 
     def read_meta_data(self):
         """Function to read in the meta data for each dataset"""
@@ -54,7 +55,6 @@ class BiColourDataset:
 
         f = [self.f1]*len(list(self.f1dir_stats['im_name'])) + \
             [self.f2]*len(list(self.f2dir_stats['im_name']))
-        print('IMAGE NAMES: ',names,f)
 
         fwhm = list(self.f1dir_stats['fwhm'])+ \
                         list(self.f2dir_stats['fwhm'])
@@ -96,7 +96,10 @@ class BiColourDataset:
         jdx = np.where(fwhm <= self.fwhm_thresh)
         ldx = np.where(sky <= self.sky_thresh)
 
-        idx = list((set(jdx[0]).intersection(set(ldx[0]))))
+        if self.use_fwhm_threshold:
+            idx = list((set(jdx[0]).intersection(set(ldx[0]))))
+        else:
+            idx = list(jdx[0])
 
         self.image_table[idx,4] = '1'
 
@@ -182,7 +185,7 @@ def get_args():
 
     dataset = BiColourDataset()
 
-    if len(argv) != 6:
+    if len(argv) < 6:
 
         dataset.f1dir = input('Please enter the path to the reduction directory for the first filters dataset: ')
         dataset.f1 = input('Please enter the name of the first filter bandpass [e.g. g, r or i]: ')
@@ -197,6 +200,11 @@ def get_args():
         dataset.f2dir = argv[3]
         dataset.f2 = argv[4]
         dataset.outdir = argv[5]
+
+    if len(argv) >= 6:
+        for arg in argv[6:]:
+            if 'no-fwhm-cut' in arg:
+                dataset.use_fwhm_threshold = False
 
     return dataset
 
