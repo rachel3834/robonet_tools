@@ -64,8 +64,6 @@ class BiColourDataset:
         qc = ['0']*len(names)
 
         image_table = np.array(list(zip(names,f,fwhm,sky,qc)))
-        print('IMAGE TABLE: ',image_table)
-        print(fwhm)
 
         idx = np.argsort(image_table[:,0])
 
@@ -131,8 +129,8 @@ class BiColourDataset:
             num2 = int(str(self.image_table[i+1,0]).split('-')[3])
             f1 = self.image_table[i,1]
             f2 = self.image_table[i+1,1]
-            qc1 = self.image_table[i,5]
-            qc2 = self.image_table[i+1,5]
+            qc1 = self.image_table[i,4]
+            qc2 = self.image_table[i+1,4]
 
             if date1 == date2 and \
                 num2 == (num1 + 1) and \
