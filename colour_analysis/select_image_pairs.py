@@ -44,7 +44,6 @@ class BiColourDataset:
             t['sky'] = m.images_stats[1]['SKY']
 
             setattr(self, d+'_stats', t)
-            print(getattr(self,d+'_stats'))
 
     def make_image_table(self):
         """Function to combine the image statistics from all datasets into
@@ -72,7 +71,6 @@ class BiColourDataset:
             image_table[:,i] = image_table[idx,i]
 
         self.image_table = image_table
-        print('END OF make image table: ',self.image_table)
 
     def quality_control(self):
         """Function to apply quality control selection to the images"""
@@ -99,7 +97,6 @@ class BiColourDataset:
         idx = list((set(jdx[0]).intersection(set(ldx[0]))))
 
         self.image_table[idx,4] = '1'
-        print('POST QC: ',self.image_table)
 
     def append_image_list(self,name,f):
 
@@ -174,6 +171,7 @@ def select_image_pairs():
     dataset.make_image_table()
 
     dataset.quality_control()
+    print(dataset.image_table)
 
     dataset.identify_image_pairs(txt_output=True)
 
