@@ -186,7 +186,7 @@ def select_image_pairs():
 def get_args():
     """Function to obtain the necessary parameters"""
 
-    dataset = TriColourDataset()
+    dataset = BiColourDataset()
 
     if len(argv) != 5:
 
