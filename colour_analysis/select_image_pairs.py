@@ -6,7 +6,7 @@
 from os import path
 from sys import argv
 from pyDANDIA import metadata
-from astropy.table import Table
+from astropy.table import Table, Column
 import astropy.units as u
 import numpy as np
 
