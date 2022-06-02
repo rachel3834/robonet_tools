@@ -176,7 +176,8 @@ def select_image_pairs():
     dataset.make_image_table()
 
     dataset.quality_control()
-    print(dataset.image_table)
+    for entry in dataset.image_table:
+        print(entry)
 
     dataset.identify_image_pairs(txt_output=True)
 
