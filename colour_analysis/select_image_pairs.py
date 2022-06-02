@@ -188,7 +188,7 @@ def get_args():
 
     dataset = BiColourDataset()
 
-    if len(argv) != 5:
+    if len(argv) != 6:
 
         dataset.f1dir = input('Please enter the path to the reduction directory for the first filters dataset: ')
         dataset.f1 = input('Please enter the name of the first filter bandpass [e.g. g, r or i]: ')
