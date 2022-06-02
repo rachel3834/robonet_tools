@@ -145,7 +145,7 @@ class BiColourDataset:
                 self.append_image_list(name2,f2,)
 
                 if txt_output:
-                    for j in range(i,i+3,1):
+                    for j in range(i,i+2,1):
 
                         text = ''
 
