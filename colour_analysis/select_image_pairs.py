@@ -40,8 +40,7 @@ class BiColourDataset:
 
             t = Table()
             t['im_name'] = m.images_stats[1]['IM_NAME']
-            t['fwhm_x'] = m.images_stats[1]['FWHM_X']
-            t['fwhm_y'] = m.images_stats[1]['FWHM_Y']
+            t['fwhm'] = m.images_stats[1]['FWHM']
             t['sky'] = m.images_stats[1]['SKY']
 
             setattr(self, d+'_stats', t)
@@ -56,21 +55,18 @@ class BiColourDataset:
         f = ['f1']*len(list(self.f1dir_stats['im_name'])) + \
             ['f2']*len(list(self.f2dir_stats['im_name']))
 
-        fwhmx = list(self.f1dir_stats['fwhm_x']) + \
-                        list(self.f2dir_stats['fwhm_x'])
+        fwhm = list(self.f1dir_stats['fwhm'])
 
-        fwhmy = list(self.f1dir_stats['fwhm_y']) + \
-                        list(self.f2dir_stats['fwhm_y'])
         sky = list(self.f1dir_stats['sky']) + \
                         list(self.f2dir_stats['sky'])
 
         qc = ['0']*len(names)
 
-        image_table = np.array(zip(names,f,fwhmx,fwhmy,sky,qc))
+        image_table = np.array(zip(names,f,fwhm,sky,qc))
 
         idx = np.argsort(image_table[:,0])
 
-        for i in range(0,5,1):
+        for i in range(0,4,1):
 
             image_table[:,i] = image_table[idx,i]
 
@@ -79,33 +75,28 @@ class BiColourDataset:
     def quality_control(self):
         """Function to apply quality control selection to the images"""
 
-        fwhmx = np.zeros(len(self.image_table))
-        fwhmy = np.zeros(len(self.image_table))
+        fwhm = np.zeros(len(self.image_table))
         sky = np.zeros(len(self.image_table))
 
         for i in range(0,len(self.image_table),1):
 
             if np.isnan(float(self.image_table[i,2])) == False and \
-                np.isnan(float(self.image_table[i,3])) == False and \
-                np.isnan(float(self.image_table[i,4])) == False:
+                np.isnan(float(self.image_table[i,3])) == False:
 
-                fwhmx[i] = float(self.image_table[i,2])
-                fwhmy[i] = float(self.image_table[i,3])
-                sky[i] = float(self.image_table[i,4])
+                fwhm[i] = float(self.image_table[i,2])
+                sky[i] = float(self.image_table[i,3])
 
             else:
 
-                fwhmx[i] = 99.9
-                fwhmy[i] = 99.9
+                fwhm[i] = 99.9
                 sky[i] = 9999.9
 
-        jdx = np.where(fwhmx <= self.fwhm_thresh)
-        kdx = np.where(fwhmy <= self.fwhm_thresh)
+        jdx = np.where(fwhm <= self.fwhm_thresh)
         ldx = np.where(sky <= self.sky_thresh)
 
-        idx = list((set(jdx[0]).intersection(set(kdx[0]))).intersection(set(ldx[0])))
+        idx = list((set(jdx[0]).intersection(set(ldx[0]))))
 
-        self.image_table[idx,5] = '1'
+        self.image_table[idx,4] = '1'
 
     def append_image_list(self,name,f):
 
@@ -120,8 +111,8 @@ class BiColourDataset:
         same observation subrequest."""
 
         if txt_output:
-            output = open(path.join(self.outdir, 'image_trios.txt'),'w')
-            output.write('# Image name   Filter  FWHM_X   FWHM_Y   SKY   QC\n')
+            output = open(path.join(self.outdir, 'image_pairs.txt'),'w')
+            output.write('# Image name   Filter  FWHM   SKY   QC\n')
 
         t = Table()
 
