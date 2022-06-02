@@ -54,6 +54,7 @@ class BiColourDataset:
 
         f = [self.f1]*len(list(self.f1dir_stats['im_name'])) + \
             [self.f2]*len(list(self.f2dir_stats['im_name']))
+        print('IMAGE NAMES: ',f)
 
         fwhm = list(self.f1dir_stats['fwhm'])
 
