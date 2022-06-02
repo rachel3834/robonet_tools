@@ -169,8 +169,8 @@ class BiColourDataset:
 
         self.image_pairs_table = t
 
-def select_image_trios():
-    """Function to select trios of images in different passbands that were
+def select_image_pairs():
+    """Function to select pairs of images in different passbands that were
     taken as a sequence"""
 
     dataset = get_args()
