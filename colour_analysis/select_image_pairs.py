@@ -63,10 +63,10 @@ class BiColourDataset:
 
         qc = ['0']*len(names)
 
-        image_table = np.array(zip(names,f,fwhm,sky,qc))
+        image_table = np.array(list(zip(names,f,fwhm,sky,qc)))
         print('IMAGE TABLE: ',image_table)
         print(fwhm)
-        
+
         idx = np.argsort(image_table[:,0])
 
         for i in range(0,4,1):
