@@ -52,7 +52,7 @@ def count_event_datasets(top_dir):
         for dataid, ndata in data.items():
             nimages_target += ndata
         nimages.append(nimages_target)
-    nimages = np.array(nimages_target)
+    nimages = np.array(nimages)
     bins = np.arange(0, nimages.max(), 25)
 
     fig = plt.figure(1,(10,10))
