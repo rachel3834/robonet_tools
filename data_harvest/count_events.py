@@ -1,4 +1,5 @@
 from os import path
+from sys import argv
 import glob
 
 def count_event_datasets(top_dir):
