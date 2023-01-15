@@ -11,7 +11,7 @@ def count_event_datasets(top_dir):
     datasets = {}
     for item in dir_list:
         if '.txt' not in item:
-            entries = str(path.basename(item)).split('-')
+            entries = str(path.basename(item)).split('_')
             print(entries)
             target = entries[0]
             print(target)
