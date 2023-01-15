@@ -34,7 +34,7 @@ def count_event_datasets(top_dir):
 
     nimages = []
     for target, data in datasets.items():
-        for dataid, ndata in data.items:
+        for dataid, ndata in data.items():
             nimages.append(ndata)
     nimages = np.array(nimages)
 
@@ -43,7 +43,7 @@ def count_event_datasets(top_dir):
     plt.xlabel('Number of images per dataset')
     plt.ylabel('Number of datasets')
     plt.title('OMEGA observations per dataset')
-    
+
 if __name__ == '__main__':
     if len(argv) > 1:
         top_dir = argv[1]
