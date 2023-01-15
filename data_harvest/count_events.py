@@ -1,6 +1,8 @@
 from os import path
 from sys import argv
 import glob
+import matplotlib.pyplot as plt
+import numpy as np
 
 def count_event_datasets(top_dir):
     """The purpose of this function is to review the datasets gathered on
@@ -30,6 +32,18 @@ def count_event_datasets(top_dir):
 
     print('Number of targets: '+str(len(datasets)))
 
+    nimages = []
+    for target, data in datasets.items():
+        for dataid, ndata in data.items:
+            nimages.append(ndata)
+    nimages = np.array(nimages)
+
+    fig = plt.figure(1,(10,10))
+    plt.hist(nimages)
+    plt.xlabel('Number of images per dataset')
+    plt.ylabel('Number of datasets')
+    plt.title('OMEGA observations per dataset')
+    
 if __name__ == '__main__':
     if len(argv) > 1:
         top_dir = argv[1]
