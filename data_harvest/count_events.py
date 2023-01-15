@@ -37,14 +37,15 @@ def count_event_datasets(top_dir):
         for dataid, ndata in data.items():
             nimages.append(ndata)
     nimages = np.array(nimages)
+    bins = np.arange(0, nimages.max(), 25)
 
     fig = plt.figure(1,(10,10))
-    plt.hist(nimages)
+    plt.hist(nimages, bins=bins)
     plt.xlabel('Number of images per dataset')
     plt.ylabel('Number of datasets')
     plt.title('OMEGA observations per dataset')
     plt.savefig('data_histogram.png')
-    
+
 if __name__ == '__main__':
     if len(argv) > 1:
         top_dir = argv[1]
