@@ -40,10 +40,13 @@ def count_event_datasets(top_dir):
     bins_dataset = np.arange(0, nimages_dataset.max(), 25)
 
     nimages_target = []
+    nstudied = 0
     for target, data in datasets.items():
         n = 0
         for dataid, ndata in data.items():
             n += ndata
+        if n >= 100:
+            nstudied += 1
         nimages_target.append(n)
     nimages_target = np.array(nimages_target)
     bins_target = np.arange(0, nimages_target.max(), 25)
@@ -57,6 +60,8 @@ def count_event_datasets(top_dir):
     plt.legend()
     plt.savefig('dataset_histogram.png')
     plt.close(1)
+
+    print(str(nstudied)+' targets have more than 100 observations')
 
 if __name__ == '__main__':
     if len(argv) > 1:
