@@ -12,12 +12,16 @@ def count_event_datasets(top_dir):
     for item in dir_list:
         if '.txt' not in item:
             entries = str(path.basename(item)).split('-')
+            print(entries)
             target = entries[0]
+            print(target)
             dataid = str(path.basename(item)).replace(target+'_','')
+            print(dataid)
             data_dir = path.join(item, 'data')
+            print(data_dir)
             if path.isdir(data_dir):
                 data_list = glob.glob(path.join(item, 'data', '*.fits'))
-
+                print(len(data_list))
                 if target in datasets.keys():
                     data = datasets[target]
                     data[dataid] = len(data_list)
