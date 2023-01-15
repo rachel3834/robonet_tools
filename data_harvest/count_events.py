@@ -43,7 +43,8 @@ def count_event_datasets(top_dir):
     plt.xlabel('Number of images per dataset')
     plt.ylabel('Number of datasets')
     plt.title('OMEGA observations per dataset')
-
+    plt.savefig('data_histogram.png')
+    
 if __name__ == '__main__':
     if len(argv) > 1:
         top_dir = argv[1]
