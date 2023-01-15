@@ -32,35 +32,30 @@ def count_event_datasets(top_dir):
 
     print('Number of targets: '+str(len(datasets)))
 
-    nimages = []
+    nimages_dataset = []
     for target, data in datasets.items():
         for dataid, ndata in data.items():
-            nimages.append(ndata)
-    nimages = np.array(nimages)
-    bins = np.arange(0, nimages.max(), 25)
+            nimages_dataset.append(ndata)
+    nimages_dataset = np.array(nimages_dataset)
+    bins_dataset = np.arange(0, nimages_dataset.max(), 25)
+
+    nimages_target = []
+    for target, data in datasets.items():
+        n = 0
+        for dataid, ndata in data.items():
+            n += ndata
+        nimages_target.append(n)
+    nimages_target = np.array(nimages_target)
+    bins_target = np.arange(0, nimages.max(), 25)
 
     fig = plt.figure(1,(10,10))
-    plt.hist(nimages, bins=bins)
-    plt.xlabel('Number of images per dataset')
-    plt.ylabel('Number of datasets')
-    plt.title('OMEGA observations per dataset')
+    plt.hist(nimages_dataset, bins=bins_dataset, color='g', label='Per dataset')
+    plt.hist(nimages_target, bins=bins_target, color='m', label='Per target')
+    plt.xlabel('Number of images')
+    plt.ylabel('Count')
+    plt.title('OMEGA observations per target and per dataset')
     plt.savefig('dataset_histogram.png')
-
-    nimages = []
-    for target, data in datasets.items():
-        nimages_target = 0
-        for dataid, ndata in data.items():
-            nimages_target += ndata
-        nimages.append(nimages_target)
-    nimages = np.array(nimages)
-    bins = np.arange(0, nimages.max(), 25)
-
-    fig = plt.figure(1,(10,10))
-    plt.hist(nimages, bins=bins)
-    plt.xlabel('Number of images per target')
-    plt.ylabel('Number of datasets')
-    plt.title('OMEGA observations per target')
-    plt.savefig('target_data_histogram.png')
+    plt.close(1)
 
 if __name__ == '__main__':
     if len(argv) > 1:
