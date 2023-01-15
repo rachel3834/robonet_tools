@@ -54,6 +54,7 @@ def count_event_datasets(top_dir):
     plt.xlabel('Number of images')
     plt.ylabel('Count')
     plt.title('OMEGA observations per target and per dataset')
+    plt.legend()
     plt.savefig('dataset_histogram.png')
     plt.close(1)
 
