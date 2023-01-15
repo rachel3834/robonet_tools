@@ -29,7 +29,6 @@ def count_event_datasets(top_dir):
                     datasets[target] = data
 
     print('Number of targets: '+str(len(datasets)))
-    print(datasets.keys())
 
 if __name__ == '__main__':
     if len(argv) > 1:
