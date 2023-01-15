@@ -46,7 +46,7 @@ def count_event_datasets(top_dir):
             n += ndata
         nimages_target.append(n)
     nimages_target = np.array(nimages_target)
-    bins_target = np.arange(0, nimages.max(), 25)
+    bins_target = np.arange(0, nimages_target.max(), 25)
 
     fig = plt.figure(1,(10,10))
     plt.hist(nimages_dataset, bins=bins_dataset, color='g', label='Per dataset')
