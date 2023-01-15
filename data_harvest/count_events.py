@@ -6,28 +6,27 @@ def count_event_datasets(top_dir):
     """The purpose of this function is to review the datasets gathered on
     all microlensing observations and count the number of events observed"""
 
+    # Number of images overwhich a dataset is considered to be substantial
+    min_images = 10
+
     dir_list = glob.glob(path.join(top_dir, '*'))
 
     datasets = {}
     for item in dir_list:
         if '.txt' not in item:
             entries = str(path.basename(item)).split('_')
-            print(entries)
             target = entries[0]
-            print(target)
             dataid = str(path.basename(item)).replace(target+'_','')
-            print(dataid)
             data_dir = path.join(item, 'data')
-            print(data_dir)
             if path.isdir(data_dir):
                 data_list = glob.glob(path.join(item, 'data', '*.fits'))
-                print(len(data_list))
-                if target in datasets.keys():
-                    data = datasets[target]
-                    data[dataid] = len(data_list)
-                else:
-                    data = {dataid: len(data_list)}
-                datasets[target] = data
+                if len(data_list) > min_images:
+                    if target in datasets.keys():
+                        data = datasets[target]
+                        data[dataid] = len(data_list)
+                    else:
+                        data = {dataid: len(data_list)}
+                    datasets[target] = data
 
     print('Number of targets: '+str(len(datasets)))
     print(datasets.keys())
