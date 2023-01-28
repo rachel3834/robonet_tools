@@ -11,6 +11,7 @@ def rerun_phot_calibration(datasets):
     calibrate_photometry"""
 
     for data_dir in datasets:
+        print('-> Calibrating '+path.basename(data_dir))
 
         # Use the data_dir to create a pipeline_setup object and
         # params dictionary with red_dir, metadata, log_dir
@@ -60,14 +61,17 @@ def get_list_of_datasets():
         if not path.isfile(option[1:]):
             raise IOError('Cannot find input list of datasets at '+option[1:])
 
+        print('Reading list of datasets from '+option[1:])
         file_lines = open(option[1:]).readlines()
         for line in file_lines:
             if len(line.replace('\n','')) > 0:
                 entries = line.replace('\n','').split()
                 datasets.append(entries[0])
+        print('Found '+str(len(datasets))+' datasets to process')
 
     else:
         datasets.append(option)
+        print('Received dataset '+datasets[0]+' to process')
 
     return datasets
 
