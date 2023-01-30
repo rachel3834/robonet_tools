@@ -1,11 +1,12 @@
-from os import path, rename
-from sys import argv
+from os import path, rename, getcwd
+from sys import argv, executable
 import numpy as np
 from pyDANDIA import calibrate_photometry
 from pyDANDIA import pipeline_setup
 from pyDANDIA import logs
+import subprocess
 
-def rerun_phot_calibration(datasets):
+def rerun_phot_calibration(datasets, software_dir):
     """Function to re-run the photometric calibration for a dataset,
     based on the parameters of extracted from the log of the previous run of
     calibrate_photometry"""
@@ -18,6 +19,7 @@ def rerun_phot_calibration(datasets):
         params = {'red_dir': data_dir, 'log_dir': data_dir,
                   'metadata': 'pyDANDIA_metadata.fits',
                   'use_gaia_phot': False, 'set_phot_calib': False,
+                  'software_dir': software_dir,
                   'cat_mags_min': None, 'a0': None, 'a1': None}
         setup = pipeline_setup.pipeline_setup(params)
 
@@ -26,9 +28,22 @@ def rerun_phot_calibration(datasets):
         # cat_mags_max and cat_merr_max
         (status, params) = parse_calib_phot_log(params)
         backup_phot_calib_log(setup)
-        
+
         if status:
-            (status, report) = calibrate_photometry.calibrate_photometry_catalog(setup, **params)
+            command = path.join(software_dir,'calibrate_photometry.py')
+            args = [executable, command, data_dir,
+                        'pyDANDIA_metadata.fits', data_dir]
+            for key in ['det_mags_max', 'det_mags_min', 'cat_merr_max', \
+                        'cat_mags_max', 'cat_mags_min']:
+                if key in params.keys() and 'none' not in str(params[key]).lower():
+                    args.append(key+'='+str(params[key]))
+
+            # Calling out as a separate process so that the logs are properly
+            # handled and not concatenated into a single file when multiple
+            # datasets are calibrated. 
+            #(status, report) = calibrate_photometry.calibrate_photometry_catalog(setup, **params)
+            p = subprocess.Popen(args, stdout=subprocess.PIPE)
+            p.wait()
 
 def parse_calib_phot_log(params):
     log_file = path.join(params['red_dir'], 'phot_calib.log')
@@ -61,13 +76,15 @@ def backup_phot_calib_log(setup):
             bkup_file_name = path.join(setup.red_dir,'phot_calib.log.'+str(idx))
         rename(phot_file_name, bkup_file_name)
 
-def get_list_of_datasets():
+def get_args():
     datasets = []
 
     if len(argv) > 1:
         option = argv[1]
+        software_dir = argv[2]
     else:
         option = input('Please enter the path to a reduction directory, or path to list of directories with @ prefix: ')
+        software_dir = input('Please enter the path to the pyDANDIA software directory: ')
 
     if '@' in option[0:1]:
         if not path.isfile(option[1:]):
@@ -85,8 +102,8 @@ def get_list_of_datasets():
         datasets.append(option)
         print('Received dataset '+datasets[0]+' to process')
 
-    return datasets
+    return datasets, software_dir
 
 if __name__ == '__main__':
-    datasets = get_list_of_datasets()
-    rerun_phot_calibration(datasets)
+    (datasets, software_dir) = get_args()
+    rerun_phot_calibration(datasets, software_dir)
