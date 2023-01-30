@@ -1,4 +1,4 @@
-from os import path
+from os import path, rename
 from sys import argv
 import numpy as np
 from pyDANDIA import calibrate_photometry
@@ -25,7 +25,8 @@ def rerun_phot_calibration(datasets):
         # extract the values for parameters det_mags_max, det_mags_min,
         # cat_mags_max and cat_merr_max
         (status, params) = parse_calib_phot_log(params)
-
+        backup_phot_calib_log(setup)
+        
         if status:
             (status, report) = calibrate_photometry.calibrate_photometry_catalog(setup, **params)
 
@@ -48,6 +49,17 @@ def parse_calib_phot_log(params):
                     params[par] = float(entries[2])
 
     return status, params
+
+def backup_phot_calib_log(setup):
+
+    phot_file_name = path.join(setup.red_dir,'phot_calib.log')
+    idx = 1
+    bkup_file_name = path.join(setup.red_dir,'phot_calib.log.'+str(idx))
+    if path.isfile(phot_file_name):
+        while path.isfile(bkup_file_name):
+            idx +=1
+            bkup_file_name = path.join(setup.red_dir,'phot_calib.log.'+str(idx))
+        rename(phot_file_name, bkup_file_name)
 
 def get_list_of_datasets():
     datasets = []
