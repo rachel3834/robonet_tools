@@ -9,7 +9,8 @@ def run_statistics(args):
     xmatch.load(args.crossmatch_file,log=None)
 
     calc_image_totals(xmatch)
-
+    calc_star_totals(xmatch)
+    
 def calc_image_totals(xmatch):
     """Function to calculate the total number of images across all datasets"""
     filter_list = ['gp', 'rp', 'ip']
@@ -23,6 +24,9 @@ def calc_image_totals(xmatch):
 
     for f in filter_list:
         print('Total '+f+' '+str(filter_count[f]))
+
+def calc_star_totals(xmatch):
+    print('N stars = '+str(len(xmatch.stars)))
 
 def get_args():
 
