@@ -54,15 +54,15 @@ def calc_cadence(xmatch, filter_list):
             idx = idx.intersection(set(idx3))
             idx = list(idx.intersection(set(idx4)))
 
-        hjds = xmatch.images['hjd'][idx]
-        hjds = np.sort(hjds)
-        dhjds = hjds[1:] - hjds[0:-1]
-        cadence = np.median(dhjds) * 24.0
-        sigma = dhjds.std() * 24.0
+            hjds = xmatch.images['hjd'][idx]
+            hjds = np.sort(hjds)
+            dhjds = hjds[1:] - hjds[0:-1]
+            cadence = np.median(dhjds) * 24.0
+            sigma = dhjds.std() * 24.0
 
-        print('Median cadence in '+f+' for season '
-                +season_start.strftime("%Y-%m-%d")
-                +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
+            print('Median cadence in '+f+' for season '
+                    +season_start.strftime("%Y-%m-%d")
+                    +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
 
 
 def get_args():
