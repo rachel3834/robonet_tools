@@ -4,6 +4,8 @@ import numpy as np
 from datetime import datetime
 from os import path
 
+VERSION = 0.1
+
 def convert_to_ipactable(args):
     """Function to convert a pyDANDIA CrossMatchTable for a single field to
     an ASCII table in IPAC format, based on the documentation provided at
@@ -87,6 +89,7 @@ def output_to_ipactable(args, source_table):
     # Construct file header
     tbl_file = open(args.ipactable_file, 'w')
     tbl_file.write('\catalog=romerea\n')
+    tbl_file.write('\catalog_version='+VERSION+'\n')
     now = datetime.utcnow()
     tbl_file.write('\date='+now.strftime("%Y-%m-%dT%H:%M:%D")+'\n')
     header = '|'
