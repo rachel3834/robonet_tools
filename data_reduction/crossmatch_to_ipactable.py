@@ -108,7 +108,7 @@ def output_to_ipactable(args, source_table):
         tbl_line = ' '
         for col, col_def in table_columns.items():
             if col == 'lc_file_path':
-                tbl_line += get_lc_file_path(star['field_id'])
+                tbl_line += get_lc_file_path(args, star['field_id'])
             elif col in ['ra', 'dec']:
                 value = round(star[col],5)
                 tbl_line += padd_column_entry(str(value), col_def['width']) + ' '
@@ -121,7 +121,7 @@ def output_to_ipactable(args, source_table):
 
     tbl_file.close()
 
-def get_lc_file_path(field_id):
+def get_lc_file_path(args, field_id):
     """Function to assign a file path for the lightcurve of a star, based on
     the field name and the star's field ID within that field.
 
