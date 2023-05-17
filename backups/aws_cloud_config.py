@@ -78,5 +78,5 @@ def get_config_path():
     elif 'messier' in str(host_name).lower():
 
         config_file_path = '/data/messier/rstreet/config/aws.xml'
-        
+
     return config_file_path
