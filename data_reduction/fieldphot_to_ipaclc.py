@@ -26,7 +26,7 @@ def convert_to_ipac_lightcurves(args):
 
     # Select stars in the quadrant
     select = np.where(xmatch.field_index['quadrant'] == args.qid)[0]
-    for j,field_id in enumerate(select[0:1000]):
+    for j,field_id in enumerate(select):
         field_idx = field_id - 1
         quad_id = xmatch.field_index['quadrant_id'][field_idx]
         quad_idx = quad_id - 1
@@ -47,7 +47,7 @@ def convert_to_ipac_lightcurves(args):
 
         if j%1000 == 0.0:
             print('-> Completed output of lightcurve '+str(j))
-            
+
 def output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc):
     """Function to create a lightcurve file for one star in multi-extension
     FITS format, with the lightcurves of the star in different filters contained

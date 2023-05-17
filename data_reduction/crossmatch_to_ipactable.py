@@ -4,7 +4,7 @@ import numpy as np
 from datetime import datetime
 from os import path
 
-VERSION = 0.1
+VERSION = '0.1'
 
 def convert_to_ipactable(args):
     """Function to convert a pyDANDIA CrossMatchTable for a single field to
