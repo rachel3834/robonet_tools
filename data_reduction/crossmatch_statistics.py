@@ -3,6 +3,7 @@ import argparse
 from pyDANDIA import crossmatch
 import numpy as np
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 def run_statistics(args):
 
@@ -44,6 +45,8 @@ def calc_cadence(xmatch, filter_list):
         image_dates.append(datetime.fromisoformat(ts)) # "%Y-%m-%dT%H:%M:%D"
     image_dates = np.array(image_dates)
 
+    (fig, ax) = plt.subplots(1, 1, figsize=(10, 10))
+
     for f in filter_list:
         idx1 = np.where(xmatch.images['filter'] == f)[0]
         idx2 = np.where(xmatch.images['hjd'] > 0.0)[0]
@@ -64,6 +67,11 @@ def calc_cadence(xmatch, filter_list):
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
 
+            ax.hist(cadence, bins=24, label=f)
+    ax.set_xlabel('Cadence [hrs]')
+    ax.set_ylabel('Frequency')
+    dirpath = path.dirname(args.crossmatch_file)
+    plt.savefig(path.join(dirpath), 'logs', 'cadence_histogram.png')
 
 def get_args():
 
