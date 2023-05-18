@@ -68,7 +68,7 @@ def calc_cadence(xmatch, filter_list):
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
 
-            ax.hist(cadence, bins=10, label=f)
+            ax.hist(cadence, bins='auto', label=f)
     ax.set_xlabel('Cadence [hrs]')
     ax.set_ylabel('Frequency')
     params = {'legend.fontsize': 'large',
