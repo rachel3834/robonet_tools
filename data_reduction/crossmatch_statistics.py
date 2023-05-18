@@ -71,7 +71,7 @@ def calc_cadence(xmatch, filter_list):
     ax.set_xlabel('Cadence [hrs]')
     ax.set_ylabel('Frequency')
     dirpath = path.dirname(args.crossmatch_file)
-    plt.savefig(path.join(dirpath), 'logs', 'cadence_histogram.png')
+    plt.savefig(path.join(dirpath, 'logs', 'cadence_histogram.png'))
 
 def get_args():
 
