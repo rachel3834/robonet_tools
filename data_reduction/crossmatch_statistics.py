@@ -80,7 +80,7 @@ def calc_cadence(xmatch, filter_list):
          'xtick.labelsize':'large',
          'ytick.labelsize':'large'}
     plt.rcParams.update(params)
-    plt.xlim(0,200)
+    plt.xlim(0,100)
     dirpath = path.dirname(args.crossmatch_file)
     plt.tight_layout()
     plt.savefig(path.join(dirpath, 'logs', 'cadence_histogram.png'), )
