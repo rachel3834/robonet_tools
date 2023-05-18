@@ -63,14 +63,14 @@ def calc_cadence(xmatch, filter_list):
             dhjds = hjds[1:] - hjds[0:-1]
             cadence = np.median(dhjds) * 24.0
             sigma = dhjds.std() * 24.0
-            cadences = np.concatenate(cadences, dhjds*24.0)
+            cadences = np.concatenate((cadences, dhjds*24.0))
 
             print('Median cadence in '+f+' for season '
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
 
         ax.hist(cadence, bins='auto', label=f)
-        
+
     ax.set_xlabel('Cadence [hrs]')
     ax.set_ylabel('Frequency')
     plt.legend()
