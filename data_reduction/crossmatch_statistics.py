@@ -50,6 +50,7 @@ def calc_cadence(xmatch, filter_list):
     for f in filter_list:
         idx1 = np.where(xmatch.images['filter'] == f)[0]
         idx2 = np.where(xmatch.images['hjd'] > 0.0)[0]
+        cadences = np.array([])
         for (season_start, season_end) in survey_seasons:
             idx3 = np.where(image_dates > season_start)[0]
             idx4 = np.where(image_dates <= season_end)[0]
@@ -62,12 +63,14 @@ def calc_cadence(xmatch, filter_list):
             dhjds = hjds[1:] - hjds[0:-1]
             cadence = np.median(dhjds) * 24.0
             sigma = dhjds.std() * 24.0
+            cadences = np.concatenate(cadences, dhjds*24.0)
 
             print('Median cadence in '+f+' for season '
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
 
-            ax.hist(cadence, bins='auto', label=f)
+        ax.hist(cadence, bins='auto', label=f)
+        
     ax.set_xlabel('Cadence [hrs]')
     ax.set_ylabel('Frequency')
     plt.legend()
@@ -80,7 +83,7 @@ def calc_cadence(xmatch, filter_list):
     dirpath = path.dirname(args.crossmatch_file)
     plt.savefig(path.join(dirpath, 'logs', 'cadence_histogram.png'))
     plt.close(1)
-    
+
 def get_args():
 
     parser = argparse.ArgumentParser()
