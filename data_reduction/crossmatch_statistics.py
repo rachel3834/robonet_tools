@@ -70,7 +70,7 @@ def calc_cadence(xmatch, filter_list):
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
 
         print(cadences)
-        ax.hist(cadence, bins='auto', label=f)
+        ax.hist(cadences, bins='auto', label=f)
 
     ax.set_xlabel('Cadence [hrs]')
     ax.set_ylabel('Frequency')
