@@ -62,16 +62,22 @@ def calc_cadence(xmatch, filter_list):
             dhjds = hjds[1:] - hjds[0:-1]
             cadence = np.median(dhjds) * 24.0
             sigma = dhjds.std() * 24.0
+            print(len(dhjds))
 
             print('Median cadence in '+f+' for season '
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
 
-            ax.hist(cadence, bins=24, label=f)
+            ax.hist(cadence, bins=10, label=f)
     ax.set_xlabel('Cadence [hrs]')
     ax.set_ylabel('Frequency')
+    params = {'legend.fontsize': 'large',
+         'axes.labelsize': 'large',
+         'axes.titlesize':'large',
+         'xtick.labelsize':'large',
+         'ytick.labelsize':'large'}
+    plt.rcParams.update(params)
     dirpath = path.dirname(args.crossmatch_file)
-    print(path.join(dirpath, 'logs', 'cadence_histogram.png'))
     plt.savefig(path.join(dirpath, 'logs', 'cadence_histogram.png'))
 
 def get_args():
