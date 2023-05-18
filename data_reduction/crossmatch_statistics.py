@@ -82,7 +82,8 @@ def calc_cadence(xmatch, filter_list):
     plt.rcParams.update(params)
     plt.xlim(0,200)
     dirpath = path.dirname(args.crossmatch_file)
-    plt.savefig(path.join(dirpath, 'logs', 'cadence_histogram.png'))
+    plt.tight_layout()
+    plt.savefig(path.join(dirpath, 'logs', 'cadence_histogram.png'), )
     plt.close(1)
 
 def get_args():
