@@ -69,7 +69,6 @@ def calc_cadence(xmatch, filter_list):
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
 
-        print(cadences)
         ax.hist(cadences, bins='auto', label=f)
 
     ax.set_xlabel('Cadence [hrs]')
@@ -81,6 +80,7 @@ def calc_cadence(xmatch, filter_list):
          'xtick.labelsize':'large',
          'ytick.labelsize':'large'}
     plt.rcParams.update(params)
+    plt.xlim(0,200)
     dirpath = path.dirname(args.crossmatch_file)
     plt.savefig(path.join(dirpath, 'logs', 'cadence_histogram.png'))
     plt.close(1)
