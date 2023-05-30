@@ -77,7 +77,7 @@ def output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc):
     hdu_list = [fits.PrimaryHDU(header=hdr)]
     for f in FILTER_LIST:
         fname = str(f).replace('p','').upper()
-        hdu_list.append(fits.BinTableHDU(lc[f], name='LIGHTCURVE_'+fname))
+        hdu_list.append(fits.BinTableHDU(lc[f], name='LIGHTCURVE_SDSS_'+fname))
 
     hdu_list = fits.HDUList(hdu_list)
 
