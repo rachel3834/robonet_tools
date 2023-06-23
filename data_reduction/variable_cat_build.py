@@ -9,18 +9,22 @@ def build_variable_catalog(args):
 
     # Load the variable catalogs from the different surveys.  The OGLE catalog
     # is treated as the main catalog overall
-    variables = event_cat_build.load_object_list(args.ogle_var_file)
-    vvv_variables = event_cat_build.load_object_list(args.vvv_var_file)
-    gaia_alerts = event_cat_build.load_object_list(args.gaia_file)
+    variables = event_cat_build.load_object_list(args.ogle_var_file,
+                ['ra','dec','ogle_class','ogle_subclass','rome_field'])
+    vvv_variables = event_cat_build.load_object_list(args.vvv_var_file,
+                ['ra', 'dec', 'VVV_class', 'VVV_period', 'Gaia_EDR3_ID', 'rome_field'])
+    gaia_alerts = event_cat_build.load_object_list(args.gaia_file,
+                ['ra', 'dec', 'Gaia_alert_class', 'Gaia_alert_comment',
+                'ATel', 'rome_field'])
 
     # Combine the information from the VVV catalog and Gaia alerts
     variables = add_vvv_variables(variables, vvv_variables)
-    variables = event_cat_build.mark_gaia_alerts(variables, gaia_alerts, main_entry_length=5)
+    variables = event_cat_build.mark_gaia_alerts(variables, gaia_alerts)
 
     # Output the revised main_catalog
     event_cat_build.output_catalog(args.output_file, variables)
 
-def add_vvv_variables(main_catalog, vvv_catalog, main_entry_length=5):
+def add_vvv_variables(main_catalog, vvv_catalog):
     """Add variables to the main catalog from the VVV list.  If the same star
     is already present in the main catalog, then the data from VVV is combined
     with the existing entry.  Otherwise, a new entry is made.
@@ -35,32 +39,40 @@ def add_vvv_variables(main_catalog, vvv_catalog, main_entry_length=5):
     # combining or adding entries as appropriate
     tol = 2.0/3600.0 * u.deg
     for vvv_name, vvv_data in vvv_catalog.items():
-        v = SkyCoord(vvv_data[0], vvv_data[1], frame='icrs', unit=(u.deg, u.deg))
+        v = SkyCoord(vvv_data['ra'], vvv_data['dec'], frame='icrs', unit=(u.deg, u.deg))
         (idx, d2d, d3d) = v.match_to_catalog_sky(targets)
         if d2d[0] <= tol:
             target_name = target_index[int(idx)]
             target_data = main_catalog[target_name]
-            target_data.append(vvv_name)
-            target_data.append(vvv_data[2])
-            target_data.append(vvv_data[3])
-            target_data.append(vvv_data[4])
+            target_data['VVV_name'] = vvv_name
+            target_data['VVV_ra'] = vvv_data['ra']
+            target_data['VVV_dec'] = vvv_data['dec']
+            target_data['VVV_class'] = vvv_data['VVV_class']
+            target_data['VVV_period'] = vvv_data['VVV_period']
+            target_data['Gaia_EDR3_ID'] = vvv_data['Gaia_EDR3_ID']
             main_catalog[target_name] = target_data
 
         else:
-            target_data = [vvv_data[0], vvv_data[1]]
-            add_length = main_entry_length - 2
-            target_data += [None]*add_length
-            target_data += [vvv_name, vvv_data[2], vvv_data[3], vvv_data[4]]
+            target_data = {'ra': vvv_data['ra'],
+                           'dec': vvv_data['dec'],
+                           'ogle_class': None,
+                           'ogle_subclass': None,
+                           'VVV_name': vvv_name,
+                           'VVV_ra': vvv_data['ra'],
+                           'VVV_dec': vvv_data['dec'],
+                           'VVV_class': vvv_data['VVV_class'],
+                           'VVV_period': vvv_data['VVV_period'],
+                           'Gaia_EDR3_ID': vvv_data['Gaia_EDR3_ID']}
             main_catalog[vvv_name] = target_data
 
     # Review the main catalog and back-fill the entries for any unmatched
     # objects, to ensure consistent formatting
     for target_name, data in main_catalog.items():
         if len(data) == 5:
-            data.append('no_vvv_entry')
-            data.append('no_vvv_class')
-            data.append('no_vvv_period')
-            data.append('no_gaiaEDR3')
+            data['VVV_name'] = None
+            data['VVV_class'] = None
+            data['VVV_period'] = None
+            data['Gaia_EDR3_ID'] = None
             main_catalog[target_name] = data
 
     return main_catalog

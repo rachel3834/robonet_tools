@@ -48,11 +48,8 @@ def make_coordinate_index(catalog):
 
     return targets, target_index
 
-def mark_gaia_alerts(main_catalog, gaia_catalog, main_entry_length=3):
+def mark_gaia_alerts(main_catalog, gaia_catalog):
     """Function to crossmatch the main catalog against the catalog of alerts.
-    Parameter main_entry_length indicates the expected default number of items
-    in the list of data for each main catalog entry, prior to the addition of
-    other data.
     """
 
     # Build an index of the coordinates of all objects in tha main catalog.
@@ -71,6 +68,8 @@ def mark_gaia_alerts(main_catalog, gaia_catalog, main_entry_length=3):
             target_name = target_index[int(idx)]
             target_data = main_catalog[target_name]
             target_data['Gaia_alert_ID'] = gaia_name
+            target_data['Gaia_alert_ra'] = data['ra']
+            target_data['Gaia_alert_dec'] = data['dec']
             target_data['Gaia_alert_class'] = data['Gaia_alert_class']
             target_data['Gaia_alert_comment'] = data['Gaia_alert_comment']
             target_data['ATel'] = data['ATel']
@@ -78,11 +77,13 @@ def mark_gaia_alerts(main_catalog, gaia_catalog, main_entry_length=3):
 
         # If the Gaia classification is ULENS, and there is no known event
         # at those coordinates, then add the event to the main catalog
-        else:
-            target_data = {'ra': data[0],
-                           'dec': data[1],
+        elif 'ULENS' in data['Gaia_alert_class'] and d2d[0] > tol:
+            target_data = {'ra': data['ra'],
+                           'dec': data['dec'],
                            'baseline_mag': None,
                            'Gaia_alert_ID': gaia_name,
+                           'Gaia_alert_ra': data['ra'],
+                           'Gaia_alert_dec': data['dec'],
                            'Gaia_alert_class': data['Gaia_alert_class'],
                            'Gaia_alert_comment': data['Gaia_alert_comment'],
                            'ATel': data['ATel']}
@@ -94,6 +95,8 @@ def mark_gaia_alerts(main_catalog, gaia_catalog, main_entry_length=3):
     for target_name, data in main_catalog.items():
         if 'Gaia_alert_ID' not in data.keys():
             data['Gaia_alert_ID'] = None
+            data['Gaia_alert_ra'] = None
+            data['Gaia_alert_dec'] = None
             data['Gaia_alert_class'] = None
             data['Gaia_alert_comment'] = None
             data['ATel'] = None
