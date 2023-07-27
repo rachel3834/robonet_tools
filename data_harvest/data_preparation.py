@@ -7,6 +7,7 @@ import config_utils
 import log_utils
 import subprocess
 from astropy.io import fits
+from pyDANDIA import automatic_pipeline
 
 def prepare_data_for_reduction(CONFIG_FILE):
 
@@ -124,16 +125,29 @@ def transfer_to_reduction_directory(config, log, dataset_dir):
         move(dataset_dir, red_dir)
 
     else:
-        frames = glob.glob(path.join(dataset_dir,'data','*fits'))
+        unlocked = automatic_pipeline.check_dataset_dir_unlocked(red_dir,log)
 
-        log.info('-> Moving '+str(len(frames))+' frames to '+red_dir)
+        if unlocked:
+            frames = glob.glob(path.join(dataset_dir,'data','*fits'))
 
-        for f in frames:
-            move(f, path.join(red_dir, 'data', path.basename(f)))
+            log.info('-> Moving '+str(len(frames))+' frames to '+red_dir)
 
+            for f in frames:
+                move(f, path.join(red_dir, 'data', path.basename(f)))
+
+        # If the directory is locked for an ongoing reduction, frames can be
+        # left over.  These should be moved back to the incoming directory
+        # where they will be picked up next time the code runs
         frames_left = glob.glob(path.join(dataset_dir,'data','*fits'))
-        if len(frames_left) == 0:
-            rmtree(dataset_dir)
+        log.info(str(len(frames_left))+' frames remain that cannot be moved to reduction directories yet (reductions in progress)')
+        log.info('Moving to holding area:')
+        if len(frames_left) > 0:
+            for f in frames_left:
+                dest = path.join(dataset_dir, '..')
+                move(f, dest)
+                log.info('Returned '+path.basename(f)+' to '+dest)
+
+        rmtree(dataset_dir)
 
 if __name__ == '__main__':
 

@@ -1,0 +1,11 @@
+differential_evolution step 4072: f(x)= 41328.6
+DE converge to objective function : f(x) =  41328.58168167844
+DE converge to parameters : =  ['2459353.6473272033' '0.010142290457217595' '1.7288791767600369'
+ '-2.675831410905277' '-0.020794428383774433' '-2.7968956797837343'
+ '0.08904266410653205']
+fit  : Differential Evolution fit SUCCESS
+best_model: [ 2.45935365e+06  1.01422905e-02  1.72887918e+00 -2.67583141e+00
+ -2.07944284e-02 -2.79689568e+00  8.90426641e-02] -ln(likelihood) 41328.58168167844
+odict_keys(['t0', 'u0', 'log_tE', 'log_rho', 'log_separation', 'log_mass_ratio', 'alpha'])
+Best_model [ 2.45935365e+06  1.01422905e-02  1.72887918e+00 -2.67583141e+00
+ -2.07944284e-02 -2.79689568e+00  8.90426641e-02]

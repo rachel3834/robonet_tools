@@ -44,6 +44,34 @@ def moa_flux_to_mag(flux, flux_err, ZP=27.4, flux_0=0.0):
 
     return mag, mag_err
 
+def read_ASASSN_lightcurve(input_file):
+    """Function to read a lightcurve in the standard ASAS-SN format"""
+
+    filter = path.basename(input_file).split('.')[0].split('_')[-1]
+
+    if path.isfile(input_file):
+
+        file_lines = open(input_file, 'r').readlines()
+
+        data = []
+        for line in file_lines:
+            if '#' not in line[0:1]:
+                entries = line.replace('\n','').split()
+                data.append( [float(entries[0]), filter, entries[1], entries[2]])
+
+        data = np.array(data)
+
+        lc = Table( [Column(name='time', data=data[:,0]),
+                     Column(name='filter', data=data[:,1]),
+                     Column(name='magnitude', data=data[:,2]),
+                     Column(name='error', data=data[:,3])] )
+
+    else:
+
+        raise IOError('Cannot find lightcurve input file '+input_file)
+
+    return lc
+
 def output_tom_csv(lc, output_file):
     """Function to output a lightcurve in TOM-standard CSV format"""
 
@@ -58,7 +86,8 @@ def output_tom_csv(lc, output_file):
 
 if __name__ == '__main__':
 
-    supported_formats = {'MOA': read_moa_lightcurve}
+    supported_formats = {'MOA': read_moa_lightcurve,
+                         'ASASSN': read_ASASSN_lightcurve}
 
     if len(argv) < 3:
         input_file = input('Please enter the path in an input file: ')
@@ -68,9 +97,13 @@ if __name__ == '__main__':
         input_file = argv[1]
         format = argv[2]
 
+    extn = path.basename(input_file).split('.')[-1]
+    output_file = input_file.replace('.'+extn, '.csv')
+
     if format in supported_formats.keys():
 
         lc = supported_formats[format](input_file)
+        output_tom_csv(lc, output_file)
 
     else:
         raise IOError('Unrecognized lightcurve format')

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ##########################################################
-# Make a plot of the distrubition of exoplanets in Orbit 
+# Make a plot of the distrubition of exoplanets in Orbit
 # size (AU) vs planet mass (M_earth).
 # using the latest planet data from exoplanet.eu
 #
@@ -9,14 +9,14 @@
 #           datetime
 # version 1.0 by Y Tsapras 4 Feb 2011
 # last modified 17 Mar 2016 by YT
-#               11 Jan 2012 by YT - corrected bug with 
+#               11 Jan 2012 by YT - corrected bug with
 #                     information parsing from website
 #               15 Jan 2014 by YT - updated script to work with
 #                   the new format of the exoplanet.eu website
-#               7 Mar 2014 by YT - updated to record distances 
+#               7 Mar 2014 by YT - updated to record distances
 #                   and stellar (host) masses
 #               11 Apr 2014 by YT - Updated plots for snow-line
-#               12 Jan 2015 by YT - Updated to work with CSV files 
+#               12 Jan 2015 by YT - Updated to work with CSV files
 #               15 Feb 2017 by YT - Updated to work with single CSV file
 #               15 May 2018 by YT - Updated to work with CSV file from NASA Exoplanet Archive
 #               14 Sep 2020 by YT - Updated to use API
@@ -48,8 +48,10 @@ mass_im, orbit_im, dist_im, starmass_im, snow_im = np.array([]), np.array([]), n
 ml_plan, tr_plan, ti_plan, rv_plan, im_plan= 0, 0, 0, 0, 0
 
 # Get the data by querying the NASA Exoplanet Archive API for the given column identifiers
-url ='https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_discmethod,pl_bmassj,pl_orbsmax,st_dist,st_mass&format=csv'
-data = pd.read_csv(url,sep=",") # use sep="," for coma separation. 
+# RAS: Updated following DB change of column names
+#url ='https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_discmethod,pl_bmassj,pl_orbsmax,st_dist,st_mass&format=csv'
+url = 'https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+discoverymethod,pl_massj,pl_orbsmax,sy_dist,st_mass+from+ps&format=csv'
+data = pd.read_csv(url,sep=",") # use sep="," for coma separation.
 
 
 # You can use these columns:
@@ -67,10 +69,10 @@ data = pd.read_csv(url,sep=",") # use sep="," for coma separation.
 # The distance in pc and the stellar mass in solar masses.
 
 # Update every list accordingly
-method = data.pl_discmethod.values
-pl_mass = data.pl_bmassj.values
+method = data.discoverymethod.values
+pl_mass = data.pl_massj.values
 pl_orbit = data.pl_orbsmax.values
-st_dist =  data.st_dist.values
+st_dist =  data.sy_dist.values
 st_mass = data.st_mass.values
 
 for i in np.arange(len(pl_mass)):
@@ -140,7 +142,7 @@ mlleg = 'Microlensing: '+str(ml_plan)
 tileg = 'Timing: '+str(ti_plan)
 
 # Overplot sensitivities
-ax = plt.gca()
+#ax = plt.gca()
 # Transits from space
 #ax.add_patch(Polygon([[0.001,0.1],[0.9,0.9],[0.9,100000.0],[0.001,100000.0]], closed=True ,fill=True, alpha=0.5,linewidth=0,color='#FF6699'))
 #plt.annotate('transits (space)', xy=(0.003,0.5), size=14, rotation=0, color='#990000')
@@ -154,10 +156,10 @@ ax = plt.gca()
 # Microlensing from space
 #ax.add_patch(Polygon([[0.1,12000.0],[0.6,0.8],[0.8,0.26],[0.9,0.24],[2.0,0.08],[4,0.06],[10,0.09],[100,0.1],[1100,0.1],[12000,12000],[0.1,12000]], closed=True ,fill=True, alpha=.3,linewidth=0,color='#00FF99'))
 #plt.annotate('microlensing (space)', xy=(10,0.2), size=14, rotation=0, color='#006600')
-#Imaging 
+#Imaging
 #ax.add_patch(Polygon([[2,400],[10000.0,400],[10000.0,100000.0],[1.1,100000.0]], closed=True ,fill=True, alpha=.5,linewidth=0,color='#9900CC'))
 #plt.annotate('imaging', xy=(100,500), size=14, rotation=0, color='#000099')
-# Microlensing 
+# Microlensing
 #ax.add_patch(Polygon([[0.11,12000.0],[0.2,300],[0.3,95],[0.5,7],[0.8,1.9],[1,0.9],[4,0.9],[5,1.2],[6,1.8],[8,4],[10,6],[30,80],[50,300],[100,12000]], closed=True ,fill=True, alpha=.3,linewidth=0,color='#FF6600'))
 #plt.annotate('microlensing', xy=(1.5,40), size=14, rotation=0, color='#006600')
 #plt.annotate('(ground)', xy=(1.7,25), size=14, rotation=0, color='#006600')
@@ -171,24 +173,26 @@ plt.plot(orbit_ml, mass_ml,'p', markerfacecolor='#44B3C2', alpha=1, markersize=8
 #plt.plot(orbit_tr, mass_tr,'o', markerfacecolor='#d40606', alpha=1, markersize=6, markeredgewidth=0, label=trleg)
 #plt.plot(orbit_im, mass_im,'o', markerfacecolor='#80e874', alpha=1, markersize=6, markeredgewidth=0, label=imleg)
 #plt.plot(orbit_ml, mass_ml,'o', markerfacecolor='#fffd6e', alpha=1, markersize=6, markeredgewidth=0, label=mlleg)
-    
+
 # plot the positions of the solar planets
 #plt.plot(0.39,0.055,'o', markerfacecolor='#8F8A78', alpha=1, markersize=13, markeredgewidth=0) # Mercury
 #plt.text(0.366,0.05,'M',size=11)
-plt.plot(0.723,0.815,'o', markerfacecolor='#EACF60', alpha=1, markersize=13, markeredgewidth=0) # Venus
-plt.text(0.66,0.73,'V',size=11)
-plt.plot(1.,1.,'o', markerfacecolor='#48A8F2', alpha=1, markersize=13, markeredgewidth=0) # Earth
-plt.text(0.92,0.9,'E',size=11)
-plt.plot(1.52,0.107,'o', markerfacecolor='#C24024', alpha=1, markersize=13, markeredgewidth=0) # Mars
-plt.text(1.37,0.095,'M',size=11)
-plt.plot(5.203,318.0,'o', markerfacecolor='#FF5D00', alpha=1, markersize=18, markeredgewidth=0) # Jupiter
-plt.text(5.15,299.0,'J',size=11)
-plt.plot(9.536,93.6,'o', markerfacecolor='#A080B0', alpha=1, markersize=17, markeredgewidth=0) # Saturn
-plt.text(8.9,83.6,'S',size=11)
-plt.plot(19.18,15.0,'o', markerfacecolor='#2D59B0', alpha=1, markersize=15, markeredgewidth=0) # Uranus
-plt.text(17.5,13.6,'U',size=11)
-plt.plot(30.06,17.0,'o', markerfacecolor='#0400FF', alpha=1, markersize=15, markeredgewidth=0) # Neptune
-plt.text(27.6,15.2,'N',size=11)
+plot_solsys = False
+if plot_solsys:
+    plt.plot(0.723,0.815,'o', markerfacecolor='#EACF60', alpha=1, markersize=13, markeredgewidth=0) # Venus
+    plt.text(0.66,0.73,'V',size=11)
+    plt.plot(1.,1.,'o', markerfacecolor='#48A8F2', alpha=1, markersize=13, markeredgewidth=0) # Earth
+    plt.text(0.92,0.9,'E',size=11)
+    plt.plot(1.52,0.107,'o', markerfacecolor='#C24024', alpha=1, markersize=13, markeredgewidth=0) # Mars
+    plt.text(1.37,0.095,'M',size=11)
+    plt.plot(5.203,318.0,'o', markerfacecolor='#FF5D00', alpha=1, markersize=18, markeredgewidth=0) # Jupiter
+    plt.text(5.15,299.0,'J',size=11)
+    plt.plot(9.536,93.6,'o', markerfacecolor='#A080B0', alpha=1, markersize=17, markeredgewidth=0) # Saturn
+    plt.text(8.9,83.6,'S',size=11)
+    plt.plot(19.18,15.0,'o', markerfacecolor='#2D59B0', alpha=1, markersize=15, markeredgewidth=0) # Uranus
+    plt.text(17.5,13.6,'U',size=11)
+    plt.plot(30.06,17.0,'o', markerfacecolor='#0400FF', alpha=1, markersize=15, markeredgewidth=0) # Neptune
+    plt.text(27.6,15.2,'N',size=11)
 
 # increase the size of the text that labels the tick marks on the axes
 xticklabels = plt.getp(plt.gca(), 'xticklabels')
@@ -206,13 +210,13 @@ legend_font_par = {'legend.fontsize': 16}
 
 plt.rcParams.update(legend_font_par)
 
-#plt.legend(bbox_to_anchor=(0.0,1.02,1.0,0.102), ncol=4, loc=3, mode="expand", numpoints = 1, 
-#          labelspacing=0.02, borderpad=0.01, borderaxespad=0.01, handletextpad=0.3, 
+#plt.legend(bbox_to_anchor=(0.0,1.02,1.0,0.102), ncol=4, loc=3, mode="expand", numpoints = 1,
+#          labelspacing=0.02, borderpad=0.01, borderaxespad=0.01, handletextpad=0.3,
 #          handlelength=0.2)
 
 leg = plt.legend(loc=4)
 
-leg.get_frame().set_linewidth(2)
+#leg.get_frame().set_linewidth(2)
 
 plt.axes().set_aspect('equal')
 # Use scalar formatting for axes if needed (or leave commented out for power
@@ -232,6 +236,7 @@ plt.grid(True)
 print("Completed processing. Printing figure...")
 # Save the figure as png
 plt.savefig('exoplanets.png', dpi = (90) )
+plt.close(2)
 #-------------------------------------------------------------------------------------#
 
 #-------------------------------------------------------------------------------------#
@@ -267,10 +272,10 @@ ax = plt.gca()
 # Microlensing from space
 #ax.add_patch(Polygon([[0.1,12000.0],[0.22,0.5],[0.8,0.08],[0.9,0.06],[2.0,0.05],[4,0.06],[10,0.08],[100,0.2],[1100,0.2],[12000,12000],[0.1,12000]], closed=True ,fill=True, alpha=.3,linewidth=0,color='#00FF99'))
 #plt.annotate('microlensing (space)', xy=(10,0.45), size=14, rotation=0, color='#006600')
-#Imaging 
+#Imaging
 #ax.add_patch(Polygon([[2,400],[10000.0,400],[10000.0,100000.0],[1.1,100000.0]], closed=True ,fill=True, alpha=.5,linewidth=0,color='#9900CC'))
 #plt.annotate('Direct Imaging', xy=(20,2000), size=16, rotation=0, color='#000099')
-# Microlensing 
+# Microlensing
 #ax.add_patch(Polygon([[0.3,12000.0],[0.4,200],[1,10],[3,0.9],[8,0.9],[20,2.2],[110,1000],[200,12000.0]], closed=True ,fill=True, alpha=.3,linewidth=0,color='#FF6600'))
 #plt.annotate('Microlensing', xy=(3,22), size=16, rotation=0, color='#006600')
 #plt.annotate('Microlensing', xy=(1.9,25), size=14, rotation=0, color='#006600')
@@ -324,8 +329,8 @@ plt.ylim((0.08,11000.0))
 # set the legend font size to use
 #legend_font_par = {'legend.fontsize': 13}
 #plt.rcParams.update(legend_font_par)
-#plt.legend(bbox_to_anchor=(0.0,1.07,1.0,0.102), ncol=5, loc=3, mode="expand", numpoints = 1, 
-#           labelspacing=0.01, borderpad=0.1, borderaxespad=0.1, handletextpad=0.2, 
+#plt.legend(bbox_to_anchor=(0.0,1.07,1.0,0.102), ncol=5, loc=3, mode="expand", numpoints = 1,
+#           labelspacing=0.01, borderpad=0.1, borderaxespad=0.1, handletextpad=0.2,
 #	   handlelength=0.4)
 #plt.grid(True)
 #plt.annotate('transits (space)', xy=(0.02,1.05), size=14, rotation=0, color='#990000')
@@ -340,8 +345,8 @@ legend_font_par = {'legend.fontsize': 16}
 
 plt.rcParams.update(legend_font_par)
 
-#plt.legend(bbox_to_anchor=(0.0,1.02,1.0,0.102), ncol=4, loc=3, mode="expand", numpoints = 1, 
-#          labelspacing=0.02, borderpad=0.01, borderaxespad=0.01, handletextpad=0.3, 
+#plt.legend(bbox_to_anchor=(0.0,1.02,1.0,0.102), ncol=4, loc=3, mode="expand", numpoints = 1,
+#          labelspacing=0.02, borderpad=0.01, borderaxespad=0.01, handletextpad=0.3,
 #          handlelength=0.2)
 
 leg = plt.legend(loc=4)
@@ -404,4 +409,3 @@ print("Completed processing. Printing figure...")
 # Save the figure as png
 plt.savefig('exoplanets_distance.png', dpi = (60) )
 #-------------------------------------------------------------------------------------#
-

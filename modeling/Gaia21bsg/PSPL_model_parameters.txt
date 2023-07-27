@@ -1,0 +1,7 @@
+/data/software/pylima_venv3/bin/python3.10 /data/software/robonet_tools/modeling/Gaia21bsg/gaia21bsg_binary_noparallax_usbl_EB.py 
+check_event  : Everything looks fine...
+DE converge to objective function : f(x) =  48040.689373626126
+DE converge to parameters : =  ['2459353.875558258' '0.999805943579007' '1.1231763030240245']
+fit  : Differential Evolution fit SUCCESS
+best_model: [2.45935388e+06 9.99805944e-01 1.12317630e+00] -ln(likelihood) 48040.689373626126
+odict_keys(['t0', 'u0', 'tE'])
