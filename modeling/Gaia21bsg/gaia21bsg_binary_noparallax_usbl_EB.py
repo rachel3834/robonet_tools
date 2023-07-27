@@ -960,6 +960,7 @@ print('Best_model',fit_2.fit_results['best_model'])
 pyLIMA_plots.list_of_fake_telescopes = []
 plot_lightcurves(usbl,fit_2.fit_results['best_model'])
 
+plt.show()
 #mpld3.show()
 
 #plot_geometry(usbl,fit_2.fit_results['best_model'])
