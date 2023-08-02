@@ -23,3 +23,4 @@ for i in range(10000):
     
     
 breakpoint()
+print(mago)
