@@ -102,8 +102,8 @@ guess_parameters = [ 2.45933417e+06,    # t0
                     -1.63468426e-01,    # log(q)
                     7.44880142e-01]     # alpha
 print(guess_parameters)
-
-usbl = USBL_model.USBLmodel(your_event, parallax=['None',2.45935387e+06])
+fancy = pyLIMA_fancy_parameters.standard_fancy_parameters
+usbl = USBL_model.USBLmodel(your_event, fancy_parameters=fancy, parallax=['None',2.45935387e+06])
 fit2 = TRF_fit.TRFfit(usbl)
 fit2.model_parameter_guess = guess_parameters
 fit2.fit()
