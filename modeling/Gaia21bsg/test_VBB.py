@@ -20,7 +20,5 @@ for i in range(10000):
 
     mago = magnification_VBB.magnification_USBL([par[0]],par[1],[par[2]],[par[3]],par[4])
     mags.append(mago[0])
-    
-    
-breakpoint()
+
 print(mago)

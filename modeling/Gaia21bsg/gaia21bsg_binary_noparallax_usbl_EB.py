@@ -925,15 +925,15 @@ print('')
 
 fancy = pyLIMA_fancy_parameters.standard_fancy_parameters
 usbl = USBL_model.USBLmodel(your_event,fancy_parameters=fancy,parallax=['None',2.45935387e+06])
-fit_2 = DE_fit.DEfit(usbl, telescopes_fluxes_method='polyfit', DE_population_size=10, max_iteration=10000, display_progress=True)
+fit_2 = DE_fit.DEfit(usbl, telescopes_fluxes_method='polyfit', DE_population_size=20, max_iteration=10000, display_progress=True)
 #fit_2.model_parameter_guess = [2459375.94, 0.243636, 4.708, -4.683, 0.324, -2.367, 0.663347] # [t0, u0, log_tE, log_rho, log_s, log_q, alpha]
 
 fit_2.fit_parameters['t0'][1] = [2459282.00, 2459413.00] # t0 limits, changed
 #fit_2.fit_parameters['u0'][1] = [0.10, 0.3] # u0 limits, computed and changed
-#fit_2.fit_parameters['log_tE'][1] = [4.09, 5.0] # logtE limits in days, changed
+fit_2.fit_parameters['log_tE'][1] = [1.0,3.0] # logtE limits in days, changed
 
 #fit_2.fit_parameters['log_rho'][1] = [-6.042577190325831, -2.088329855444677]
-#fit_2.fit_parameters['log_separation'][1] = [-4.8, 0.4] # log_s limits,
+fit_2.fit_parameters['log_separation'][1] = [-0.5,0.5] # log_s limits,
 #fit_2.fit_parameters['log_mass_ratio'][1] = [-7.472756449463439, 8.15962396e-03] # log_q limits,
 #fit_2.fit_parameters['alpha'][1] = [-3.14, 3.14] # alpha limits (in radians)
 
