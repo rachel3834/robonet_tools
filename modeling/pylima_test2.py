@@ -85,8 +85,9 @@ fit1 = LM_fit.LMfit(pspl)
 fit1.fit_parameters
 fit1.fit()
 
-print('RESULTS: ',fit1.fit_results['best_model'])
-print(fit1.fit_parameters.keys())
+print('RESULTS PSPL model: ',fit1.fit_results['best_model'])
+expected_pspl_results = [2459421.7367247217, -1643.1186207426726, 1016.7157834731744, -358953.74753607647, 367486.29517801385, -22010.230307457714, 22314.805814874573, -114441.63859215772, 115814.69267379036, -271085.94159024704, 272601.577490539]
+assert( fit1.fit_results['best_model']==expected_pspl_results )
 
 #guess_parameters = fit1.fit_results['best_model']
 
@@ -101,9 +102,12 @@ guess_parameters = [ 2.45933417e+06,    # t0
                     2.41845537e-01,     # log(s)
                     -1.63468426e-01,    # log(q)
                     7.44880142e-01]     # alpha
-print(guess_parameters)
+
 fancy = pyLIMA_fancy_parameters.standard_fancy_parameters
 usbl = USBL_model.USBLmodel(your_event, fancy_parameters=fancy, parallax=['None',2.45935387e+06])
 fit2 = TRF_fit.TRFfit(usbl)
-fit2.model_parameter_guess = guess_parameters
+fit2.model_parameters_guess = guess_parameters
 fit2.fit()
+print('RESULTS USBL model: ',fit2.fit_results['best_model'])
+expected_usbl_results = [2459334.3781281007, 0.011964425775738204, 2.435014189162299, -2.460628968443897, 0.2360312692735136, -0.18262860172435824, 0.7918451957533834, 1070.2723059375824, 3165.635781440189, 31.8340425838355, 126.22459101315538, 178.95999566233235, 448.28602898231225, 961.3383664886596, 355.9217885862539]
+assert( fit2.fit_results['best_model']==expected_usbl_results )
