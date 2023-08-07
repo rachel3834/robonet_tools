@@ -13,9 +13,9 @@ from pyLIMA.outputs import file_outputs
 import pandas as pd
 import pygtc
 
-path_save = '/data/software/robonet_tools/modeling/Event_7/'
-path_ephemerides = '/data/software/robonet_tools/modeling/Event_7/james_webb.txt'
-path_model = '/data/software/robonet_tools/modeling/Event_7/'
+path_save = '/data/software/robonet_tools/modeling/Event7/'
+path_ephemerides = '/data/software/robonet_tools/modeling/Event7/james_webb.txt'
+path_model = '/data/software/robonet_tools/modeling/Event7/'
 
 def bineadora(evento,fil, n):
     evento_sorted = evento[evento['band']==fil].sort_values(by='mjd')
