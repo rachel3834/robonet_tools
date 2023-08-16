@@ -30,34 +30,35 @@ def map_DE_population(input_file):
     Based on original code by E. Bachelet.
     """
     
-    map_data = np.loadtxt(input_file)
-    map_data_sort = map_data[map_data[:,-1].argsort(),]
-    
-    fig = plt.figure(1,(10,5))
-        
+    map_data = np.load(input_file)
+    order = 'descending'
+    # Descending order sort
+    if order == 'descending':
+        map_data_sort = map_data[map_data[:,-1].argsort()[::-1][:len(map_data[:,-1])]]
+    else:
+        map_data_sort = map_data[map_data[:, -1].argsort()]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
+
     # Down sample the number of map points to speed up plotting
     #index = np.random.randint(0,len(map_data),int(len(map_data)*0.12))
-    index = np.arange(0,len(map_data),1, dtype=int)
-    
-    plt.subplot(121)
-    
-    plt.hist2d(map_data_sort[index,4],map_data_sort[index,5],
+    index = np.arange(0,len(map_data_sort),1, dtype=int)
+
+    h = ax1.hist2d(map_data_sort[index,4],map_data_sort[index,5],
                norm=LogNorm(),bins=(30,30))
     
-    plt.title('N DE samples')
-    plt.xlabel('$log_{10}(s)$')
-    plt.ylabel('$log_{10}(q)$')
-    plt.colorbar()
+    ax1.set_title('N DE samples')
+    ax1.set_xlabel('$log_{10}(s)$')
+    ax1.set_ylabel('$log_{10}(q)$')
+    plt.colorbar(h[3], ax=ax1)
 
-    plt.subplot(122)
+    im2 = ax2.scatter(map_data_sort[index,4],map_data_sort[index,5],
+                c=np.log10(map_data_sort[index,-1]))
 
-    plt.scatter(map_data[index,4],map_data[index,5],
-                c=np.log10(map_data[index,-1]),alpha=0.25)
-    
-    plt.title('$\log_{10}(\chi^{2})$')
-    plt.xlabel('$log_{10}(s)$')
-    plt.ylabel('$log_{10}(q)$')
-    plt.colorbar()
+    ax2.set_title('$\log_{10}(\chi^{2})$')
+    ax2.set_xlabel('$log_{10}(s)$')
+    plt.colorbar(im2, ax=ax2)
 
     plt.savefig('DE_population_maps.png')
     
