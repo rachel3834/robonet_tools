@@ -3,12 +3,18 @@ import json
 import argparse
 from astropy.coordinates import SkyCoord
 from astropy import units as u
+from astropy.time import Time
+import requests
+from datetime import datetime
+import numpy as np
 
 def build_event_catalog(args):
 
     # Load the main event catalog, the table of Spitzer events and the list
     # of Gaia alerts
     events = load_object_list(args.main_file, ['ra', 'dec', 'baseline_mag'])
+    print('Loaded '+str(len(events))+' events from the main list')
+
     spitzer_events = load_object_list(args.spitzer_file, ['ra', 'dec', 'rome_field'])
     gaia_alerts = load_object_list(args.gaia_file,
                 ['ra', 'dec', 'Gaia_alert_class', 'Gaia_alert_comment',
@@ -17,6 +23,11 @@ def build_event_catalog(args):
     # Combined the catalogs
     events = mark_spitzer_events(events, spitzer_events)
     events = mark_gaia_alerts(events, gaia_alerts)
+
+    # Retrieve known event parameters from OGLE, MOA
+    events = fetch_ogle_event_parameters(events)
+    events = fetch_moa_event_parameters(events)
+    events = fetch_kmtnet_event_parameters(events)
 
     # Output revised catalog
     output_catalog(args.output_file, events)
@@ -137,6 +148,107 @@ def load_object_list(input_file, key_list):
         catalog[name] = target_data
 
     return catalog
+
+def fetch_ogle_event_parameters(catalog):
+
+    BROKER_URL = 'https://www.astrouw.edu.pl/ogle/ogle4/ews'
+
+    # Fetch the online OGLE event catalogs for the years of the ROME/REA survey
+    survey_years = [2017, 2018, 2019]
+    ogle_events = {}
+    for year in survey_years:
+        par_file_url = path.join(BROKER_URL, str(year), 'lenses.par')
+        response = requests.request('GET', par_file_url)
+        if response.status_code == 200:
+            for line in response.iter_lines():
+                line = str(line)
+                if 'StarNo' not in line and len(line) > 5:  # Skip the file header
+                    entries = line.split()
+                    name = 'OGLE-' + entries[0].replace("b'", "")
+                    ra = entries[3]
+                    dec = entries[4]
+                    to = float(entries[5])
+                    te = float(entries[7])
+                    uo = float(entries[8])
+                    ogle_events[name] = {'RA': ra, 'Dec': dec, 't0': to, 'tE': te, 'u0': uo}
+
+    # Extract the parameters of all OGLE events in the catalog:
+    for name, event in catalog.items():
+        if name in ogle_events.keys():
+            event['t0'] = ogle_events[name]['t0']
+            event['tE'] = ogle_events[name]['tE']
+            event['u0'] = ogle_events[name]['u0']
+            catalog[name] = event
+
+    return catalog
+
+def fetch_moa_event_parameters(catalog):
+
+    BROKER_URL = 'https://www.massey.ac.nz/~iabond/moa/'
+
+    # Fetch the online MOA event catalogs for the years of the ROME/REA survey
+    survey_years = [2017, 2018, 2019]
+    moa_events = {}
+    for year in survey_years:
+        par_file_url = path.join(BROKER_URL, 'alert'+str(year), 'alert.php')
+        response = requests.request('GET', par_file_url)
+        if response.status_code == 200:
+            for line in response.iter_lines():
+                line = str(line)
+                if str(year) in line:
+                    entries = line.replace('<',' ').replace('>',' ').replace('\n','').split()
+                    if len(entries) == 38:
+                        name = 'MOA-'+entries[5]
+                        (date,dayfrac) = entries[18].split('.')
+                        to = Time(datetime.strptime(date, "%Y-%b-%d")).jd + float(dayfrac)
+                        te = float(entries[22])
+                        amax = float(entries[26])
+                        moa_events[name] = {'t0': to, 'tE': te, 'amax': amax}
+
+    # Extract the parameters of all OGLE events in the catalog:
+    for name, event in catalog.items():
+        if name in moa_events.keys():
+            event['t0'] = moa_events[name]['t0']
+            event['tE'] = moa_events[name]['tE']
+            event['amax'] = moa_events[name]['amax']
+            catalog[name] = event
+
+    return catalog
+
+def fetch_kmtnet_event_parameters(catalog):
+
+    BROKER_URL = 'https://kmtnet.kasi.re.kr/~ulens/event/'
+
+    # Fetch the online KMTNet event catalogs for the years of the ROME/REA survey
+    survey_years = [2017, 2018, 2019]
+    kmtnet_events = {}
+    for year in survey_years:
+        par_file_url = path.join(BROKER_URL, str(year), 'listpage.dat')
+        response = requests.request('GET', par_file_url)
+        if response.status_code == 200:
+            for line in response.iter_lines():
+                line = str(line)
+                if str(year) in line:
+                    entries = line.replace("b'",'').replace('\n','').split()
+                    name = entries[0]
+                    if '-' not in entries[6]:
+                        to = float(entries[6]) + 2450000.0
+                        te = float(entries[7])
+                        uo = float(entries[8])
+                        kmtnet_events[name] = {'t0': to, 'tE': te, 'u0': uo}
+                    else:
+                        kmtnet_events[name] = {'t0': np.nan, 'tE': np.nan, 'u0': np.nan}
+
+    # Extract the parameters of all OGLE events in the catalog:
+    for name, event in catalog.items():
+        if name in kmtnet_events.keys():
+            event['t0'] = kmtnet_events[name]['t0']
+            event['tE'] = kmtnet_events[name]['tE']
+            event['u0'] = kmtnet_events[name]['u0']
+            catalog[name] = event
+
+    return catalog
+
 
 def get_args():
     parser = argparse.ArgumentParser()
