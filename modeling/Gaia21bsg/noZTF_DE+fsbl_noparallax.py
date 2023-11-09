@@ -9,8 +9,8 @@ import cycler
 from matplotlib.ticker import MaxNLocator
 from bokeh.layouts import gridplot
 
-import PyQt5   # necessary to display interactive matplotlib plots
-matplotlib.use('QtAgg')
+#import PyQt5   # necessary to display interactive matplotlib plots
+#matplotlib.use('QtAgg')
 
 from pyLIMA.fits import DE_fit
 from pyLIMA.fits import TRF_fit

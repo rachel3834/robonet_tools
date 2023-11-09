@@ -5,7 +5,7 @@ from pyDANDIA import config_utils
 from pyLIMA import event as pyEvent
 from pyLIMA import telescopes
 from pyLIMA import toolbox
-from pyLIMA.fits import TRF_fit, DE_fit, MCMC_fit
+from pyLIMA.fits import TRF_fit, DE_fit, MCMC_fit, LM_fit
 from pyLIMA.fits import stats
 from pyLIMA.models import PSPL_model, USBL_model, FSBL_model
 from pyLIMA.outputs import pyLIMA_plots
@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import json
 from datetime import datetime
 import logging
+import multiprocessing
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,7 +41,11 @@ def run_model_fit(config):
 
     # Create and configure the fitting method, and perform the fit
     fitter = create_model_fitter(config, model)
-    fitter.fit()
+    if config['model_type'] in ['DE', 'MCMC']:
+        pool = multiprocessing.Pool(processes=4)
+        fitter.fit(computational_pool=pool)
+    else:
+        fitter.fit()
 
     # Extract and store model fit results
     model_params = gather_model_parameters(event, fitter)
@@ -93,7 +98,9 @@ def create_model(config, event):
 
 def create_model_fitter(config, model):
 
-    if config['fit_type'] == 'TRF':
+    if config['fit_type'] == 'LM':
+        fitter = LM_fit.LMfit(model)
+    elif config['fit_type'] == 'TRF':
         fitter = TRF_fit.TRFfit(model, loss_function=config['loss_function'])
     elif config['fit_type'] == 'DE':
         fitter = DE_fit.DEfit(model)
@@ -224,11 +231,6 @@ def store_model_fit_params(config, model_params):
     file_path = path.join(config['output_dir'], config['model_type'] + '_fit.json')
     with open(file_path, "w") as outfile:
         outfile.write(json_object)
-
-def chi2(params, fit):
-
-    chi2 = np.sum(fit.residuals_LM(params)**2)
-    return chi2
 
 def flux_to_mag(flux):
 
