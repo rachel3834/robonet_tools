@@ -233,12 +233,10 @@ def gather_model_parameters(config, event, fitter):
     # array values that JSON can't serialize
     fit_params = []
     for key, value in fitter.fit_parameters.items():
-        print('1 ',key, value)
         if type(value[1]) == type(np.zeros(1)):
             value = [key, [value[0], value[1].tolist()]]
         else:
             value = [key, [value[0], value[1]]]
-        print('2 ',key, value)
         fit_params.append(value)
     model_params['fit_parameters'] = fit_params
 
@@ -271,8 +269,6 @@ def gather_model_parameters(config, event, fitter):
     elif config['fit_type'] == 'MCMC':
         output_file = config['model_type'] + '_' + config['fit_type'] + '_chains.npy'
         np.save(path.join(config['output_dir'], output_file), fitter.fit_results['MCMC_chains'])
-
-    print(model_params)
 
     return model_params
 
