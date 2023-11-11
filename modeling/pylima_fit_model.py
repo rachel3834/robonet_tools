@@ -7,7 +7,7 @@ from pyLIMA import telescopes
 from pyLIMA import toolbox
 from pyLIMA.fits import TRF_fit, DE_fit, MCMC_fit, LM_fit
 from pyLIMA.fits import stats
-from pyLIMA.models import PSPL_model, USBL_model, FSBL_model
+from pyLIMA.models import PSPL_model, USBL_model, FSBL_model, pyLIMA_fancy_parameters
 from pyLIMA.outputs import pyLIMA_plots
 from astropy.coordinates import SkyCoord
 from astropy import units as u
@@ -48,7 +48,7 @@ def run_model_fit(config):
         fitter.fit()
 
     # Extract and store model fit results
-    model_params = gather_model_parameters(event, fitter)
+    model_params = gather_model_parameters(config, event, fitter)
     store_model_fit_params(config, model_params)
 
     pyLIMA_plots.plot_lightcurves(model, fitter.fit_results['best_model'])
@@ -78,10 +78,19 @@ def load_lightcurves(config):
 
 def create_model(config, event):
 
+    if config['use_fancy_parameters']:
+        fancy_set = pyLIMA_fancy_parameters.standard_fancy_parameters
+    else:
+        fancy_set = []
+
     if config['model_type'] == 'PSPL':
         model = PSPL_model.PSPLmodel(event, parallax=[config['parallax_type'], config['t0_par']])
     elif config['model_type'] == 'USBL':
-        model = USBL_model.USBLmodel(event, parallax=[config['parallax_type'], config['t0_par']])
+        if config['use_fancy_parameters']:
+            model = USBL_model.USBLmodel(event, fancy_parameters=fancy_set,
+                                                parallax=[config['parallax_type'], config['t0_par']])
+        else:
+            model = USBL_model.USBLmodel(event, parallax=[config['parallax_type'], config['t0_par']])
     elif config['model_type'] == 'FSBL':
         model = FSBL_model.FSBLmodel(event, parallax=[config['parallax_type'], config['t0_par']])
     else:
@@ -103,7 +112,12 @@ def create_model_fitter(config, model):
     elif config['fit_type'] == 'TRF':
         fitter = TRF_fit.TRFfit(model, loss_function=config['loss_function'])
     elif config['fit_type'] == 'DE':
-        fitter = DE_fit.DEfit(model)
+        if config['use_fancy_parameters']:
+            fitter = DE_fit.DEfit(model, DE_population_size = 20, max_iteration = 10000,
+                                                display_progress = True,)
+        else:
+            fitter = DE_fit.DEfit(model, DE_population_size = 20, max_iteration = 10000,
+                                                display_progress = True)
     elif config['fit_type'] == 'MCMC':
         fitter = MCMC_fit.MCMCfit(model)
     else:
@@ -116,8 +130,7 @@ def create_model_fitter(config, model):
         fitter.fit_parameters["u0"][1] = [config['u0_min'], config['u0_max']]
 
     if config['use_initial_guess']:
-        guess_parameters = config['initial_guess_parameters']
-        fitter.model_parameters_guess = guess_parameters
+        fitter.model_parameters_guess = config['guess']
 
     return fitter
 
@@ -130,7 +143,7 @@ def load_config():
     config = config_utils.read_config(args.config_file)
 
     # Parse modeling-specific parameters
-    boolean_keys = ['use_boundaries', 'use_initial_guess']
+    boolean_keys = ['use_boundaries', 'use_initial_guess', 'use_fancy_parameters']
     for key in boolean_keys:
         if 'true' in str(config[key]).lower():
             config[key] = True
@@ -141,9 +154,39 @@ def load_config():
     for key in float_keys:
         config[key] = float(config[key])
 
+    parse_initial_guess(config)
+
     return config
 
-def gather_model_parameters(event, fitter):
+def parse_initial_guess(config):
+
+    if config['model_type'] == 'PSPL' and 'none' in str(config['parallax_type']).lower():
+        config['guess'] = [config['initial_guess_parameters']['t0'],
+                           config['initial_guess_parameters']['u0'],
+                           config['initial_guess_parameters']['tE']]
+
+    elif config['model_type'] == 'USBL' and 'none' in str(config['parallax_type']).lower():
+        config['guess'] = [config['initial_guess_parameters']['t0'],
+                           config['initial_guess_parameters']['u0'],
+                           config['initial_guess_parameters']['tE'],
+                           config['initial_guess_parameters']['rho'],
+                           config['initial_guess_parameters']['s'],
+                           config['initial_guess_parameters']['q'],
+                           config['initial_guess_parameters']['alpha']]
+
+        # If fancy parameters are selected, order is: [t0, u0, log_tE, log_rho, log_s, log_q, alpha]
+        if config['use_fancy_parameters']:
+            config['guess'] = [config['initial_guess_parameters']['t0'],
+                               config['initial_guess_parameters']['u0'],
+                               np.log10(config['initial_guess_parameters']['tE']),
+                               np.log10(config['initial_guess_parameters']['rho']),
+                               np.log10(config['initial_guess_parameters']['s']),
+                               np.log10(config['initial_guess_parameters']['q']),
+                               config['initial_guess_parameters']['alpha']]
+
+    return config
+
+def gather_model_parameters(config, event, fitter):
     """
     Function to gather the parameters of a PyLIMA fitted model into a dictionary for easier handling.
     """
@@ -162,7 +205,8 @@ def gather_model_parameters(event, fitter):
         else:
             ndp = 5
         model_params[key] = np.around(fitter.fit_results["best_model"][i], ndp)
-        model_params[key+'_error'] = np.around(np.sqrt(fitter.fit_results["covariance_matrix"][i,i]), ndp)
+        if config['fit_type'] in ['TRF']:
+            model_params[key+'_error'] = np.around(np.sqrt(fitter.fit_results["covariance_matrix"][i,i]), ndp)
 
     # model_params['chi2'] = np.around(fitter.fit_results["best_model"][-1], 3)
     # Reporting actual chi2 instead value of the loss function
@@ -182,9 +226,21 @@ def gather_model_parameters(event, fitter):
         ndata += len(tel.lightcurve_magnitude)
     model_params['red_chi2'] = np.around(model_params['chi2'] / float(ndata - len(param_keys)),3)
 
-    model_params['Fit_covariance'] = fitter.fit_results["covariance_matrix"]
+    if config['fit_type'] in ['TRF']:
+        model_params['Fit_covariance'] = fitter.fit_results["covariance_matrix"]
 
-    model_params['fit_parameters'] = fitter.fit_parameters
+    # Parse the fit parameters because some of these items contain
+    # array values that JSON can't serialize
+    fit_params = []
+    for key, value in fitter.fit_parameters.items():
+        print('1 ',key, value)
+        if type(value[1]) == type(np.zeros(1)):
+            value = [key, [value[0], value[1].tolist()]]
+        else:
+            value = [key, [value[0], value[1]]]
+        print('2 ',key, value)
+        fit_params.append(value)
+    model_params['fit_parameters'] = fit_params
 
     # Calculate fit statistics
     # The fitter.model_residuals returns photometric and astrometric residuals as a dictionary
@@ -209,12 +265,22 @@ def gather_model_parameters(event, fitter):
         model_params['KS_test'] = np.nan
         model_params['chi2_dof'] = np.nan
 
+    if config['fit_type'] == 'DE':
+        output_file = config['model_type'] + '_' + config['fit_type'] + '_population.npy'
+        np.save(path.join(config['output_dir'], output_file), fitter.fit_results['DE_population'])
+    elif config['fit_type'] == 'MCMC':
+        output_file = config['model_type'] + '_' + config['fit_type'] + '_chains.npy'
+        np.save(path.join(config['output_dir'], output_file), fitter.fit_results['MCMC_chains'])
+
+    print(model_params)
+
     return model_params
 
 def store_model_fit_params(config, model_params):
 
     # Serialize the convarience array first, since JSON can't handle this otherwise
-    model_params['Fit_covariance'] = model_params['Fit_covariance'].tolist()
+    if config['fit_type'] in ['TRF']:
+        model_params['Fit_covariance'] = model_params['Fit_covariance'].tolist()
 
     # Add the input parameters for the record:
     for key, value in config.items():
