@@ -56,7 +56,7 @@ def map_DE_population(input_file):
     im2 = ax2.scatter(map_data_sort[index,4],map_data_sort[index,5],
                 c=np.log10(map_data_sort[index,-1]))
 
-    ax2.set_title('$\log_{10}(\chi^{2})$')
+    ax2.set_title('$\log_{10}(Likelihood)$')
     ax2.set_xlabel('$log_{10}(s)$')
     plt.colorbar(im2, ax=ax2)
 
