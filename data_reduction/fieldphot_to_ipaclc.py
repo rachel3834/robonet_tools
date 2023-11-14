@@ -72,6 +72,8 @@ def output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc):
     for f in FILTER_LIST:
         hdr['NDATA_'+str(f).replace('p','').upper()] = len(lc[f])
 
+    XXX Add image data with airmass, moon angular separation, moon fractions, sky background and FWHM XXX
+
     # Add the lightcurves in each filter as a binary table extention.
     # This will create zero-length table if no data is available for a given filter.
     hdu_list = [fits.PrimaryHDU(header=hdr)]

@@ -14,6 +14,7 @@ def build_event_catalog(args):
     # of Gaia alerts
     events = load_object_list(args.main_file, ['ra', 'dec', 'baseline_mag'])
     print('Loaded '+str(len(events))+' events from the main list')
+    (targets, target_index) = make_coordinate_index(events)
 
     spitzer_events = load_object_list(args.spitzer_file, ['ra', 'dec', 'rome_field'])
     gaia_alerts = load_object_list(args.gaia_file,
@@ -22,12 +23,12 @@ def build_event_catalog(args):
 
     # Combined the catalogs
     events = mark_spitzer_events(events, spitzer_events)
-    events = mark_gaia_alerts(events, gaia_alerts)
+    events = mark_gaia_alerts(events, gaia_alerts, targets, target_index)
 
     # Retrieve known event parameters from OGLE, MOA
-    events = fetch_ogle_event_parameters(events)
-    events = fetch_moa_event_parameters(events)
-    events = fetch_kmtnet_event_parameters(events)
+    events = fetch_ogle_event_parameters(events, targets, target_index)
+    events = fetch_moa_event_parameters(events, targets, target_index)
+    events = fetch_kmtnet_event_parameters(events, targets, target_index)
 
     # Output revised catalog
     output_catalog(args.output_file, events)
@@ -59,14 +60,9 @@ def make_coordinate_index(catalog):
 
     return targets, target_index
 
-def mark_gaia_alerts(main_catalog, gaia_catalog):
+def mark_gaia_alerts(main_catalog, gaia_catalog, targets, target_index):
     """Function to crossmatch the main catalog against the catalog of alerts.
     """
-
-    # Build an index of the coordinates of all objects in tha main catalog.
-    # Keep track of the index numbers of the targets in the list for future
-    # reference
-    (targets, target_index) = make_coordinate_index(main_catalog)
 
     # Search for each Gaia event in the main target catalog and append the
     # Gaia alert data to the corresponding entry in the main catalog, if there
@@ -100,7 +96,7 @@ def mark_gaia_alerts(main_catalog, gaia_catalog):
                            'ATel': data['ATel']}
             main_catalog[gaia_name] = target_data
 
-    # Review the main catalog.  For those event where no Gaia alert was
+    # Review the main catalog.  For those events where no Gaia alert was
     # issued, fill in blanks for the Gaia entries to ensure consistency of
     # formatting
     for target_name, data in main_catalog.items():
@@ -131,7 +127,17 @@ def mark_spitzer_events(main_catalog, add_catalog):
     return combined_catalog
 
 def load_object_list(input_file, key_list):
+    """The event object list was compiled by Yiannis Tsapras, using software that loaded
+    the list of OGLE events first, followed by MOA and then KMTNet.  If an event was
+    identified in more than one survey, it is only entered into the list under the
+    naming convention of the first survey in the sequence, so duplicated detections
+    are not flagged.
 
+    Tables of cross-identified events are available from the surveys:
+    For MOA https://www.massey.ac.nz/~iabond/moa/alertXXXX/fetchtxt.php?path=moa/alertXXXX/moa2ogle.txt
+    For KMTNet a webpage scrapper code was used:
+    https://kmtnet.kasi.re.kr/ulens/event/2017/
+    """
     if not path.isfile(input_file):
         raise IOError('Cannot find input list of target coordinates at '
                         + input_file)
@@ -149,9 +155,10 @@ def load_object_list(input_file, key_list):
 
     return catalog
 
-def fetch_ogle_event_parameters(catalog):
+def fetch_ogle_event_parameters(catalog, targets, target_index):
 
     BROKER_URL = 'https://www.astrouw.edu.pl/ogle/ogle4/ews'
+    tol = 2.0 / 3600.0 * u.deg
 
     # Fetch the online OGLE event catalogs for the years of the ROME/REA survey
     survey_years = [2017, 2018, 2019]
@@ -170,21 +177,35 @@ def fetch_ogle_event_parameters(catalog):
                     to = float(entries[5])
                     te = float(entries[7])
                     uo = float(entries[8])
+                    s = SkyCoord(ra, dec, frame='icrs', unit=(u.hourangle, u.deg))
                     ogle_events[name] = {'RA': ra, 'Dec': dec, 't0': to, 'tE': te, 'u0': uo}
 
-    # Extract the parameters of all OGLE events in the catalog:
-    for name, event in catalog.items():
-        if name in ogle_events.keys():
-            event['t0'] = ogle_events[name]['t0']
-            event['tE'] = ogle_events[name]['tE']
-            event['u0'] = ogle_events[name]['u0']
-            catalog[name] = event
+                    if name in catalog.keys():
+                        target_data = catalog[name]
+                        target_data['t0'] = ogle_events[name]['t0']
+                        target_data['tE'] = ogle_events[name]['tE']
+                        target_data['u0'] = ogle_events[name]['u0']
+                        catalog[name] = target_data
+
+                    else:
+                        (idx, d2d, d3d) = s.match_to_catalog_sky(targets)
+                        if d2d[0] <= tol:
+                            target_name = target_index[int(idx)]
+                            target_data = catalog[target_name]
+                            target_data['OGLE_alert_ID'] = name
+                            target_data['OGLE_alert_ra'] = ogle_events[name]['RA']
+                            target_data['OGLE_alert_dec'] = ogle_events[name]['Dec']
+                            target_data['OGLE_t0'] = ogle_events[name]['t0']
+                            target_data['OGLE_tE'] = ogle_events[name]['tE']
+                            target_data['OGLE_u0'] = ogle_events[name]['u0']
+                            catalog[target_name] = target_data
 
     return catalog
 
-def fetch_moa_event_parameters(catalog):
+def fetch_moa_event_parameters(catalog, targets, target_index):
 
     BROKER_URL = 'https://www.massey.ac.nz/~iabond/moa/'
+    tol = 2.0 / 3600.0 * u.deg
 
     # Fetch the online MOA event catalogs for the years of the ROME/REA survey
     survey_years = [2017, 2018, 2019]
@@ -203,21 +224,37 @@ def fetch_moa_event_parameters(catalog):
                         to = Time(datetime.strptime(date, "%Y-%b-%d")).jd + float(dayfrac)
                         te = float(entries[22])
                         amax = float(entries[26])
-                        moa_events[name] = {'t0': to, 'tE': te, 'amax': amax}
+                        s = SkyCoord(entries[10], entries[14], frame='icrs', unit=(u.hourangle, u.deg))
+                        moa_events[name] = {'t0': to, 'tE': te, 'amax': amax, 'ra': s.ra.deg, 'dec': s.dec.deg}
 
-    # Extract the parameters of all OGLE events in the catalog:
-    for name, event in catalog.items():
-        if name in moa_events.keys():
-            event['t0'] = moa_events[name]['t0']
-            event['tE'] = moa_events[name]['tE']
-            event['amax'] = moa_events[name]['amax']
-            catalog[name] = event
+                        if name in catalog.keys():
+                            target_data = catalog[name]
+                            target_data['ra'] = moa_events[name]['ra']
+                            target_data['dec'] = moa_events[name]['dec']
+                            target_data['t0'] = moa_events[name]['t0']
+                            target_data['tE'] = moa_events[name]['tE']
+                            target_data['amax'] = moa_events[name]['amax']
+                            catalog[name] = target_data
+
+                        else:
+                            (idx, d2d, d3d) = s.match_to_catalog_sky(targets)
+                            if d2d[0] <= tol:
+                                target_name = target_index[int(idx)]
+                                target_data = catalog[target_name]
+                                target_data['MOA_alert_ID'] = name
+                                target_data['MOA_ra'] = moa_events[name]['ra']
+                                target_data['MOA_dec'] = moa_events[name]['dec']
+                                target_data['MOA_t0'] = moa_events[name]['t0']
+                                target_data['MOA_tE'] = moa_events[name]['tE']
+                                target_data['MOA_amax'] = moa_events[name]['amax']
+                                catalog[target_name] = target_data
 
     return catalog
 
-def fetch_kmtnet_event_parameters(catalog):
+def fetch_kmtnet_event_parameters(catalog, targets, target_index):
 
     BROKER_URL = 'https://kmtnet.kasi.re.kr/~ulens/event/'
+    tol = 2.0 / 3600.0 * u.deg
 
     # Fetch the online KMTNet event catalogs for the years of the ROME/REA survey
     survey_years = [2017, 2018, 2019]
@@ -231,21 +268,43 @@ def fetch_kmtnet_event_parameters(catalog):
                 if str(year) in line:
                     entries = line.replace("b'",'').replace('\n','').split()
                     name = entries[0]
-                    if '-' not in entries[6]:
-                        to = float(entries[6]) + 2450000.0
-                        te = float(entries[7])
-                        uo = float(entries[8])
-                        kmtnet_events[name] = {'t0': to, 'tE': te, 'u0': uo}
-                    else:
-                        kmtnet_events[name] = {'t0': np.nan, 'tE': np.nan, 'u0': np.nan}
+                    try:
+                        if year == 2017:
+                            s = SkyCoord(entries[3], entries[4], frame='icrs', unit=(u.hourangle, u.deg))
+                            to = float(entries[5]) + 2450000.0
+                            te = float(entries[6])
+                            uo = float(entries[7])
+                            kmtnet_events[name] = {'t0': to, 'tE': te, 'u0': uo, 'ra': s.ra.deg, 'dec': s.dec.deg}
+                        else:
+                            s = SkyCoord(entries[4], entries[5], frame='icrs', unit=(u.hourangle, u.deg))
+                            to = float(entries[6]) + 2450000.0
+                            te = float(entries[7])
+                            uo = float(entries[8])
+                            kmtnet_events[name] = {'t0': to, 'tE': te, 'u0': uo, 'ra': s.ra.deg, 'dec': s.dec.deg}
+                    except ValueError:
+                        kmtnet_events[name] = {'t0': np.nan, 'tE': np.nan, 'u0': np.nan, 'ra': 'None', 'dec': 'None'}
 
-    # Extract the parameters of all OGLE events in the catalog:
-    for name, event in catalog.items():
-        if name in kmtnet_events.keys():
-            event['t0'] = kmtnet_events[name]['t0']
-            event['tE'] = kmtnet_events[name]['tE']
-            event['u0'] = kmtnet_events[name]['u0']
-            catalog[name] = event
+                    if name in catalog.keys():
+                        target_data = catalog[name]
+                        target_data['t0'] = kmtnet_events[name]['t0']
+                        target_data['tE'] = kmtnet_events[name]['tE']
+                        target_data['u0'] = kmtnet_events[name]['u0']
+                        target_data['ra'] = kmtnet_events[name]['ra']
+                        target_data['dec'] = kmtnet_events[name]['dec']
+                        catalog[name] = target_data
+
+                    else:
+                        (idx, d2d, d3d) = s.match_to_catalog_sky(targets)
+                        if d2d[0] <= tol:
+                            target_name = target_index[int(idx)]
+                            target_data = catalog[target_name]
+                            target_data['KMTNet_alert_ID'] = name
+                            target_data['KMTNet_ra'] = kmtnet_events[name]['ra']
+                            target_data['KMTNet_dec'] = kmtnet_events[name]['dec']
+                            target_data['KMTNet_t0'] = kmtnet_events[name]['t0']
+                            target_data['KMTNet_tE'] = kmtnet_events[name]['tE']
+                            target_data['KMTNet_u0'] = kmtnet_events[name]['u0']
+                            catalog[target_name] = target_data
 
     return catalog
 
