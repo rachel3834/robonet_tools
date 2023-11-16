@@ -76,9 +76,15 @@ def calc_cadence(xmatch, filter_list, log):
             print('Median cadence in '+f+' for season '
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
+            print('Mean cadence in '+f+' for season '
+                    +season_start.strftime("%Y-%m-%d")
+                    +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(dhjds.mean(),1))+'hrs')
             log.info('Median cadence in '+f+' for season '
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
+            log.info('Mean cadence in '+f+' for season '
+                    +season_start.strftime("%Y-%m-%d")
+                    +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(dhjds.mean(),1))+'hrs')
 
         ax.hist(cadences, bins='auto', label=f)
 
