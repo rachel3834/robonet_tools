@@ -36,7 +36,7 @@ def calc_image_totals(xmatch, filter_list, log):
         print('Total '+f+' '+str(filter_count[f]))
         log.info('Total '+f+' '+str(filter_count[f]))
 
-def calc_star_totals(xmatch):
+def calc_star_totals(xmatch, log):
     print('N stars = '+str(len(xmatch.stars)))
     log.info('N stars = '+str(len(xmatch.stars)))
 
