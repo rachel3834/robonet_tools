@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 def run_statistics(args):
 
-    log = logs.start_stage_log(args.output_dir, 'xmatch_statistics.log')
+    log = logs.start_stage_log(args.output_dir, 'xmatch_statistics')
 
     xmatch = crossmatch.CrossMatchTable()
     xmatch.load(args.crossmatch_file,log=log)
@@ -76,15 +76,9 @@ def calc_cadence(xmatch, filter_list, log):
             print('Median cadence in '+f+' for season '
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
-            print('Mean cadence in '+f+' for season '
-                    +season_start.strftime("%Y-%m-%d")
-                    +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(dhjds.mean(),1))+'hrs')
             log.info('Median cadence in '+f+' for season '
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
-            log.info('Mean cadence in '+f+' for season '
-                    +season_start.strftime("%Y-%m-%d")
-                    +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(dhjds.mean(),1))+'hrs')
 
         ax.hist(cadences, bins='auto', label=f)
 
