@@ -1,38 +1,46 @@
 from os import path
 import argparse
 from pyDANDIA import crossmatch
+from pyDANDIA import  logs
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 
 def run_statistics(args):
 
+    log = logs.start_stage_log(args['output_dir'], 'xmatch_statistics.log')
+
     xmatch = crossmatch.CrossMatchTable()
-    xmatch.load(args.crossmatch_file,log=None)
+    xmatch.load(args.crossmatch_file,log=log)
 
     filter_list = ['gp', 'rp', 'ip']
 
-    calc_image_totals(xmatch, filter_list)
-    calc_star_totals(xmatch)
-    calc_cadence(xmatch, filter_list)
+    calc_image_totals(xmatch, filter_list, log)
+    calc_star_totals(xmatch, log)
+    calc_cadence(xmatch, filter_list, log)
 
-def calc_image_totals(xmatch, filter_list):
+    logs.close_log(log)
+
+def calc_image_totals(xmatch, filter_list, log):
     """Function to calculate the total number of images across all datasets"""
 
     filter_count = {'gp': 0, 'rp': 0, 'ip': 0}
     for i,dset in enumerate(xmatch.datasets['dataset_code']):
         idx = np.where(xmatch.images['dataset_code'] == dset)[0]
         print(dset+' contains '+str(len(idx)))
+        log.info(dset+' contains '+str(len(idx)))
         f = xmatch.datasets['dataset_filter'][i]
         filter_count[f] += len(idx)
 
     for f in filter_list:
         print('Total '+f+' '+str(filter_count[f]))
+        log.info('Total '+f+' '+str(filter_count[f]))
 
 def calc_star_totals(xmatch):
     print('N stars = '+str(len(xmatch.stars)))
+    log.info('N stars = '+str(len(xmatch.stars)))
 
-def calc_cadence(xmatch, filter_list):
+def calc_cadence(xmatch, filter_list, log):
     survey_seasons = [(datetime.strptime('2017-01-01',"%Y-%m-%d"),
                         datetime.strptime('2017-10-30',"%Y-%m-%d")),
                         (datetime.strptime('2018-01-01',"%Y-%m-%d"),
@@ -68,6 +76,9 @@ def calc_cadence(xmatch, filter_list):
             print('Median cadence in '+f+' for season '
                     +season_start.strftime("%Y-%m-%d")
                     +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
+            log.info('Median cadence in '+f+' for season '
+                    +season_start.strftime("%Y-%m-%d")
+                    +' to '+season_end.strftime("%Y-%m-%d")+' = '+str(round(cadence,1))+'hrs')
 
         ax.hist(cadences, bins='auto', label=f)
 
@@ -81,9 +92,8 @@ def calc_cadence(xmatch, filter_list):
          'ytick.labelsize':'large'}
     plt.rcParams.update(params)
     plt.xlim(0,100)
-    dirpath = path.dirname(args.crossmatch_file)
     plt.tight_layout()
-    plt.savefig(path.join(dirpath, 'logs', 'cadence_histogram.png'), )
+    plt.savefig(path.join(args.output_dir, 'cadence_histogram.png'), )
     plt.close(1)
 
 def get_args():
@@ -91,6 +101,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('crossmatch_file', type=str,
                     help='Path to crossmatch file')
+    parser.add_argument('output_dir', help='Path for output')
 
     return parser.parse_args()
 
