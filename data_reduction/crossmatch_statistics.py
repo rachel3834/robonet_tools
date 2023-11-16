@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 def run_statistics(args):
 
-    log = logs.start_stage_log(args['output_dir'], 'xmatch_statistics.log')
+    log = logs.start_stage_log(args.output_dir, 'xmatch_statistics.log')
 
     xmatch = crossmatch.CrossMatchTable()
     xmatch.load(args.crossmatch_file,log=log)
