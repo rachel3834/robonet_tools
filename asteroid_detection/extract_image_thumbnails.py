@@ -91,23 +91,26 @@ def extract_thumbnail_images(args, selected_events, xmatch):
             red_dir = path.join(args.red_dir, xmatch.images['dataset_code'][i])
             stamps_dir = path.join(red_dir, 'diffim', xmatch.images['filename'][i])
 
-            # Load the metadata for the reduction corresponding to this image and extract the stamps
-            # table
-            red_meta = metadata.MetaData()
-            red_meta.load_all_metadata(metadata_directory=red_dir,
-                                   metadata_name='pyDANDIA_metadata.fits')
-            stamps = recombine_image_stamps.parse_stamps_table(red_meta)
+            # Stamps may be missing in the case of images that were flagged by the pipeline's
+            # quality control.  If so, we skip the attempt to extract a thumbnail
+            if path.isdir(stamps_dir):
+                # Load the metadata for the reduction corresponding to this image and extract the stamps
+                # table
+                red_meta = metadata.MetaData()
+                red_meta.load_all_metadata(metadata_directory=red_dir,
+                                       metadata_name='pyDANDIA_metadata.fits')
+                stamps = recombine_image_stamps.parse_stamps_table(red_meta)
 
-            # Recombine the stamps for the appropriate differenced image
-            full_image = recombine_image_stamps.stamps_to_fullframe_image(stamps, stamps_dir, 'diff_stamp')
+                # Recombine the stamps for the appropriate differenced image
+                full_image = recombine_image_stamps.stamps_to_fullframe_image(stamps, stamps_dir, 'diff_stamp')
 
-            # Extract the thumbnail around the target event
-            box_boundaries = event_data['rome_star']['box_boundaries']
-            thumb_image = full_image[
-                        box_boundaries['ymin']:box_boundaries['ymax'],
-                        box_boundaries['xmin']:box_boundaries['xmax']
-            ]
-            thumbnails[xmatch.images['filename'][i]] = thumb_image
+                # Extract the thumbnail around the target event
+                box_boundaries = event_data['rome_star']['box_boundaries']
+                thumb_image = full_image[
+                            box_boundaries['ymin']:box_boundaries['ymax'],
+                            box_boundaries['xmin']:box_boundaries['xmax']
+                ]
+                thumbnails[xmatch.images['filename'][i]] = thumb_image
 
         event_data['thumbnails'] = thumbnails
 
