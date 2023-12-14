@@ -3,6 +3,8 @@ from os import path
 import json
 from pyDANDIA import crossmatch
 from pyDANDIA import metadata
+import recombine_image_stamps
+import h5py
 
 PRI_REF = 'lsc-doma-1m0-05-fa15_ip'
 
@@ -36,7 +38,26 @@ def run_extraction(args):
 
     # Extract thumbnail images around all selected events for those images within t0 +/- 0.5tE
     # Record which images in the lightcurve these are for later reference
+    selected_events = extract_thumbnail_images(args, selected_events, xmatch)
 
+    # Output the collections of thumbnails
+    output_thumbnails(args, selected_events)
+    
+def output_thumbnails(args, selected_events):
+    """
+    Function to output the sets of thumbnail images for each event as an HDF5 file
+    """
+
+    for event_name, event_data in selected_events.items():
+        output_path = path.join(args.output_dir, event_name + '_thumbs.hdf5')
+
+        with h5py.File(output_path, "w") as f:
+            for image_name, data in event_data['thumbnails'].items():
+                dset = f.create_dataset(image_name,
+                                        data.shape,
+                                        dtype='float64',
+                                        data=data)
+            f.close()
 
 def extract_thumbnail_images(args, selected_events, xmatch):
     """Function to work out which images from a field dataset took place during each microlensing event,
@@ -48,8 +69,33 @@ def extract_thumbnail_images(args, selected_events, xmatch):
 
         image_idx = (xmatch.images['hjd'] >= tmin) and (xmatch.images['hjd'] <= tmax)
 
+        thumbnails = {}
+
         for i in image_idx:
-            image_path = path.join(args.red_dir, xmatch.images['dataset_code'][i], 'diffim', xmatch.images['filename'][i], )
+            red_dir = path.join(args.red_dir, xmatch.images['dataset_code'][i])
+            stamps_dir = path.join(red_dir, 'diffim', xmatch.images['filename'][i])
+
+            # Load the metadata for the reduction corresponding to this image and extract the stamps
+            # table
+            red_meta = metadata.MetaData()
+            red_meta.load_all_metadata(metadata_directory=red_dir,
+                                   metadata_name='pyDANDIA_metadata.fits')
+            stamps = parse_stamps_table(red_meta)
+
+            # Recombine the stamps for the appropriate differenced image
+            full_image = recombine_image_stamps.stamps_to_fullframe_image(stamps, args.stamp_dir, args.filename)
+
+            # Extract the thumbnail around the target event
+            thumb_image = full_image[
+                        event_data['box_boundaries']['ymin']:event_data['box_boundaries']['ymax'],
+                        event_data['box_boundaries']['xmin']:event_data['box_boundaries']['xmax']
+            ]
+            thumbnails[xmatch.images['filename'][i]] = thumb_image
+
+        event_data['thumbnails'] = thumbnails
+
+    return selected_events
+
 def calc_thumbnail_boundaries(selected_events, meta):
     """Function to calculate the boundaries of the thumbnail image around each.  This function filters
     out any events where the thumbnail boundaries would exceed the image boundaries."""
