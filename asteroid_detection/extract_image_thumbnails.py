@@ -99,7 +99,7 @@ def extract_thumbnail_images(args, selected_events, xmatch):
             stamps = recombine_image_stamps.parse_stamps_table(red_meta)
 
             # Recombine the stamps for the appropriate differenced image
-            full_image = recombine_image_stamps.stamps_to_fullframe_image(stamps, args.stamp_dir, args.filename)
+            full_image = recombine_image_stamps.stamps_to_fullframe_image(stamps, stamps_dir, 'diff_stamp')
 
             # Extract the thumbnail around the target event
             thumb_image = full_image[
