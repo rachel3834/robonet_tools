@@ -96,7 +96,7 @@ def extract_thumbnail_images(args, selected_events, xmatch):
             red_meta = metadata.MetaData()
             red_meta.load_all_metadata(metadata_directory=red_dir,
                                    metadata_name='pyDANDIA_metadata.fits')
-            stamps = parse_stamps_table(red_meta)
+            stamps = recombine_image_stamps.parse_stamps_table(red_meta)
 
             # Recombine the stamps for the appropriate differenced image
             full_image = recombine_image_stamps.stamps_to_fullframe_image(stamps, args.stamp_dir, args.filename)
