@@ -5,6 +5,7 @@ from pyDANDIA import crossmatch
 from pyDANDIA import metadata
 import recombine_image_stamps
 import h5py
+import numpy as np
 
 PRI_REF = 'lsc-doma-1m0-05-fa15_ip'
 
