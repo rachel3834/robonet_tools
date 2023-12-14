@@ -41,8 +41,7 @@ def run_extraction(args):
     # Record which images in the lightcurve these are for later reference
     selected_events = extract_thumbnail_images(args, selected_events, xmatch)
 
-    # Output the collections of thumbnails and the summary of selected events
-    output_thumbnails(args, selected_events)
+    # Output a summary of selected events
     output_catalog(args, selected_events)
 
 def output_catalog(args, selected_events):
@@ -57,21 +56,20 @@ def output_catalog(args, selected_events):
         write_file.write(json_data)
         write_file.close()
 
-def output_thumbnails(args, selected_events):
+def output_thumbnails(args, event_name, thumbnails):
     """
     Function to output the sets of thumbnail images for each event as an HDF5 file
     """
 
-    for event_name, event_data in selected_events.items():
-        output_path = path.join(args.output_dir, event_name + '_thumbs.hdf5')
+    output_path = path.join(args.output_dir, event_name + '_thumbs.hdf5')
 
-        with h5py.File(output_path, "w") as f:
-            for image_name, data in event_data['thumbnails'].items():
-                dset = f.create_dataset(image_name,
-                                        data.shape,
-                                        dtype='float64',
-                                        data=data)
-            f.close()
+    with h5py.File(output_path, "w") as f:
+        for image_name, data in thumbnails.items():
+            dset = f.create_dataset(image_name,
+                                    data.shape,
+                                    dtype='float64',
+                                    data=data)
+        f.close()
 
 def extract_thumbnail_images(args, selected_events, xmatch):
     """Function to work out which images from a field dataset took place during each microlensing event,
@@ -113,8 +111,9 @@ def extract_thumbnail_images(args, selected_events, xmatch):
                 ]
                 thumbnails[xmatch.images['filename'][i]] = thumb_image
                 print(' -> ' + xmatch.images['filename'][i])
-                
-        event_data['thumbnails'] = thumbnails
+
+        output_thumbnails(args, event_name, thumbnails)
+        event_data['thumbnails'] = thumbnails.keys()
 
     return selected_events
 
