@@ -43,7 +43,7 @@ def run_extraction(args):
     # Output the collections of thumbnails and the summary of selected events
     output_thumbnails(args, selected_events)
     output_catalog(args, selected_events)
-    
+
 def output_catalog(args, selected_events):
     """
     Function to output the JSON summary of the selected events
@@ -80,7 +80,9 @@ def extract_thumbnail_images(args, selected_events, xmatch):
         tmin = event_data['target_data']['t0'] - 0.5*event_data['target_data']['tE']
         tmax = event_data['target_data']['t0'] + 0.5*event_data['target_data']['tE']
 
-        image_idx = (xmatch.images['hjd'] >= tmin) and (xmatch.images['hjd'] <= tmax)
+        idx1 = np.where(xmatch.images['hjd'] >= tmin)
+        idx2 = np.where(xmatch.images['hjd'] <= tmax)
+        image_idx = list(set(idx1).intersection(set(idx2)))
 
         thumbnails = {}
 
