@@ -40,9 +40,22 @@ def run_extraction(args):
     # Record which images in the lightcurve these are for later reference
     selected_events = extract_thumbnail_images(args, selected_events, xmatch)
 
-    # Output the collections of thumbnails
+    # Output the collections of thumbnails and the summary of selected events
     output_thumbnails(args, selected_events)
+    output_catalog(args, selected_events)
     
+def output_catalog(args, selected_events):
+    """
+    Function to output the JSON summary of the selected events
+    """
+    output_file = path.join(args.output_dir, 'selected_events.json')
+
+    json_data = json.dumps(selected_events, indent=4)
+
+    with open(output_file, 'w') as write_file:
+        write_file.write(json_data)
+        write_file.close()
+
 def output_thumbnails(args, selected_events):
     """
     Function to output the sets of thumbnail images for each event as an HDF5 file
@@ -64,8 +77,8 @@ def extract_thumbnail_images(args, selected_events, xmatch):
     and extract the pixel data for the thumbnails from the corresponding difference images"""
 
     for event_name, event_data in selected_events.items():
-        tmin = selected_events['target_data']['t0'] - 0.5*selected_events['target_data']['tE']
-        tmax = selected_events['target_data']['t0'] + 0.5*selected_events['target_data']['tE']
+        tmin = event_data['target_data']['t0'] - 0.5*event_data['target_data']['tE']
+        tmax = event_data['target_data']['t0'] + 0.5*event_data['target_data']['tE']
 
         image_idx = (xmatch.images['hjd'] >= tmin) and (xmatch.images['hjd'] <= tmax)
 
@@ -128,7 +141,7 @@ def calc_thumbnail_boundaries(selected_events, meta):
             'ymax': y_center + npix
         }
         if check_image_boundaries(box_boundaries, image_boundaries ):
-            event_data['box_boundaries'] = box_boundaries
+            event_data['rome_star']['box_boundaries'] = box_boundaries
             revised_events[event_name] = event_data
 
     print('Selected ' + str(len(revised_events)) + ' events with thumbnail boxes within the image FoV')
