@@ -81,8 +81,8 @@ def extract_thumbnail_images(args, selected_events, xmatch):
         tmin = event_data['target_data']['t0'] - 0.5*event_data['target_data']['tE']
         tmax = event_data['target_data']['t0'] + 0.5*event_data['target_data']['tE']
 
-        idx1 = np.where(xmatch.images['hjd'] >= tmin)
-        idx2 = np.where(xmatch.images['hjd'] <= tmax)
+        idx1 = np.where(xmatch.images['hjd'] >= tmin)[0]
+        idx2 = np.where(xmatch.images['hjd'] <= tmax)[0]
         image_idx = list(set(idx1).intersection(set(idx2)))
 
         thumbnails = {}
