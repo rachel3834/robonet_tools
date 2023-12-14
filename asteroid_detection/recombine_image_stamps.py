@@ -26,7 +26,7 @@ def stamps_to_fullframe_image(stamps_table, stamp_dir, filename):
     data = np.zeros((stamps_table['Y_MAX'].max(), stamps_table['X_MAX'].max()))
 
     # Looping over all of the stamps, read in each stamp in turn, combining the pixel data
-    for i in meta.stamps[1]['PIXEL_INDEX']:
+    for i in stamps_table['PIXEL_INDEX']:
         stamp_image = path.join(stamp_dir, filename+'_'+str(i)+'.fits')
         stamp_data = fits.getdata(stamp_image)
         ymin = stamps_table['Y_MIN'][i]
