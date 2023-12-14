@@ -4,6 +4,7 @@ from pyDANDIA import crossmatch
 from pyDANDIA import  logs
 import numpy as np
 from datetime import datetime
+from astropy.time import Time
 import matplotlib.pyplot as plt
 
 def run_statistics(args):
@@ -41,11 +42,11 @@ def calc_star_totals(xmatch, log):
     log.info('N stars = '+str(len(xmatch.stars)))
 
 def calc_cadence(xmatch, filter_list, log):
-    survey_seasons = [(datetime.strptime('2017-01-01',"%Y-%m-%d"),
+    survey_seasons = [(datetime.strptime('2017-03-01',"%Y-%m-%d"),
                         datetime.strptime('2017-10-30',"%Y-%m-%d")),
-                        (datetime.strptime('2018-01-01',"%Y-%m-%d"),
+                        (datetime.strptime('2018-03-01',"%Y-%m-%d"),
                         datetime.strptime('2018-10-30',"%Y-%m-%d")),
-                        (datetime.strptime('2019-01-01',"%Y-%m-%d"),
+                        (datetime.strptime('2019-03-01',"%Y-%m-%d"),
                         datetime.strptime('2019-10-30',"%Y-%m-%d"))]
 
     image_dates = []
@@ -72,6 +73,13 @@ def calc_cadence(xmatch, filter_list, log):
             cadence = np.median(dhjds) * 24.0
             sigma = dhjds.std() * 24.0
             cadences = np.concatenate((cadences, dhjds*24.0))
+
+            season_earliest = Time(hjds[0]-2400000.0, format='mjd')
+            season_latest = Time(hjds[-1]-2400000.0, format='mjd')
+            print('First and last observations in season: ' + str(season_earliest.isot) + ' - '
+                        + str(season_latest.isot))
+            log.info('First and last observations in season: ' + str(season_earliest.isot) + ' - '
+                        + str(season_latest.isot))
 
             print('Median cadence in '+f+' for season '
                     +season_start.strftime("%Y-%m-%d")
