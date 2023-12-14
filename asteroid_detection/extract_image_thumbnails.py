@@ -102,9 +102,10 @@ def extract_thumbnail_images(args, selected_events, xmatch):
             full_image = recombine_image_stamps.stamps_to_fullframe_image(stamps, stamps_dir, 'diff_stamp')
 
             # Extract the thumbnail around the target event
+            box_boundaries = event_data['rome_star']['box_boundaries']
             thumb_image = full_image[
-                        event_data['box_boundaries']['ymin']:event_data['box_boundaries']['ymax'],
-                        event_data['box_boundaries']['xmin']:event_data['box_boundaries']['xmax']
+                        box_boundaries['ymin']:box_boundaries['ymax'],
+                        box_boundaries['xmin']:box_boundaries['xmax']
             ]
             thumbnails[xmatch.images['filename'][i]] = thumb_image
 
