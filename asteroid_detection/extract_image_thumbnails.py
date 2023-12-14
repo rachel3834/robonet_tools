@@ -86,6 +86,7 @@ def extract_thumbnail_images(args, selected_events, xmatch):
         image_idx = list(set(idx1).intersection(set(idx2)))
 
         thumbnails = {}
+        print('Extracting thumbnail difference images for ' + event_name)
 
         for i in image_idx:
             red_dir = path.join(args.red_dir, xmatch.images['dataset_code'][i])
@@ -111,7 +112,8 @@ def extract_thumbnail_images(args, selected_events, xmatch):
                             box_boundaries['xmin']:box_boundaries['xmax']
                 ]
                 thumbnails[xmatch.images['filename'][i]] = thumb_image
-
+                print(' -> ' + xmatch.images['filename'][i])
+                
         event_data['thumbnails'] = thumbnails
 
     return selected_events
@@ -193,6 +195,8 @@ def fetch_xy_for_events(args, selected_events, xmatch, meta, pri_ref_dir):
         event_data['rome_star']['y'] = meta.star_catalog[1]['y'][pri_ref_idx]
 
         selected_events[event_name] = event_data
+
+    print('Extracted the pixel coordinates of the selected events')
 
     return selected_events
 
