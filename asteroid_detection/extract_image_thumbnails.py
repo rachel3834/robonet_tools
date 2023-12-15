@@ -49,7 +49,8 @@ def output_catalog(args, selected_events):
     Function to output the JSON summary of the selected events
     """
     output_file = path.join(args.output_dir, 'selected_events.json')
-
+    print(selected_events)
+    
     json_data = json.dumps(selected_events, indent=4)
 
     with open(output_file, 'w') as write_file:
