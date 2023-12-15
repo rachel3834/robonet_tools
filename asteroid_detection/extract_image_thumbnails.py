@@ -124,7 +124,7 @@ def extract_thumbnail_images(args, selected_events, xmatch):
 
             f.close()
 
-        event_data['thumbnails'] = xmatch.images['filename'][image_idx].data
+        event_data['thumbnails'] = list(xmatch.images['filename'][image_idx].data)
 
     return selected_events
 
