@@ -83,37 +83,47 @@ def extract_thumbnail_images(args, selected_events, xmatch):
         idx2 = np.where(xmatch.images['hjd'] <= tmax)[0]
         image_idx = list(set(idx1).intersection(set(idx2)))
 
-        thumbnails = {}
-        print('Extracting thumbnail difference images for ' + event_name)
+        if len(image_idx) > 0:
+            print('Extracting ' + str(len(image_idx)) + ' thumbnail difference images for ' + event_name)
+            output_path = path.join(args.output_dir, event_name + '_thumbs.hdf5')
 
-        for i in image_idx:
-            red_dir = path.join(args.red_dir, xmatch.images['dataset_code'][i])
-            stamps_dir = path.join(red_dir, 'diffim', xmatch.images['filename'][i])
+            with h5py.File(output_path, "w") as f:
 
-            # Stamps may be missing in the case of images that were flagged by the pipeline's
-            # quality control.  If so, we skip the attempt to extract a thumbnail
-            if path.isdir(stamps_dir):
-                # Load the metadata for the reduction corresponding to this image and extract the stamps
-                # table
-                red_meta = metadata.MetaData()
-                red_meta.load_all_metadata(metadata_directory=red_dir,
-                                       metadata_name='pyDANDIA_metadata.fits')
-                stamps = recombine_image_stamps.parse_stamps_table(red_meta)
+                for i in image_idx:
+                    red_dir = path.join(args.red_dir, xmatch.images['dataset_code'][i])
+                    stamps_dir = path.join(red_dir, 'diffim', xmatch.images['filename'][i])
 
-                # Recombine the stamps for the appropriate differenced image
-                full_image = recombine_image_stamps.stamps_to_fullframe_image(stamps, stamps_dir, 'diff_stamp')
+                    # Stamps may be missing in the case of images that were flagged by the pipeline's
+                    # quality control.  If so, we skip the attempt to extract a thumbnail
+                    if path.isdir(stamps_dir):
+                        # Load the metadata for the reduction corresponding to this image and extract the stamps
+                        # table
+                        red_meta = metadata.MetaData()
+                        red_meta.load_all_metadata(metadata_directory=red_dir,
+                                               metadata_name='pyDANDIA_metadata.fits')
+                        stamps = recombine_image_stamps.parse_stamps_table(red_meta)
 
-                # Extract the thumbnail around the target event
-                box_boundaries = event_data['rome_star']['box_boundaries']
-                thumb_image = full_image[
-                            box_boundaries['ymin']:box_boundaries['ymax'],
-                            box_boundaries['xmin']:box_boundaries['xmax']
-                ]
-                thumbnails[xmatch.images['filename'][i]] = thumb_image
-                print(' -> ' + xmatch.images['filename'][i])
+                        # Recombine the stamps for the appropriate differenced image
+                        full_image = recombine_image_stamps.stamps_to_fullframe_image(stamps, stamps_dir, 'diff_stamp')
 
-        output_thumbnails(args, event_name, thumbnails)
-        event_data['thumbnails'] = thumbnails.keys()
+                        # Extract the thumbnail around the target event
+                        box_boundaries = event_data['rome_star']['box_boundaries']
+                        thumb_image = full_image[
+                                    box_boundaries['ymin']:box_boundaries['ymax'],
+                                    box_boundaries['xmin']:box_boundaries['xmax']
+                        ]
+
+                        # Add this dataset to the HDF5 file
+                        dset = f.create_dataset(xmatch.images['filename'][i],
+                                                thumb_image.shape,
+                                                dtype='float64',
+                                                data=thumb_image)
+
+                        print(' -> ' + xmatch.images['filename'][i])
+
+            f.close()
+
+        event_data['thumbnails'] = xmatch.images['filename'][image_idx]
 
     return selected_events
 
