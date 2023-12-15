@@ -50,7 +50,7 @@ def output_catalog(args, selected_events):
     """
     output_file = path.join(args.output_dir, 'selected_events.json')
     print(selected_events)
-    
+
     json_data = json.dumps(selected_events, indent=4)
 
     with open(output_file, 'w') as write_file:
@@ -124,7 +124,7 @@ def extract_thumbnail_images(args, selected_events, xmatch):
 
             f.close()
 
-        event_data['thumbnails'] = xmatch.images['filename'][image_idx]
+        event_data['thumbnails'] = xmatch.images['filename'][image_idx].data
 
     return selected_events
 
