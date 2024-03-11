@@ -59,7 +59,7 @@ def verify_field_timestamps(args):
 
         # Output tables to quadrant HDF5 file
         params = {'crossmatch_file': crossmatch_file, 'field_name': args.field_name}
-        output_quad_photometry(params, xmatch, quad_phot, qid, log)
+        field_photometry.output_quad_photometry(params, xmatch, quad_phot, qid, log)
 
     logs.close_log(log)
 
