@@ -32,7 +32,7 @@ def run(args):
 
             dateobs = hdu[0].header['DATE-OBS']
             utstart = hdu[0].header['UTSTART']
-            utend = hdu[0].header['UTEND']
+            utend = hdu[0].header['UTSTOP']
             exptime = float(hdu[0].header['EXPTIME'])
 
             # Corrected DATE-OBS and UTSTART is the existing values plus the offset
@@ -50,7 +50,7 @@ def run(args):
             # Update the header:
             hdu2[0].header['DATE-OBS'] = str(dateobs1.value)
             hdu2[0].header['UTSTART'] = utstart1
-            hdu2[0].header['UTEND'] = utend1
+            hdu2[0].header['UTSTOP'] = utend1
             hdu2[0].header['MJD-OBS'] = str(mjdobs1)
 
             # Save the corrected image file
