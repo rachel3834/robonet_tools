@@ -9,9 +9,9 @@ import copy
 # LCO Tel-Ops.  This script is designed to amend the header information to the correct time.
 # The affected images from this program are as follows:
 AFFECTED_IMAGES = [
-    lsc1m004-fa03-20240320-0352-e91.fits,
-    lsc1m004-fa03-20240320-0353-e91.fits,
-    lsc1m004-fa03-20240320-0354-e91.fits,
+    'lsc1m004-fa03-20240320-0352-e91.fits',
+    'lsc1m004-fa03-20240320-0353-e91.fits',
+    'lsc1m004-fa03-20240320-0354-e91.fits',
 ]
 
 # The clocks were measured to be early by 7107.053965sec
@@ -56,7 +56,7 @@ def run(args):
             # Save the corrected image file
             hdu2.writeto(image.replace('.fits', '_c.fits'), overwrite=True)
             print('Corrected timestatmp for image ' + image)
-            
+
 
 def get_args():
 
