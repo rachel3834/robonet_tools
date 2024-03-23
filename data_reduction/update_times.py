@@ -41,7 +41,7 @@ def run(args):
             utstart1 = str(dateobs1.value).split('T')[1]
 
             # Corrected UTEND is the UTSTART + exposure time
-            utend1 = dateobs1 + Time(exptime, format='sec')
+            utend1 = dateobs1 + TimeDelta(exptime, format='sec')
             utend1 = str(utend1.value).split('T')[1]
 
             # Corrected MJD-OBS is the corrected DATE-OBS converted to MJD
