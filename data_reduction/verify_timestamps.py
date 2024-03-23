@@ -46,7 +46,7 @@ def verify_field_timestamps(args):
     log.info('Updated crossmatch table')
 
     # Verify the HJD timestamps in the timeseries photometry data
-    for qid in range(1, 5, 1):     
+    for qid in range(1, 5, 1):
         phot_file = path.join(args.data_dir,
                               args.field_name + '_quad' + str(qid) + '_photometry.hdf5')
 
