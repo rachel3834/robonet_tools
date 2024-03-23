@@ -36,7 +36,7 @@ def run(args):
             exptime = float(hdu[0].header['EXPTIME'])
 
             # Corrected DATE-OBS and UTSTART is the existing values plus the offset
-            dateobs1 = Time(dateobs, format='utc', format='isot', scale='utc')
+            dateobs1 = Time(dateobs, format='isot', scale='utc')
             dateobs1 += dt
             utstart1 = str(dateobs1.value).split('T')[1]
 
