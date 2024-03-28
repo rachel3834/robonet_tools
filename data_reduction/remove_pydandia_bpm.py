@@ -20,14 +20,14 @@ def reset_imageset_bpms(args):
 
         with fits.open(image_file) as hdul:
             new_hdul = []
-            for exnt in hdul:
-                if 'PYDANDIA_PIXEL_MASK' not in exnt.name:
+            for extn in hdul:
+                if 'PYDANDIA_PIXEL_MASK' not in extn.name:
                     new_hdul.append(extn)
             new_hdul = fits.HDUList(new_hdul)
             new_hdul.writeto(image_file)
 
         print('Removed pyDANDIA BPM from ' + image_file)
-        
+
 def get_args():
 
     parser = argparse.ArgumentParser()
