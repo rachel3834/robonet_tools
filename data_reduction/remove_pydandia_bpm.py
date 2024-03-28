@@ -24,7 +24,7 @@ def reset_imageset_bpms(args):
                 if 'PYDANDIA_PIXEL_MASK' not in extn.name:
                     new_hdul.append(extn)
             new_hdul = fits.HDUList(new_hdul)
-            new_hdul.writeto(image_file)
+            new_hdul.writeto(image_file, overwrite=True)
 
         print('Removed pyDANDIA BPM from ' + image_file)
 
