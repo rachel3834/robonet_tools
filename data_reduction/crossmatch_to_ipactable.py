@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 from datetime import datetime
 from os import path
+from astropy.table import Table, Column
 
 VERSION = '0.1'
 
@@ -16,13 +17,25 @@ def convert_to_ipactable(args):
     xmatch = crossmatch.CrossMatchTable()
     xmatch.load(args.crossmatch_file,log=None)
 
+    # Load the field's event and variable catalogs
+    event_catalog = load_json_target_catalog(args.event_catalog_file)
+    variable_catalog = load_json_target_catalog(args.variable_catalog_file)
+
     # Data on each source is derived from a combination of two tables in the
     # crossmatch file, the field index and the stars table, so we extract that
     # first
-    source_table = extract_source_data(xmatch)
+    source_table = extract_source_data(args, xmatch)
 
     # Output the source table in IPAC table format
     output_to_ipactable(args, source_table)
+
+def load_json_target_catalog(catalog_path):
+    """Function to load a catalog of selected objects in JSON format"""
+
+    with open(catalog_path, "r") as read_file:
+        data = json.load(read_file)
+
+    return data
 
 def get_column_widths(table_columns):
     """Function to set the width of a column header, based on the length of the
@@ -62,12 +75,20 @@ def output_to_ipactable(args, source_table):
 
     # Formal definition of the columns in the source table:
     table_columns = {
+                    'name': {'type': 'char', 'unit': 'null', 'nulls': 'null'},
+                    'field': {'type': 'char', 'unit': 'null', 'nulls': 'null'},
                     'field_id': {'type': 'int', 'unit': 'null', 'nulls': 'null'},
                     'ra': {'type': 'double', 'unit': 'degrees', 'nulls': 'null'},
                     'dec': {'type': 'double', 'unit': 'degrees', 'nulls': 'null'},
                     'quadrant': {'type': 'int', 'unit': 'null', 'nulls': 'null'},
                     'quadrant_id': {'type': 'int', 'unit': 'null', 'nulls': 'null'},
                     'gaia_source_id': {'type': 'int', 'unit': 'null', 'nulls': 'null', 'width': 21},
+                    'ogle_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': XX},
+                    'ogle_variable_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': XX},
+                    'moa_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': XX},
+                    'kmtnet_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': XX},
+                    'spitzer_event': {'type': 'bool', 'unit': 'null', 'nulls': 'null'},
+                    'vvv_variable_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': XX},
                     'cal_mag_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
                     'cal_mag_error_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
                     'norm_mag_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
@@ -80,7 +101,7 @@ def output_to_ipactable(args, source_table):
                     'cal_mag_error_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
                     'norm_mag_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
                     'norm_mag_error_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'lc_file_path': {'type': 'chat', 'unit': 'null', 'nulls': 'null', 'width': 300},
+                    'lc_file_path': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 300},
                     }
 
     # Calculate the widths for each column:
@@ -163,7 +184,7 @@ def get_lc_file_path(args, field_id):
 
     return lc_path
 
-def extract_source_data(xmatch):
+def extract_source_data(args, xmatch):
     """Function to extract the data on all stars within the field.  This
     combines information held in the field index and stars tables of the crossmatch
     table.
@@ -176,13 +197,41 @@ def extract_source_data(xmatch):
     then Australia were used for normalization in that order, so those
     magnitudes are provided instead.
     """
+
+    # TABLE CREATION
+    column_list = []
+
+    # Create columns to hold the star and field identifiers
+    nstars = len(xmatch.field_index['field_id'])
+    star_ids = []
+    for j in xmatch.field_index['field_id']:
+        star_ids.append(args.field_name + '_' + zero_padd(j, 6))
+    column_list.append(Column(name='name', data=star_ids))
+    column_list.append(Column(name='field', data=[args.field_name]*nstars))
+
     # Star field indices, positional and quadrant data come from the field index
     col_list_field_idx = [
                           'field_id', 'ra', 'dec', 'quadrant', 'quadrant_id',
                           'gaia_source_id'
                          ]
-    source_table = xmatch.field_index[col_list_field_idx]
-    nstars = len(source_table)
+    for col in col_list_field_idx:
+        column_list.append(xmatch.field_index['col'])
+
+    # Include columns for crossmatches with other catalogs
+    # CHECK THE FORMATS OF THESE AND WHERE THEY COME FROM; EXTRACT THE DATA
+    col_list = {
+        'ogle_event_id': 'string',
+        'ogle_variable_id': 'string',
+        'moa_event_id': 'string',
+        'kmtnet_event_id': 'string',
+        'spitzer_event': 'boolean',
+        'vvv_variable_id': 'string'
+    }
+    for col, col_type in col_list.items():
+        if col_type == 'string':
+            column_list.append(Column(name=col, data=['']*nstars))
+        else:
+            column_list.append(Column(name=col, data[False]*nstars))
 
     # Create columns to hold the photometry data
     phot_cols = [
@@ -191,8 +240,11 @@ def extract_source_data(xmatch):
                  'cal_mag_i', 'cal_mag_error_i', 'norm_mag_i', 'norm_mag_error_i',
                 ]
     for col in phot_cols:
-        source_table.add_column(np.zeros(nstars), name=col)
+        column_list.append(Column(name=col, data=np.zeros(nstars)))
 
+    source_table = Table(column_list)
+
+    # DATA POPULATION
     # ROME/REA photometry were normalized by selecting the instruments used for
     # the survey data as primary references.
     filter_list = ['gp', 'rp', 'ip']
@@ -248,6 +300,15 @@ def extract_source_data(xmatch):
                         source_table['norm_mag_error_'+f][j] = xmatch.stars['norm_'+f+'_magerr_'+site_code][j]
 
     return source_table
+
+def zero_padd(ivalue, nsf):
+
+    svalue = str(ivalue)
+    nzeros = nsf - len(svlue)
+    prefix = ''.join(['0']*nzeros)
+    svalue = prefix + svalue
+
+    return svalue
 
 def get_site_dome(facility_code=None, dataset_code=None):
 
@@ -309,6 +370,10 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('crossmatch_file', type=str,
                     help='Path to crossmatch file')
+    parser.add_argument('event_catalog_file', type=str,
+                        help='Path to catalog of known events')
+    parser.add_argument('variable_catalog_file', type=str,
+                        help='Path to catalog of known variables')
     parser.add_argument('ipactable_file', type=str,
                     help='Path to output IPAC table file')
     parser.add_argument('field_name', type=str,
