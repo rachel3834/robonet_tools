@@ -42,7 +42,7 @@ def extract_rome_star_matches(LUT, catalog, catalog_type='event'):
     def extract_keyword_entry(key, entry):
         value = None
         if key in entry.keys():
-            if 'null' not in str(entry[key]).lower() and 'false' not in str(entry[key]).lower():
+            if str(entry[key]).lower() in ['false', 'true'] or 'null' not in str(entry[key]).lower():
                 value = entry[key]
         return value
 
@@ -61,7 +61,7 @@ def extract_rome_star_matches(LUT, catalog, catalog_type='event'):
                         'ogle_variable_id': None,
                         'moa_event_id': None,
                         'kmtnet_event_id': None,
-                        'spitzer_event': None,
+                        'spitzer_event': 'false',
                         'vvv_variable_id': None
                     }
 

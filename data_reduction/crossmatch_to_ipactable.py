@@ -19,13 +19,12 @@ def convert_to_ipactable(args):
     xmatch.load(args.crossmatch_file,log=None)
 
     # Load the field's event and variable catalogs
-    event_catalog = load_json_target_catalog(args.event_catalog_file)
-    variable_catalog = load_json_target_catalog(args.variable_catalog_file)
+    variable_catalog = load_json_target_catalog(args.variable_lut_file)
 
     # Data on each source is derived from a combination of two tables in the
     # crossmatch file, the field index and the stars table, so we extract that
     # first
-    source_table = extract_source_data(args, xmatch, event_catalog, variable_catalog)
+    source_table = extract_source_data(args, xmatch, variable_catalog)
 
     # Output the source table in IPAC table format
     output_to_ipactable(args, source_table)
@@ -185,7 +184,7 @@ def get_lc_file_path(args, field_id):
 
     return lc_path
 
-def extract_source_data(args, xmatch, event_catalog, variable_catalog):
+def extract_source_data(args, xmatch, variable_catalog):
     """Function to extract the data on all stars within the field.  This
     combines information held in the field index and stars tables of the crossmatch
     table.
@@ -218,11 +217,7 @@ def extract_source_data(args, xmatch, event_catalog, variable_catalog):
     for col in col_list_field_idx:
         column_list.append(xmatch.field_index[col])
 
-    print(event_catalog)
-    exit()
-
     # Include columns for crossmatches with other catalogs
-    # CHECK THE FORMATS OF THESE AND WHERE THEY COME FROM; EXTRACT THE DATA
     col_list = {
         'ogle_event_id': 'string',
         'ogle_variable_id': 'string',
@@ -374,10 +369,8 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('crossmatch_file', type=str,
                     help='Path to crossmatch file')
-    parser.add_argument('event_catalog_file', type=str,
-                        help='Path to catalog of known events')
-    parser.add_argument('variable_catalog_file', type=str,
-                        help='Path to catalog of known variables')
+    parser.add_argument('variable_lut_file', type=str,
+                        help='Path to look-up table of known events and variables')
     parser.add_argument('ipactable_file', type=str,
                     help='Path to output IPAC table file')
     parser.add_argument('field_name', type=str,

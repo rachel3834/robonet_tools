@@ -7,7 +7,7 @@ import pytest
             "ra": 268.0280833333333,
             "dec": -30.179333333333336,
             "baseline_mag": 19.19,
-            "spitzer_target": 'SPITZER_12345',
+            "spitzer_target": 'true',
             "MOA_alert_ID": "MOA-XXXX-BLG-123",
             "Gaia_alert_ID": 'null',
             "Gaia_alert_ra": 'null',
@@ -86,7 +86,7 @@ import pytest
                     'ogle_variable_id': None,
                     'moa_event_id': 'MOA-XXXX-BLG-123',
                     'kmtnet_event_id': None,
-                    'spitzer_event': 'SPITZER_12345',
+                    'spitzer_event': 'true',
                     'vvv_variable_id': None
         },
             177749: {
@@ -94,7 +94,7 @@ import pytest
                 'ogle_variable_id': None,
                 'moa_event_id': None,
                 'kmtnet_event_id': 'KMT-2017-BLG-0042',
-                'spitzer_event': None,
+                'spitzer_event': 'false',
                 'vvv_variable_id': None
          }
         }
@@ -213,7 +213,7 @@ import pytest
                     'ogle_variable_id': 'OGLE-BLG-ELL-008964',
                     'moa_event_id': None,
                     'kmtnet_event_id': None,
-                    'spitzer_event': None,
+                    'spitzer_event': 'false',
                     'vvv_variable_id': None
         },
             280360: {
@@ -221,7 +221,7 @@ import pytest
                     'ogle_variable_id': None,
                     'moa_event_id': None,
                     'kmtnet_event_id': None,
-                    'spitzer_event': None,
+                    'spitzer_event': 'false',
                     'vvv_variable_id': ' 370408'
             }
         }
