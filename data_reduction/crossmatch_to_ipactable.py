@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime
 from os import path
 from astropy.table import Table, Column
+import json
 
 VERSION = '0.1'
 
@@ -24,7 +25,7 @@ def convert_to_ipactable(args):
     # Data on each source is derived from a combination of two tables in the
     # crossmatch file, the field index and the stars table, so we extract that
     # first
-    source_table = extract_source_data(args, xmatch)
+    source_table = extract_source_data(args, xmatch, event_catalog, variable_catalog)
 
     # Output the source table in IPAC table format
     output_to_ipactable(args, source_table)
@@ -184,7 +185,7 @@ def get_lc_file_path(args, field_id):
 
     return lc_path
 
-def extract_source_data(args, xmatch):
+def extract_source_data(args, xmatch, event_catalog, variable_catalog):
     """Function to extract the data on all stars within the field.  This
     combines information held in the field index and stars tables of the crossmatch
     table.
@@ -215,7 +216,10 @@ def extract_source_data(args, xmatch):
                           'gaia_source_id'
                          ]
     for col in col_list_field_idx:
-        column_list.append(xmatch.field_index['col'])
+        column_list.append(xmatch.field_index[col])
+
+    print(event_catalog)
+    exit()
 
     # Include columns for crossmatches with other catalogs
     # CHECK THE FORMATS OF THESE AND WHERE THEY COME FROM; EXTRACT THE DATA
@@ -231,7 +235,7 @@ def extract_source_data(args, xmatch):
         if col_type == 'string':
             column_list.append(Column(name=col, data=['']*nstars))
         else:
-            column_list.append(Column(name=col, data[False]*nstars))
+            column_list.append(Column(name=col, data=[False]*nstars))
 
     # Create columns to hold the photometry data
     phot_cols = [
@@ -304,7 +308,7 @@ def extract_source_data(args, xmatch):
 def zero_padd(ivalue, nsf):
 
     svalue = str(ivalue)
-    nzeros = nsf - len(svlue)
+    nzeros = nsf - len(svalue)
     prefix = ''.join(['0']*nzeros)
     svalue = prefix + svalue
 
