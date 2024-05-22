@@ -1,8 +1,11 @@
 import fieldphot_to_ipaclc
+import crossmatch_to_ipactable
 import pytest
 import numpy as np
 from pyDANDIA import crossmatch
 from astropy.table import Table, Column
+from os import path, remove
+from astropy.io import fits
 
 def mock_field_photometry(nstars, nimages):
     """
@@ -180,3 +183,97 @@ def test_fetch_photometry_for_star():
             print('COL: ',col, data[col])
             assert((lc[f][col] == data[col]).all())
         assert(test_datacount[f] == datacount[f])
+
+class CodeArguments():
+    def __init__(self):
+        self.field_name = 'ROME-FIELD-01'
+        self.qid = 1
+        self.output_dir = './test_output'
+
+def test_output_to_ipac_lightcurve():
+
+    # Simulate code arguments:
+    args = CodeArguments()
+
+    # Synthesize a small test dataset in the right format
+    phot_data = mock_field_photometry(100, 10)
+    xmatch = mock_xmatch(100, 10)
+    star_field_id = 50
+    star_field_idx = star_field_id - 1
+    str_field_id = crossmatch_to_ipactable.bin_num_string(star_field_id)
+
+    quad_id = 10
+    test_lc, test_datacount = extract_test_lc(phot_data, xmatch, quad_id-1)
+
+    expected_header_keys = {
+        'NAME': args.field_name + '_' + str_field_id,
+        'FIELD': args.field_name,
+        'FIELD_ID': star_field_id,
+        'QUADRANT': args.qid,
+        'RA': xmatch.stars['ra'][star_field_idx],
+        'DEC': xmatch.stars['dec'][star_field_idx],
+        'GAIA_ID': xmatch.stars['gaia_source_id'][star_field_idx],
+        'GAIACAT': 'Gaia_EDR3',
+        'NDATA_G': len(test_lc['gp']),
+        'NDATA_R': len(test_lc['rp']),
+        'NDATA_I': len(test_lc['ip']),
+    }
+    expected_table_cols = [
+        'HJD',
+        'inst_mag', 'inst_mag_error',
+        'calib_mag', 'calib_mag_error',
+        'norm_mag', 'norm_mag_error',
+        'qc_flag',
+        'dataset',
+        'airmass', 'moon_frac', 'moon_sep',
+        'sky_bkgd', 'fwhm'
+    ]
+    hdu_map = {
+        'LIGHTCURVE_SDSS_G': 'gp',
+        'LIGHTCURVE_SDSS_R': 'rp',
+        'LIGHTCURVE_SDSS_I': 'ip',
+    }
+
+    file_path = fieldphot_to_ipaclc.output_to_ipac_lightcurve(args, star_field_id, quad_id, xmatch, test_lc)
+
+    assert(path.isfile(file_path))
+    with fits.open(file_path) as hdul:
+        # Check the primary header data is correct
+        for key, value in expected_header_keys.items():
+            assert(hdul[0].header[key] == value)
+
+        # Check we have 3 tables plus the primary data unit, and that
+        # each table has the right columns and number of entries
+        assert(len(hdul) == 4)
+        for hdu in hdul[1:]:
+            for col in hdu.data.columns:
+                assert(col.name in expected_table_cols)
+            assert(len(hdu.data) == len(test_lc[hdu_map[hdu.name]]))
+
+    # Force a test where one of the lightcurves is zero-length
+    remove(file_path)
+    test_lc['rp'] = Table([
+                Column(name='HJD', data=np.array([])),
+                Column(name='inst_mag', data=np.array([])),
+                Column(name='inst_mag_error', data=np.array([])),
+                Column(name='calib_mag', data=np.array([])),
+                Column(name='calib_mag_error', data=np.array([])),
+                Column(name='norm_mag', data=np.array([])),
+                Column(name='norm_mag_error', data=np.array([])),
+                Column(name='qc_flag', data=np.array([])),
+                Column(name='dataset', data=np.array([])),
+                Column(name='airmass', data=np.array([])),
+                Column(name='moon_frac', data=np.array([])),
+                Column(name='moon_sep', data=np.array([])),
+                Column(name='sky_bkgd', data=np.array([])),
+                Column(name='fwhm', data=np.array([])),
+            ])
+    file_path = fieldphot_to_ipaclc.output_to_ipac_lightcurve(args, star_field_id, quad_id, xmatch, test_lc)
+
+    with fits.open(file_path) as hdul:
+        for hdu in hdul[1:]:
+            if hdu.name == 'LIGHTCURVE_SDSS_R':
+                for col in hdu.data.columns:
+                    assert (col.name in expected_table_cols)
+                assert (len(hdu.data) == 0)
+    remove(file_path)

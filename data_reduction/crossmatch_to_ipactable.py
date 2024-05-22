@@ -158,6 +158,12 @@ def output_to_ipactable(args, source_table):
 
     tbl_file.close()
 
+def bin_num_string(num):
+    num = str(num)
+    while len(num) < 6:
+        num = '0' + num
+    return num
+
 def get_lc_file_path(args, field_id):
     """Function to assign a file path for the lightcurve of a star, based on
     the field name and the star's field ID within that field.
@@ -178,11 +184,6 @@ def get_lc_file_path(args, field_id):
     The filenames assigned to each star are constructed as follows:
     <field_name>_star_<field_ID>.fits
     """
-    def bin_num_string(num):
-        num = str(num)
-        while len(num) < 6:
-            num = '0' + num
-        return num
 
     bin_width = 1000
     len_num = len(str(field_id))
@@ -194,7 +195,7 @@ def get_lc_file_path(args, field_id):
         nmax = nmin + bin_width
         subdir = 'FieldID' + bin_num_string(nmin) + '_' + bin_num_string(nmax)
 
-    filename = args.field_name+'_star_'+str(field_id)+'.fits'
+    filename = args.field_name+'_star_'+str(bin_num_string(field_id))+'.fits'
 
     lc_path = path.join('./', args.field_name, subdir, filename)
 

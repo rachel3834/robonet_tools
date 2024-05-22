@@ -91,7 +91,7 @@ def output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc):
     # for the star, plus information on the data available from the
     # lightcurve tables
     hdr = fits.Header()
-    hdr['NAME'] = args.field_name+'_'+str(field_id)
+    hdr['NAME'] = args.field_name+'_'+str(crossmatch_to_ipactable.bin_num_string(field_id))
     hdr['FIELD'] = args.field_name
     hdr['FIELD_ID'] = field_id
     hdr['QUADRANT'] = args.qid
