@@ -12,11 +12,13 @@ from astropy.io import fits
 
 VERSION = 0.1
 FILTER_LIST = ['gp', 'rp', 'ip']
+upload_aws = False
 
 def convert_to_ipac_lightcurves(args):
 
     # Load the AWS configuration
-    aws_config = aws_utils.AWSConfig(args.aws_config_file)
+    if upload_aws:
+        aws_config = aws_utils.AWSConfig(args.aws_config_file)
 
     # Load the field data products for this quadrant
     xmatch = crossmatch.CrossMatchTable()
@@ -24,7 +26,11 @@ def convert_to_ipac_lightcurves(args):
     quad_phot = hd5_utils.read_phot_from_hd5_file(args.phot_hdf_file,
     										  return_type='array')
 
+    # Holding dictionary for the count of datapoints per star
+    datacounts = {}
+
     # Select stars in the quadrant
+    MAXSTAR = 100
     select = np.where(xmatch.field_index['quadrant'] == args.qid)[0]
     for j,field_id in enumerate(select):
         field_idx = field_id - 1
@@ -33,27 +39,39 @@ def convert_to_ipac_lightcurves(args):
 
         # Extract the photometry for this star, in a dictionary of arrays
         # of the lightcurve data for each filter
-        lc = fetch_photometry_for_star(field_idx, quad_idx, xmatch, quad_phot)
+        lc, star_datacount = fetch_photometry_for_star(quad_idx, xmatch, quad_phot)
+        datacounts.update(datacount)
 
         # Create the IPAC-format multi-extention FITS lightcurve table
         lc_file_path = output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc)
 
         # Upload the lightcurve to the AWS Bucket
-        aws_utils.upload_file(aws_config, lc_file_path, args.output_dir,
+        if upload_aws:
+            aws_utils.upload_file(aws_config, lc_file_path, args.output_dir,
                               args.aws_root)
 
         # Remove the temporary local copy of the lightcurve to save space:
-        remove(lc_file_path)
+        #remove(lc_file_path)
 
         if j%1000 == 0.0:
             print('-> Completed output of lightcurve '+str(j))
+
+        # TEMPORARY CAP FOR TESTING
+        if j==MAXSTAR:
+            break
+
+    # Output summary of the number of datapoints per star:
+    json_data = json.dumps(datacounts, indent=4)
+    file_path = path.join(args.output_dir, args.field_name + '_starcounts.json')
+    with open(file_path, 'w') as write_file:
+        write_file.write(json_data)
+        write_file.close()
 
 def output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc):
     """Function to create a lightcurve file for one star in multi-extension
     FITS format, with the lightcurves of the star in different filters contained
     as separate binary tables."""
 
-    quad_idx = quad_id - 1
     field_idx = field_id - 1
 
     # Primary file header will contain basic identification information
@@ -71,8 +89,6 @@ def output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc):
     hdr['GAIACAT'] = 'Gaia_EDR3'
     for f in FILTER_LIST:
         hdr['NDATA_'+str(f).replace('p','').upper()] = len(lc[f])
-
-    XXX Add image data with airmass, moon angular separation, moon fractions, sky background and FWHM XXX
 
     # Add the lightcurves in each filter as a binary table extention.
     # This will create zero-length table if no data is available for a given filter.
@@ -93,94 +109,67 @@ def output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc):
 
     return file_path
 
-def fetch_photometry_for_star(field_idx, quad_idx, xmatch, quad_phot):
+def fetch_photometry_for_star(quad_idx, xmatch, quad_phot):
 
-    lc = {}
     (mag_col1, merr_col1) = field_photometry.get_field_photometry_columns('instrumental')
     (mag_col2, merr_col2) = field_photometry.get_field_photometry_columns('calibrated')
     (mag_col3, merr_col3) = field_photometry.get_field_photometry_columns('normalized')
     qc_col = 16
 
     lc = {}
+    datacount = {}
     for f in FILTER_LIST:
-        lc[f] = {'photometry': [], 'dataids': []}
+        # Identify valid photometry array entries for all images of the current star in the current filter
+        idx1 = np.where(xmatch.images['filter'] == f)[0]
+        idx2 = np.where(quad_phot[quad_idx, :, 0] > 0.0)[0]
+        idx3 = np.where(quad_phot[quad_idx, :, mag_col1] > 0.0)[0]
+        idx = set(idx1).intersection(set(idx2))
+        idx = list(idx.intersection(set(idx3)))
 
-    for f in FILTER_LIST:
-        datalist = np.where(xmatch.datasets['dataset_filter'] == f)[0]
+        lc_data = []
+        if len(idx) > 0:
+            # Convert the dataset codes for these images from long to short form
+            dataset_codes = [xmatch.get_dataset_shortcode(x) for x in xmatch.images['dataset_code'][idx]]
 
-        for ddx in datalist:
-            dataset = xmatch.datasets[ddx]
+            # Compile the lightcurve table data for this filter
+            lc_data.append(Column(name='HJD', data=quad_phot[quad_idx, idx, 0]))
+            lc_data.append(Column(name='inst_mag', data=quad_phot[quad_idx, idx, mag_col1]))
+            lc_data.append(Column(name='inst_mag_error', data=quad_phot[quad_idx, idx, merr_col1]))
+            lc_data.append(Column(name='calib_mag', data=quad_phot[quad_idx, idx, mag_col2]))
+            lc_data.append(Column(name='calib_mag_error', data=quad_phot[quad_idx, idx, merr_col2]))
+            lc_data.append(Column(name='norm_mag', data=quad_phot[quad_idx, idx, mag_col3]))
+            lc_data.append(Column(name='norm_mag_error', data=quad_phot[quad_idx, idx, merr_col3]))
+            lc_data.append(Column(name='qc_flag', data=quad_phot[quad_idx, idx, qc_col]))
+            lc_data.append(Column(name='dataset', data=dataset_codes))
+            lc_data.append(Column(name='airmass', data=xmatch.images['airmass'][idx]))
+            lc_data.append(Column(name='moon_frac', data=xmatch.images['moon_fraction'][idx]))
+            lc_data.append(Column(name='moon_sep', data=xmatch.images['moon_ang_separation'][idx]))
+            lc_data.append(Column(name='sky_bkgd', data=xmatch.images['sky'][idx]))
+            lc_data.append(Column(name='fwhm', data=xmatch.images['fwhm'][idx]))
 
-            # Extract the photometry of this object for the images from this dataset,
-            # if the field index indicates that the object was measured in this dataset
-            if xmatch.field_index[dataset['dataset_code']+'_index'][field_idx] != 0:
-                shortcode = xmatch.get_dataset_shortcode(dataset['dataset_code'])
-                # Select those images from the HDF5 pertaining to this dataset,
-                # then select valid measurements for this star
-                idx1 = np.where(xmatch.images['dataset_code'] == dataset['dataset_code'])[0]
-                idx2 = np.where(quad_phot[quad_idx,:,0] > 0.0)[0]
-                idx3 = np.where(quad_phot[quad_idx,:,mag_col1] > 0.0)[0]
-                idx = set(idx1).intersection(set(idx2))
-                idx = list(idx.intersection(set(idx3)))
-
-                # Store the photometry
-                if len(idx) > 0:
-                    data = lc[f]
-
-                    # Extract the photometry into holding arrays, handling
-                    # string-based data separately from numerical
-                    lc_data = np.zeros((len(idx),8))
-                    lc_data[:,0] = quad_phot[quad_idx,idx,0]
-                    lc_data[:,1] = quad_phot[quad_idx,idx,mag_col1]
-                    lc_data[:,2] = quad_phot[quad_idx,idx,merr_col1]
-                    lc_data[:,3] = quad_phot[quad_idx,idx,mag_col2]
-                    lc_data[:,4] = quad_phot[quad_idx,idx,merr_col2]
-                    lc_data[:,5] = quad_phot[quad_idx,idx,mag_col3]
-                    lc_data[:,6] = quad_phot[quad_idx,idx,merr_col3]
-                    lc_data[:,7] = quad_phot[quad_idx,idx,qc_col]
-
-                    lc_dataids = np.array([dataset['dataset_code']]*len(idx))
-
-                    # Concatenate this dataset's photometry with others using
-                    # the same filter:
-                    if len(data['photometry']) == 0:
-                        data['photometry'] = lc_data
-                        data['dataids'] = lc_dataids
-                    else:
-                        data['photometry'] = np.concatenate((data['photometry'],lc_data))
-                        data['dataids'] = np.concatenate((data['dataids'], lc_dataids))
-
-                    lc[f] = data
-
-        # Having accumulated all of the data from different datasets, now
-        # convert the arrays into a single astropy Table for easier handling
-        data = lc[f]
-        if len(data['photometry']) > 0:
-            lc[f] = Table([
-            Column(name='HJD', data=data['photometry'][:,0]),
-            Column(name='inst_mag', data=data['photometry'][:,1]),
-            Column(name='inst_mag_error', data=data['photometry'][:,2]),
-            Column(name='calib_mag', data=data['photometry'][:,3]),
-            Column(name='calib_mag_error', data=data['photometry'][:,4]),
-            Column(name='norm_mag', data=data['photometry'][:,5]),
-            Column(name='norm_mag_error', data=data['photometry'][:,6]),
-            Column(name='qc_flag', data=data['photometry'][:,7]),
-            Column(name='dataset', data=data['dataids']),
-            ])
+        # If there are no valid photometry measurements in this filter for this star,
+        # return zero-length table in the same format
         else:
-            lc[f] = Table([
-            Column(name='HJD', data=np.array([])),
-            Column(name='inst_mag', data=np.array([])),
-            Column(name='inst_mag_error', data=np.array([])),
-            Column(name='calib_mag', data=np.array([])),
-            Column(name='calib_mag_error', data=np.array([])),
-            Column(name='norm_mag', data=np.array([])),
-            Column(name='norm_mag_error', data=np.array([])),
-            Column(name='qc_flag', data=np.array([])),
-            Column(name='dataset', data=np.array([])),
-            ])
+            lc_data.append(Column(name='HJD', data=np.array([])))
+            lc_data.append(Column(name='inst_mag', data=np.array([])))
+            lc_data.append(Column(name='inst_mag_error', data=np.array([])))
+            lc_data.append(Column(name='calib_mag', data=np.array([])))
+            lc_data.append(Column(name='calib_mag_error', data=np.array([])))
+            lc_data.append(Column(name='norm_mag', data=np.array([])))
+            lc_data.append(Column(name='norm_mag_error', data=np.array([])))
+            lc_data.append(Column(name='qc_flag', data=np.array([])))
+            lc_data.append(Column(name='dataset', data=np.array([])))
+            lc_data.append(Column(name='airmass', data=np.array([])))
+            lc_data.append(Column(name='moon_frac', data=np.array([])))
+            lc_data.append(Column(name='moon_sep', data=np.array([])))
+            lc_data.append(Column(name='sky_bkgd', data=np.array([])))
+            lc_data.append(Column(name='fwhm', data=np.array([])))
 
-    return lc
+        lc[f] = Table(lc_data)
+        lc[f].sort(['HJD'])
+        datacount[f] = len(lc[f])
+
+    return lc, datacount
 
 
 def get_args():
