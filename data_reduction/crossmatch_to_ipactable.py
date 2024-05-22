@@ -49,6 +49,7 @@ def get_column_widths(table_columns):
             # plus two spaces before and after, not including the leading and trailing |
             width = max(len(col), len(col_def['type']), len(col_def['unit'])) + 4
             col_def['width'] = width
+
         table_columns[col] = col_def
 
     return table_columns
@@ -70,42 +71,57 @@ def padd_column_entry(entry, width):
 
     return entry
 
+def define_table_columns():
+    """
+    Formal definition of the columns in the source table.  Widths are set by either the
+    maximum width of the likely parameter value or the width of the column name, whichever
+    is larger
+    """
+
+    table_columns = {
+        'name': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 20},
+        'field': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 13},
+        'field_id': {'type': 'int', 'unit': 'null', 'nulls': 'null', 'width': 8},
+        'ra': {'type': 'double', 'unit': 'degrees', 'nulls': 'null', 'width': 10},
+        'dec': {'type': 'double', 'unit': 'degrees', 'nulls': 'null', 'width': 9},
+        'quadrant': {'type': 'int', 'unit': 'null', 'nulls': 'null', 'width': 8},
+        'quadrant_id': {'type': 'int', 'unit': 'null', 'nulls': 'null', 'width': 11},
+        'gaia_source_id': {'type': 'int', 'unit': 'null', 'nulls': 'null', 'width': 21},
+        'ogle_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 18},
+        'ogle_variable_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 20},
+        'moa_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 16},
+        'kmtnet_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 17},
+        'spitzer_event': {'type': 'bool', 'unit': 'null', 'nulls': 'null', 'width': 13},
+        'vvv_variable_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 15},
+        'cal_mag_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 9},
+        'cal_mag_error_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 15},
+        'norm_mag_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 10},
+        'norm_mag_error_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 16},
+        'cal_mag_r': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 9},
+        'cal_mag_error_r': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 15},
+        'norm_mag_r': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 10},
+        'norm_mag_error_r': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 16},
+        'cal_mag_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 9},
+        'cal_mag_error_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 15},
+        'norm_mag_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 10},
+        'norm_mag_error_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 16},
+        'ndata_g': {'type': 'int', 'unit': 'null', 'nulls': '0.0', 'width': 7},
+        'ndata_r': {'type': 'int', 'unit': 'null', 'nulls': '0.0', 'width': 7},
+        'ndata_i': {'type': 'int', 'unit': 'null', 'nulls': '0.0', 'width': 7},
+        'lc_file_path': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 300}
+    }
+
+    return table_columns
+
 def output_to_ipactable(args, source_table):
     """Function to output the source table to the IPAC table format"""
 
-    # Formal definition of the columns in the source table:
-    table_columns = {
-                    'name': {'type': 'char', 'unit': 'null', 'nulls': 'null'},
-                    'field': {'type': 'char', 'unit': 'null', 'nulls': 'null'},
-                    'field_id': {'type': 'int', 'unit': 'null', 'nulls': 'null'},
-                    'ra': {'type': 'double', 'unit': 'degrees', 'nulls': 'null'},
-                    'dec': {'type': 'double', 'unit': 'degrees', 'nulls': 'null'},
-                    'quadrant': {'type': 'int', 'unit': 'null', 'nulls': 'null'},
-                    'quadrant_id': {'type': 'int', 'unit': 'null', 'nulls': 'null'},
-                    'gaia_source_id': {'type': 'int', 'unit': 'null', 'nulls': 'null', 'width': 21},
-                    'ogle_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': XX},
-                    'ogle_variable_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': XX},
-                    'moa_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': XX},
-                    'kmtnet_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': XX},
-                    'spitzer_event': {'type': 'bool', 'unit': 'null', 'nulls': 'null'},
-                    'vvv_variable_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': XX},
-                    'cal_mag_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'cal_mag_error_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'norm_mag_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'norm_mag_error_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'cal_mag_r': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'cal_mag_error_r': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'norm_mag_r': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'norm_mag_error_r': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'cal_mag_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'cal_mag_error_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'norm_mag_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'norm_mag_error_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0'},
-                    'lc_file_path': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 300},
-                    }
+    # Formal definition of the columns in the source table.  Widths are set by either the
+    # maximum width of the likely parameter value or the width of the column name, whichever
+    # is larger
 
-    # Calculate the widths for each column:
-    table_columns = get_column_widths(table_columns)
+    table_columns = define_table_columns()
+    #table_columns = get_column_widths(table_columns)
 
     # Construct file header
     tbl_file = open(args.ipactable_file, 'w')
@@ -200,6 +216,7 @@ def extract_source_data(args, xmatch, variable_catalog):
 
     # TABLE CREATION
     column_list = []
+    table_columns = define_table_columns()
 
     # Create columns to hold the star and field identifiers
     nstars = len(xmatch.field_index['field_id'])
@@ -217,20 +234,23 @@ def extract_source_data(args, xmatch, variable_catalog):
     for col in col_list_field_idx:
         column_list.append(xmatch.field_index[col])
 
-    # Include columns for crossmatches with other catalogs
-    col_list = {
-        'ogle_event_id': 'string',
-        'ogle_variable_id': 'string',
-        'moa_event_id': 'string',
-        'kmtnet_event_id': 'string',
-        'spitzer_event': 'boolean',
-        'vvv_variable_id': 'string'
+    # Include columns for crossmatches with other catalogs.  Default entry is the maximum width
+    # of the column when empty
+    cols = {
+        'ogle_event_id': np.array([' '*table_columns['ogle_event_id']['width']]*nstars),
+        'ogle_variable_id': np.array([' '*table_columns['ogle_variable_id']['width']]*nstars),
+        'moa_event_id': np.array([' '*table_columns['moa_event_id']['width']]*nstars),
+        'kmtnet_event_id': np.array([' '*table_columns['kmtnet_event_id']['width']]*nstars),
+        'spitzer_event': np.array(['false']*nstars),
+        'vvv_variable_id': np.array([' '*table_columns['vvv_variable_id']['width']]*nstars)
     }
-    for col, col_type in col_list.items():
-        if col_type == 'string':
-            column_list.append(Column(name=col, data=['']*nstars))
-        else:
-            column_list.append(Column(name=col, data=[False]*nstars))
+    for field_id, entry in variable_catalog.items():
+        field_idx = int(field_id) - 1
+        for col_name, arr in cols.items():
+            arr[field_idx] = entry[col_name]
+
+    for col, arr in cols.items():
+        column_list.append(Column(name=col, data=arr))
 
     # Create columns to hold the photometry data
     phot_cols = [
@@ -241,62 +261,85 @@ def extract_source_data(args, xmatch, variable_catalog):
     for col in phot_cols:
         column_list.append(Column(name=col, data=np.zeros(nstars)))
 
+    # Create columns to hold the number of datapoints
+    cols = [ 'ndata_g', 'ndata_r', 'ndata_i' ]
+    for col in cols:
+        column_list.append(Column(name=col, data=np.zeros(nstars, dtype='int')))
+
     source_table = Table(column_list)
 
     # DATA POPULATION
     # ROME/REA photometry were normalized by selecting the instruments used for
     # the survey data as primary references.
     filter_list = ['gp', 'rp', 'ip']
-    reference_list = [
-                    'lsc-doma-1m0-05-fa15',
-                    'cpt-doma-1m0-10-fa16',
-                    'coj-doma-1m0-11-fa12'
-                    ]
+    #reference_list = [
+    #                'lsc-doma-1m0-05-fa15',
+    #                'cpt-doma-1m0-10-fa16',
+    #                'coj-doma-1m0-11-fa12'
+    #                ]
+    survey_reference = 'lsc-doma-1m0-05-fa15'
     for bandpass in filter_list:
         f = bandpass.replace('p','')
 
+        # The cal_mag and norm_mag columns in the source catalog correspond to those
+        # data from the survey's primary reference dataset, i.e. lsc-doma-fa15.
+        # Where stars were not measured in these data, these columns may be zero;
+        # this means they were detected only on other cameras.
+        # Only the data from lsc-doma are included here so that all data provided have
+        # a consistent calibration and are inter-comparable.
+        source_table['cal_mag_' + f] = xmatch.stars['cal_' + f + '_mag_lsc_doma']
+        source_table['cal_mag_error_' + f] = xmatch.stars['cal_' + f + '_magerr_lsc_doma']
+
+        # If the stars were detected in the primary reference, they have no normalization mags
+        # because they don't need to be normalized - they ARE the primary reference. So the norm_mag
+        # columns are populated from the cal_mag columns.
+        pri_ref_col = args.field_name + '_' + survey_reference + '_' + bandpass + '_index'
+        jdx = np.where(xmatch.field_index[pri_ref_col] > 0)[0]
+        source_table['norm_mag_' + f][jdx] = xmatch.stars['cal_' + f + '_mag_lsc_doma'][jdx]
+        source_table['norm_mag_error_' + f][jdx] = xmatch.stars['cal_' + f + '_magerr_lsc_doma'][jdx]
+
         # For stars measured directly in the primary reference data, we use the
         # photometry from the star's table for the relevant columns.
-        for pri_ref_code in reference_list:
-            site_code = get_site_dome(facility_code=pri_ref_code)
-            idx = select_stars_from_ref_dataset(xmatch, reference_list, pri_ref_code,
-                                                bandpass, args.field_name)
-            source_table['cal_mag_'+f][idx] = xmatch.stars['cal_'+f+'_mag_'+site_code][idx]
-            source_table['cal_mag_error_'+f][idx] = xmatch.stars['cal_'+f+'_magerr_'+site_code][idx]
-
-            # The normalized mag columns are only populated if this value is
-            # different from the calibrated magnitude for that reference image,
-            # i.e. if the reference was normalized to a primary reference:
-            for j in idx:
-                if xmatch.stars['norm_'+f+'_mag_'+site_code][j] > 0.0:
-                    source_table['norm_mag_'+f][j] = xmatch.stars['norm_'+f+'_mag_'+site_code][j]
-                    source_table['norm_mag_error_'+f][j] = xmatch.stars['norm_'+f+'_magerr_'+site_code][j]
-                else:
-                    source_table['norm_mag_'+f][j] = xmatch.stars['cal_'+f+'_mag_'+site_code][j]
-                    source_table['norm_mag_error_'+f][j] = xmatch.stars['cal_'+f+'_magerr_'+site_code][j]
-
-        # Some stars were only measured in one of the REA follow-up datasets
-        # and none of the primary reference datasets:
-        jdx = select_stars_no_ref_dataset(xmatch, reference_list, bandpass,
-                                            args.field_name)
-
-        # For REA-only stars, we work through the list of datasets in turn,
-        # taking the photometry from the first dataset in the list to
-        # provide valid measurements.
-
-        # Fetch an ordered list of all of the datasets in this bandpass
-        ddx = np.where(xmatch.datasets['dataset_filter'] == bandpass)[0]
-        datasets = xmatch.datasets['dataset_code'][ddx]
-
-        for j in jdx:
-            for dset in datasets:
-                if dset not in reference_list:
-                    if xmatch.field_index[dset+'_index'][j] > 0:
-                        site_code = get_site_dome(dataset_code=dset)
-                        source_table['cal_mag_'+f][j] = xmatch.stars['cal_'+f+'_mag_'+site_code][j]
-                        source_table['cal_mag_error_'+f][j] = xmatch.stars['cal_'+f+'_magerr_'+site_code][j]
-                        source_table['norm_mag_'+f][j] = xmatch.stars['norm_'+f+'_mag_'+site_code][j]
-                        source_table['norm_mag_error_'+f][j] = xmatch.stars['norm_'+f+'_magerr_'+site_code][j]
+        # for pri_ref_code in reference_list:
+        #     site_code = get_site_dome(facility_code=pri_ref_code)
+        #     idx = select_stars_from_ref_dataset(xmatch, reference_list, pri_ref_code,
+        #                                         bandpass, args.field_name)
+        #     source_table['cal_mag_'+f][idx] = xmatch.stars['cal_'+f+'_mag_'+site_code][idx]
+        #     source_table['cal_mag_error_'+f][idx] = xmatch.stars['cal_'+f+'_magerr_'+site_code][idx]
+        #
+        #     # The normalized mag columns are only populated if this value is
+        #     # different from the calibrated magnitude for that reference image,
+        #     # i.e. if the reference was normalized to a primary reference:
+        #     for j in idx:
+        #         if xmatch.stars['norm_'+f+'_mag_'+site_code][j] > 0.0:
+        #             source_table['norm_mag_'+f][j] = xmatch.stars['norm_'+f+'_mag_'+site_code][j]
+        #             source_table['norm_mag_error_'+f][j] = xmatch.stars['norm_'+f+'_magerr_'+site_code][j]
+        #         else:
+        #             source_table['norm_mag_'+f][j] = xmatch.stars['cal_'+f+'_mag_'+site_code][j]
+        #             source_table['norm_mag_error_'+f][j] = xmatch.stars['cal_'+f+'_magerr_'+site_code][j]
+        #
+        # # Some stars were only measured in one of the REA follow-up datasets
+        # # and none of the primary reference datasets:
+        # jdx = select_stars_no_ref_dataset(xmatch, reference_list, bandpass,
+        #                                     args.field_name)
+        #
+        # # For REA-only stars, we work through the list of datasets in turn,
+        # # taking the photometry from the first dataset in the list to
+        # # provide valid measurements.
+        #
+        # # Fetch an ordered list of all of the datasets in this bandpass
+        # ddx = np.where(xmatch.datasets['dataset_filter'] == bandpass)[0]
+        # datasets = xmatch.datasets['dataset_code'][ddx]
+        #
+        # for j in jdx:
+        #     for dset in datasets:
+        #         if dset not in reference_list:
+        #             if xmatch.field_index[dset+'_index'][j] > 0:
+        #                 site_code = get_site_dome(dataset_code=dset)
+        #                 source_table['cal_mag_'+f][j] = xmatch.stars['cal_'+f+'_mag_'+site_code][j]
+        #                 source_table['cal_mag_error_'+f][j] = xmatch.stars['cal_'+f+'_magerr_'+site_code][j]
+        #                 source_table['norm_mag_'+f][j] = xmatch.stars['norm_'+f+'_mag_'+site_code][j]
+        #                 source_table['norm_mag_error_'+f][j] = xmatch.stars['norm_'+f+'_magerr_'+site_code][j]
 
     return source_table
 
