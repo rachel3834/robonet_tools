@@ -38,28 +38,48 @@ def verify_field_timestamps(args):
             debug=False
         )
 
-        xmatch.images['hjd'][i] = hjd
+        # CATCH FOR DATA WITH BAD DATE-OBS
+        # Due to a temporary operational issue at LCO sites, the DATE-OBS parameter recorded
+        # in the image headers for some images on 2019-04-30 were set to 1970-01-01.  The DATE
+        # parameter in the corresponding header appears to be correct but records the time of
+        # file write rather than the exposure start time.  Using this to estimate the DATE-OBS would
+        # be close but inexact, and I've decided to simply flag these frames as bad data instead.
+        # Affected frames have a zero-length exposure, so no valid photometry is produced.
+        # They can be identified because the calculated HJD will be prior to 2017-01-01 = JD 2457754.5,
+        # which is the earliest possible date for the ROME survey.
+        if hjd > 2457754.5:
+            xmatch.images['hjd'][i] = hjd
+        else:
+            log.info('Caught bad DATE-OBS: '
+             + xmatch.images['filename'][i] + ' DATE-OBS=' + xmatch.images['datetime'][i]
+             + ' RA, Dec=' + str(xmatch.images['RA'][i]) + ', ' + str(xmatch.images['Dec'][i])
+             + ' ExpTime=' + str(xmatch.images['exposure'][i]))
+            xmatch.images['hjd'][i] = 0.0
+
     log.info('Verified HJD calculations')
 
     # Store the verified timestamps
     xmatch.save(crossmatch_file)
     log.info('Updated crossmatch table')
 
-    # Verify the HJD timestamps in the timeseries photometry data
-    for qid in range(1, 5, 1):
-        phot_file = path.join(args.data_dir,
-                              args.field_name + '_quad' + str(qid) + '_photometry.hdf5')
+    # Verify the HJD timestamps in the timeseries photometry data.  This section can be switched off
+    # for faster testing
+    apply_to_phot = True
+    if apply_to_phot:
+        for qid in range(1, 5, 1):
+            phot_file = path.join(args.data_dir,
+                                  args.field_name + '_quad' + str(qid) + '_photometry.hdf5')
 
-        if not path.isfile(phot_file):
-            raise IOError('Cannot find input timeseries photometry file ' + phot_file)
+            if not path.isfile(phot_file):
+                raise IOError('Cannot find input timeseries photometry file ' + phot_file)
 
-        quad_phot = hd5_utils.read_phot_from_hd5_file(phot_file,
-                                                      return_type='array')
-        quad_phot[:,:,0] = xmatch.images['hjd']
+            quad_phot = hd5_utils.read_phot_from_hd5_file(phot_file,
+                                                          return_type='array')
+            quad_phot[:,:,0] = xmatch.images['hjd']
 
-        # Output tables to quadrant HDF5 file
-        params = {'crossmatch_file': crossmatch_file, 'field_name': args.field_name}
-        field_photometry.output_quad_photometry(params, xmatch, quad_phot, qid, log)
+            # Output tables to quadrant HDF5 file
+            params = {'crossmatch_file': crossmatch_file, 'field_name': args.field_name}
+            field_photometry.output_quad_photometry(params, xmatch, quad_phot, qid, log)
 
     logs.close_log(log)
 
