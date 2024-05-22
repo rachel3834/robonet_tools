@@ -45,7 +45,7 @@ def convert_to_ipac_lightcurves(args):
         # Extract the photometry for this star, in a dictionary of arrays
         # of the lightcurve data for each filter
         lc, star_datacount = fetch_photometry_for_star(quad_idx, xmatch, quad_phot)
-        datacounts.update(star_datacount)
+        datacounts[field_id] = star_datacount
 
         # Create the IPAC-format multi-extention FITS lightcurve table
         lc_file_path = output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc)
