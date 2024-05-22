@@ -7,7 +7,7 @@ from pyDANDIA import logs
 import crossmatch_to_ipactable
 import aws_utils
 import argparse
-from datetime import datetime
+import json
 from astropy.table import Table, Column
 from astropy.io import fits
 
