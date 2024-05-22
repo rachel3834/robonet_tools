@@ -133,6 +133,9 @@ def fetch_photometry_for_star(quad_idx, xmatch, quad_phot):
     datacount = {}
     for f in FILTER_LIST:
         # Identify valid photometry array entries for all images of the current star in the current filter
+        # The second index is designed to eliminate datapoints with HJD=0.0, which is a flag that the
+        # DATE-OBS keyword from the original image was mis-formed due to a temporary issue at the telescope,
+        # so no accurate HJD can be calculated.
         idx1 = np.where(xmatch.images['filter'] == f)[0]
         idx2 = np.where(quad_phot[quad_idx, :, 0] > 0.0)[0]
         idx3 = np.where(quad_phot[quad_idx, :, mag_col1] > 0.0)[0]
