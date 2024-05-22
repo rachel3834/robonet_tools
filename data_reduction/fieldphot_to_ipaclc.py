@@ -17,7 +17,7 @@ upload_aws = False
 
 def convert_to_ipac_lightcurves(args):
 
-    log = logs.start_stage_log(args.output_dir, 'fieldphot_to_ipaclc')
+    log = logs.start_stage_log(args.output_dir, 'fieldphot_to_ipaclc_Q'+str(args.qid))
 
     # Load the AWS configuration
     if upload_aws:
@@ -71,7 +71,7 @@ def convert_to_ipac_lightcurves(args):
 
     # Output summary of the number of datapoints per star:
     json_data = json.dumps(datacounts, indent=4)
-    file_path = path.join(args.output_dir, args.field_name + '_starcounts.json')
+    file_path = path.join(args.output_dir, args.field_name + '_starcounts_Q'+str(args.qid).json')
     with open(file_path, 'w') as write_file:
         write_file.write(json_data)
         write_file.close()
