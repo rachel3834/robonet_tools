@@ -59,14 +59,14 @@ def convert_to_ipac_lightcurves(args):
         #remove(lc_file_path)
 
         if j%1000 == 0.0:
-            print('-> Completed output of lightcurve '+str(j))
-
-        if j%10 == 0.0:
             log.info('-> Completed output of lightcurve '+str(j))
 
         # TEMPORARY CAP FOR TESTING
-        if j==MAXSTAR:
-            break
+        #if j%10 == 0.0:
+        #    log.info('-> Completed output of lightcurve '+str(j))
+        #if j==MAXSTAR:
+        #    break
+
     log.info('Finished converting lightcurves')
 
     # Output summary of the number of datapoints per star:
