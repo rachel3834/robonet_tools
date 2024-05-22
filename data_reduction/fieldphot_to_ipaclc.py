@@ -3,6 +3,7 @@ import numpy as np
 from pyDANDIA import hd5_utils
 from pyDANDIA import crossmatch
 from pyDANDIA import field_photometry
+from pyDANDIA import logs
 import crossmatch_to_ipactable
 import aws_utils
 import argparse
@@ -16,6 +17,8 @@ upload_aws = False
 
 def convert_to_ipac_lightcurves(args):
 
+    log = logs.start_stage_log(args.output_dir, 'fieldphot_to_ipaclc')
+
     # Load the AWS configuration
     if upload_aws:
         aws_config = aws_utils.AWSConfig(args.aws_config_file)
@@ -25,11 +28,13 @@ def convert_to_ipac_lightcurves(args):
     xmatch.load(args.crossmatch_file, log=None)
     quad_phot = hd5_utils.read_phot_from_hd5_file(args.phot_hdf_file,
     										  return_type='array')
+    log.info('Loaded field photometry data products for quadrant ' + str(args.qid))
 
     # Holding dictionary for the count of datapoints per star
     datacounts = {}
 
     # Select stars in the quadrant
+    log.info('Converting lightcurve to IPAC format: ')
     MAXSTAR = 100
     select = np.where(xmatch.field_index['quadrant'] == args.qid)[0]
     for j,field_id in enumerate(select):
@@ -56,16 +61,24 @@ def convert_to_ipac_lightcurves(args):
         if j%1000 == 0.0:
             print('-> Completed output of lightcurve '+str(j))
 
+        if j%10 == 0.0:
+            log.info('-> Completed output of lightcurve '+str(j))
+
         # TEMPORARY CAP FOR TESTING
         if j==MAXSTAR:
             break
-
+    log.info('Finished converting lightcurves')
+    
     # Output summary of the number of datapoints per star:
     json_data = json.dumps(datacounts, indent=4)
     file_path = path.join(args.output_dir, args.field_name + '_starcounts.json')
     with open(file_path, 'w') as write_file:
         write_file.write(json_data)
         write_file.close()
+    log.info('Output star datapoint counts')
+
+    log.info('End of processing')
+    logs.close_log(log)
 
 def output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc):
     """Function to create a lightcurve file for one star in multi-extension
