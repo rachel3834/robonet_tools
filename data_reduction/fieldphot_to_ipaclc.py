@@ -36,10 +36,11 @@ def convert_to_ipac_lightcurves(args):
     # Select stars in the quadrant
     log.info('Converting lightcurve to IPAC format: ')
     MAXSTAR = 100
-    select = np.where(xmatch.field_index['quadrant'] == args.qid)[0]
-    for j,field_id in enumerate(select):
+    quadrant_rows = np.where(xmatch.field_index['quadrant'] == args.qid)[0]
+    for j,row in enumerate(quadrant_rows):
+        field_id = xmatch.field_index['field_id'][row]
         field_idx = field_id - 1
-        quad_id = xmatch.field_index['quadrant_id'][field_idx]
+        quad_id = xmatch.field_index['quadrant_id'][row]
         quad_idx = quad_id - 1
 
         # Extract the photometry for this star, in a dictionary of arrays
