@@ -1,4 +1,5 @@
 from pyDANDIA import crossmatch
+from pyDANDIA import logs
 import argparse
 import numpy as np
 from datetime import datetime
@@ -14,26 +15,64 @@ def convert_to_ipactable(args):
     https://exoplanetarchive.ipac.caltech.edu/docs/ddgen/ipac_tbl.html
     """
 
+    log = logs.start_stage_log(args.output_dir, 'crossmatch_to_ipactable')
+
     # Load the field's crossmatch table
     xmatch = crossmatch.CrossMatchTable()
-    xmatch.load(args.crossmatch_file,log=None)
+    xmatch.load(args.crossmatch_file,log=log)
 
     # Load the field's event and variable catalogs
-    variable_catalog = load_json_target_catalog(args.variable_lut_file)
+    variable_catalog = load_json_target_catalog(args.variable_lut_file, log)
+
+    # Load the starcount files for each quadrant, produced by the fieldphot_to_ipaclc code
+    starcounts = load_starcounts(args, log)
 
     # Data on each source is derived from a combination of two tables in the
     # crossmatch file, the field index and the stars table, so we extract that
     # first
-    source_table = extract_source_data(args, xmatch, variable_catalog)
+    source_table = extract_source_data(args, xmatch, variable_catalog, starcounts, log)
 
     # Output the source table in IPAC table format
-    output_to_ipactable(args, source_table)
+    output_to_ipactable(args, source_table, log)
 
-def load_json_target_catalog(catalog_path):
+    log.info('End of processing')
+    logs.close_log(log)
+
+def load_starcounts(args, log=None):
+    """
+    Function to load the JSON files that record the number of valid datapoints obtained for each
+    star.  These files are output by fieldphot_to_ipaclc separately for each quadrant, so
+    this function also concatenates the data into a single dictionary.
+    """
+
+    starcounts = {}
+    for qid in range(1,5,1):
+        input_file = path.join(args.output_dir, args.field_name + '_starcounts_Q' + str(qid) + '.json')
+
+        if not path.isfile(input_file):
+            raise IOError('Missing star count data for field quadrants.  Looking for ' + input_file)
+
+        with open(input_file, "r") as read_file:
+            quad_counts = json.load(read_file)
+            read_file.close()
+
+        for j, counts in quad_counts.items():
+            starcounts[int(j)] = counts
+
+    if log:
+        log.info('Loaded data on number of datapoints in all star lightcurves')
+
+    return starcounts
+
+def load_json_target_catalog(catalog_path, log=None):
     """Function to load a catalog of selected objects in JSON format"""
 
     with open(catalog_path, "r") as read_file:
         data = json.load(read_file)
+        read_file.close()
+
+    if log:
+        log.info('Loaded look-up table of known variables and events')
 
     return data
 
@@ -113,18 +152,22 @@ def define_table_columns():
 
     return table_columns
 
-def output_to_ipactable(args, source_table):
+def output_to_ipactable(args, source_table, log):
     """Function to output the source table to the IPAC table format"""
 
     # Formal definition of the columns in the source table.  Widths are set by either the
     # maximum width of the likely parameter value or the width of the column name, whichever
     # is larger
 
+    log.info('Outputting source catalog')
+
     table_columns = define_table_columns()
     #table_columns = get_column_widths(table_columns)
 
+    source_catalog_file = path.join(args.output_dir, args.field_name + '_source_table.tbl')
+
     # Construct file header
-    tbl_file = open(args.ipactable_file, 'w')
+    tbl_file = open(source_catalog_file, 'w')
     tbl_file.write('\catalog=romerea\n')
     tbl_file.write('\catalog_version='+VERSION+'\n')
     now = datetime.utcnow()
@@ -201,7 +244,7 @@ def get_lc_file_path(args, field_id):
 
     return lc_path
 
-def extract_source_data(args, xmatch, variable_catalog):
+def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     """Function to extract the data on all stars within the field.  This
     combines information held in the field index and stars tables of the crossmatch
     table.
@@ -214,6 +257,8 @@ def extract_source_data(args, xmatch, variable_catalog):
     then Australia were used for normalization in that order, so those
     magnitudes are provided instead.
     """
+
+    log.info('Compiling data on all stars')
 
     # TABLE CREATION
     column_list = []
@@ -263,11 +308,20 @@ def extract_source_data(args, xmatch, variable_catalog):
         column_list.append(Column(name=col, data=np.zeros(nstars)))
 
     # Create columns to hold the number of datapoints
-    cols = [ 'ndata_g', 'ndata_r', 'ndata_i' ]
-    for col in cols:
-        column_list.append(Column(name=col, data=np.zeros(nstars, dtype='int')))
+    ndata_g = np.zeros(nstars)
+    ndata_r = np.zeros(nstars)
+    ndata_i = np.zeros(nstars)
+    for field_id, entry in starcounts.items():
+        field_idx = int(field_id) - 1
+        ndata_g[field_idx] = entry['gp']
+        ndata_r[field_idx] = entry['rp']
+        ndata_i[field_idx] = entry['ip']
+    column_list.append(Column(name='ndata_g', data=ndata_g))
+    column_list.append(Column(name='ndata_r', data=ndata_r))
+    column_list.append(Column(name='ndata_i', data=ndata_i))
 
     source_table = Table(column_list)
+    log.info('Built source catalog table')
 
     # DATA POPULATION
     # ROME/REA photometry were normalized by selecting the instruments used for
@@ -341,6 +395,7 @@ def extract_source_data(args, xmatch, variable_catalog):
         #                 source_table['cal_mag_error_'+f][j] = xmatch.stars['cal_'+f+'_magerr_'+site_code][j]
         #                 source_table['norm_mag_'+f][j] = xmatch.stars['norm_'+f+'_mag_'+site_code][j]
         #                 source_table['norm_mag_error_'+f][j] = xmatch.stars['norm_'+f+'_magerr_'+site_code][j]
+    log.info('Populated source catalog table')
 
     return source_table
 
@@ -415,8 +470,8 @@ def get_args():
                     help='Path to crossmatch file')
     parser.add_argument('variable_lut_file', type=str,
                         help='Path to look-up table of known events and variables')
-    parser.add_argument('ipactable_file', type=str,
-                    help='Path to output IPAC table file')
+    parser.add_argument('output_dir', type=str,
+                    help='Path to output directory')
     parser.add_argument('field_name', type=str,
                     help='Name of the field')
 
