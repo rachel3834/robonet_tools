@@ -60,7 +60,8 @@ def convert_to_ipac_lightcurves(args):
         #remove(lc_file_path)
 
         if j%1000 == 0.0:
-            log.info('-> Completed output of lightcurve '+str(j))
+            log.info('-> Completed output of lightcurve ' + str(j) + ', row='
+                     + str(row) + ', field_id=' + str(field_id) + ', quad_id=' + str(quad_id))
 
         # TEMPORARY CAP FOR TESTING
         #if j%10 == 0.0:
