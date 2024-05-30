@@ -232,7 +232,7 @@ def get_lc_file_path(args, field_id):
     len_num = len(str(field_id))
 
     if len_num < 4:                     # 1 - 999
-        subdir = 'FieldID000000_0001000'
+        subdir = 'FieldID000000_001000'
     if len_num >= 4:    # 1000 - 9999
         nmin = int(field_id / bin_width) * bin_width
         nmax = nmin + bin_width
