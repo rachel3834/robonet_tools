@@ -1,6 +1,7 @@
 import argparse
 import glob
 from os import path, rmdir
+from shutil import rmtree
 
 def review_data(args):
     """
@@ -18,7 +19,7 @@ def review_data(args):
     # Walk over all of the directories in the data_list, removing the raw image data
     for dir in data_list:
         data_dir = path.join(dir, 'data')
-        rmdir(data_dir)
+        rmtree(data_dir)
         print('Removed the raw image data from ' + dir)
 
 def get_args():
