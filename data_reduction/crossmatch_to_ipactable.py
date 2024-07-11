@@ -202,6 +202,8 @@ def output_to_ipactable(args, source_table, log):
                 tbl_line += padd_column_entry(str(value), col_def['width']) + ' '
             else:
                 tbl_line += padd_column_entry(str(star[col]), col_def['width']) + ' '
+                if 'ndata' in col:
+                    print(padd_column_entry(str(star[col]), col_def['width']))
         tbl_file.write(tbl_line+'\n')
 
     tbl_file.close()
