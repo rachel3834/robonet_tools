@@ -173,12 +173,15 @@ def output_to_ipactable(args, source_table, log):
     now = datetime.utcnow()
     tbl_file.write('\date='+now.strftime("%Y-%m-%dT%H:%M:%D")+'\n')
     header = '|'
+    dtypes = '|'
     units = '|'
     null_values = '|'
     for col, col_def in table_columns.items():
         header += padd_header_entry(col, col_def['width']) + '|'
+        dtypes += padd_header_entry(col_def['type'], col_def['width']) + '|'
         units += padd_header_entry(col_def['unit'], col_def['width']) + '|'
         null_values += padd_header_entry(col_def['nulls'], col_def['width']) + '|'
+    tbl_file.write(header+'\n')
     tbl_file.write(header+'\n')
     tbl_file.write(units+'\n')
     tbl_file.write(null_values+'\n')
