@@ -190,8 +190,6 @@ def output_to_ipactable(args, source_table, log):
     for star in source_table:
         tbl_line = ' '
         for col, col_def in table_columns.items():
-            if 'ndata' in col:
-                print(col, star[col])
             if col == 'lc_file_path':
                 tbl_line += get_lc_file_path(args, star['field_id'])
             elif col in ['ra', 'dec']:
@@ -202,8 +200,6 @@ def output_to_ipactable(args, source_table, log):
                 tbl_line += padd_column_entry(str(value), col_def['width']) + ' '
             else:
                 tbl_line += padd_column_entry(str(star[col]), col_def['width']) + ' '
-                if 'ndata' in col:
-                    print(padd_column_entry(str(star[col]), col_def['width']))
         tbl_file.write(tbl_line+'\n')
 
     tbl_file.close()
@@ -319,7 +315,6 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     ndata_r = np.zeros(nstars)
     ndata_i = np.zeros(nstars)
     for field_id, entry in starcounts.items():
-        print(field_id, entry)
         field_idx = int(field_id) - 1
         ndata_g[field_idx] = entry['gp']
         ndata_r[field_idx] = entry['rp']
@@ -327,9 +322,6 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     column_list.append(Column(name='ndata_g', data=ndata_g))
     column_list.append(Column(name='ndata_r', data=ndata_r))
     column_list.append(Column(name='ndata_i', data=ndata_i))
-    print('NDATA_G:', ndata_g.max())
-    print('NDATA_G:', ndata_r.max())
-    print('NDATA_G:', ndata_i.max())
 
     source_table = Table(column_list)
     log.info('Built source catalog table')
@@ -407,10 +399,6 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
         #                 source_table['norm_mag_'+f][j] = xmatch.stars['norm_'+f+'_mag_'+site_code][j]
         #                 source_table['norm_mag_error_'+f][j] = xmatch.stars['norm_'+f+'_magerr_'+site_code][j]
     log.info('Populated source catalog table')
-    print('SOURCE TABLE NDATA:')
-    print(source_table['ndata_g'].max())
-    print(source_table['ndata_r'].max())
-    print(source_table['ndata_i'].max())
 
     return source_table
 
