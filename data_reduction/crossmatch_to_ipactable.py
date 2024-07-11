@@ -323,9 +323,9 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     column_list.append(Column(name='ndata_g', data=ndata_g))
     column_list.append(Column(name='ndata_r', data=ndata_r))
     column_list.append(Column(name='ndata_i', data=ndata_i))
-    print('NDATA_G': ndata_g)
-    print('NDATA_G': ndata_r)
-    print('NDATA_G': ndata_i)
+    print('NDATA_G:', ndata_g)
+    print('NDATA_G:', ndata_r)
+    print('NDATA_G:', ndata_i)
 
     source_table = Table(column_list)
     log.info('Built source catalog table')
