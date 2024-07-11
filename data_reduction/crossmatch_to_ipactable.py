@@ -182,7 +182,7 @@ def output_to_ipactable(args, source_table, log):
         units += padd_header_entry(col_def['unit'], col_def['width']) + '|'
         null_values += padd_header_entry(col_def['nulls'], col_def['width']) + '|'
     tbl_file.write(header+'\n')
-    tbl_file.write(header+'\n')
+    tbl_file.write(dtypes+'\n')
     tbl_file.write(units+'\n')
     tbl_file.write(null_values+'\n')
 
