@@ -315,6 +315,7 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     ndata_r = np.zeros(nstars)
     ndata_i = np.zeros(nstars)
     for field_id, entry in starcounts.items():
+        print(field_id, entry)
         field_idx = int(field_id) - 1
         ndata_g[field_idx] = entry['gp']
         ndata_r[field_idx] = entry['rp']
@@ -322,6 +323,9 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     column_list.append(Column(name='ndata_g', data=ndata_g))
     column_list.append(Column(name='ndata_r', data=ndata_r))
     column_list.append(Column(name='ndata_i', data=ndata_i))
+    print('NDATA_G': ndata_g)
+    print('NDATA_G': ndata_r)
+    print('NDATA_G': ndata_i)
 
     source_table = Table(column_list)
     log.info('Built source catalog table')
