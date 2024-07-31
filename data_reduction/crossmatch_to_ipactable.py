@@ -263,7 +263,24 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
 
     log.info('Compiling data on all stars')
 
+    # Sanity check that the starcounts dictionary has entries for all stars in the field index
+    if len(starcounts) != len(xmatch.field_index['field_id']):
+        raise IOError('Starcounts dictionary mismatch with field index')
+
+    # Create an index of stars with data in at least one passband
+    # There are legitimate reasons why a given star may be in the source catalog (=detected in
+    # at least one reference image) but produce no timeseries data in one or more passbands
+    # (=insufficient signal in subsequent images).  We want to output lightcurve files
+    # for stars with timeseries data in one or more bands, but exclude stars with
+    # no timeseries measurements in any band.
+    invalid_star_idx = [field_id-1 for field_id, entry in starcounts.items()
+                        if (entry['gp'] == 0 and entry['rp'] == 0 and entry['ip'] == 0)]
+    log.info('Identifed ' + str(len(invalid_star_idx)) + ' stars with no timeseries data in any bandpass:')
+    log.info(repr(invalid_star_idx))
+
     # TABLE CREATION
+    # In order to keep the indexing consistent, the source table is created with the full
+    # list of stars in the field.  Invalid stars are eliminated later.
     column_list = []
     table_columns = define_table_columns()
 
@@ -399,6 +416,9 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
         #                 source_table['norm_mag_'+f][j] = xmatch.stars['norm_'+f+'_mag_'+site_code][j]
         #                 source_table['norm_mag_error_'+f][j] = xmatch.stars['norm_'+f+'_magerr_'+site_code][j]
     log.info('Populated source catalog table')
+
+    # Now we filter the source catalog table, removing stars with no valid data:
+    source_table.remove_rows(invalid_star_idx)
 
     return source_table
 

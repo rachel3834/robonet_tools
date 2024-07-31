@@ -49,7 +49,8 @@ def convert_to_ipac_lightcurves(args):
         datacounts[int(field_id)] = star_datacount
 
         # Create the IPAC-format multi-extention FITS lightcurve table
-        lc_file_path = output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc)
+        if star_datacount['gp'] > 0 or star_datacount['rp'] > 0 or star_datacount['ip'] > 0:
+            lc_file_path = output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc)
 
         # Upload the lightcurve to the AWS Bucket
         if upload_aws:
