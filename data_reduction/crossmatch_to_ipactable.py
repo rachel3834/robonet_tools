@@ -168,10 +168,10 @@ def output_to_ipactable(args, source_table, log):
 
     # Construct file header
     tbl_file = open(source_catalog_file, 'w')
-    tbl_file.write('\catalog=romerea\n')
-    tbl_file.write('\catalog_version='+VERSION+'\n')
+    tbl_file.write('\\catalog=romerea\n')
+    tbl_file.write('\\catalog_version='+VERSION+'\n')
     now = datetime.utcnow()
-    tbl_file.write('\date='+now.strftime("%Y-%m-%dT%H:%M:%D")+'\n')
+    tbl_file.write('\\date='+now.strftime("%Y-%m-%dT%H:%M:%D")+'\n')
     header = '|'
     dtypes = '|'
     units = '|'
