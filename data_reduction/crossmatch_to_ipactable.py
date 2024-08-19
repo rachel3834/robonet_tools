@@ -130,7 +130,7 @@ def define_table_columns():
         'ogle_variable_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 20},
         'moa_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 16},
         'kmtnet_event_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 17},
-        'spitzer_event': {'type': 'bool', 'unit': 'null', 'nulls': 'null', 'width': 13},
+        'spitzer_event': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 13},
         'vvv_variable_id': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 15},
         'cal_mag_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 9},
         'cal_mag_error_g': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 15},
