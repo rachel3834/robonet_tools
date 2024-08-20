@@ -328,14 +328,14 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
         column_list.append(Column(name=col, data=np.zeros(nstars)))
 
     # Create columns to hold the number of datapoints
-    ndata_g = np.zeros(nstars)
-    ndata_r = np.zeros(nstars)
-    ndata_i = np.zeros(nstars)
+    ndata_g = np.zeros(nstars, dtype=int)
+    ndata_r = np.zeros(nstars, dtype=int)
+    ndata_i = np.zeros(nstars, dtype=int)
     for field_id, entry in starcounts.items():
         field_idx = int(field_id) - 1
-        ndata_g[field_idx] = entry['gp']
-        ndata_r[field_idx] = entry['rp']
-        ndata_i[field_idx] = entry['ip']
+        ndata_g[field_idx] = int(entry['gp'])
+        ndata_r[field_idx] = int(entry['rp'])
+        ndata_i[field_idx] = int(entry['ip'])
     column_list.append(Column(name='ndata_g', data=ndata_g))
     column_list.append(Column(name='ndata_r', data=ndata_r))
     column_list.append(Column(name='ndata_i', data=ndata_i))
