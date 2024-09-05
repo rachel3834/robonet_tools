@@ -99,6 +99,8 @@ def fetch_new_imaging_data(config, start_time, end_time, log):
     """Function to query the archive and retrieve a list of frames,
     described as dictionaries of frame parameters."""
 
+    log.info('Retrieving new imaging data')
+
     new_frames = []
     for proposal in config['proposal_ids']:
 
@@ -119,6 +121,8 @@ def fetch_new_floyds_data(config, start_time, end_time, log):
     This is handled separately because the format of the processed data products is quite
     different from imaging data.
     """
+    log.info('Retriving new FLOYDS data')
+    
     floyds_instruments = ['en06', 'en12']
     new_floyds_frames = []
 
