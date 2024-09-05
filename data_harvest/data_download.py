@@ -47,8 +47,10 @@ def set_date_range(config, log):
 
     log.info('Searching for data taken between '+start_time.strftime("%Y-%m-%d %H:%M")+\
                 ' and '+end_time.strftime("%Y-%m-%d %H:%M"))
-    dt = timedelta(hours=24.0)
-    start_time -= dt
+
+    # Optional time offset for debugging
+    #dt = timedelta(hours=24.0)
+    #start_time -= dt
 
     return start_time, end_time
 
@@ -197,7 +199,7 @@ def download_new_frames(config,new_frames,downloaded_frames,log):
                                 ' status code='+str(response.status_code))
             except requests.exceptions.ConnectionError:
                 log.info('->>>> ConnectionError downloading '+frame.filename)
-                
+
         else:
             log.info(frame.filename+' already downloaded')
 
