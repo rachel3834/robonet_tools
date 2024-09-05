@@ -113,6 +113,8 @@ def fetch_new_imaging_data(config, start_time, end_time, log):
         # Build a list of new frames, excluding calibration data and spectra
         new_frames = framelist_utils.build_imaging_frame_list(config, results, proposal, new_frames, log)
 
+    log.info(str(new_frames) + ' new imaging frame(s)')
+
     return new_frames
 
 def fetch_new_floyds_data(config, start_time, end_time, log):
@@ -122,7 +124,7 @@ def fetch_new_floyds_data(config, start_time, end_time, log):
     different from imaging data.
     """
     log.info('Retriving new FLOYDS data')
-    
+
     floyds_instruments = ['en06', 'en12']
     new_floyds_frames = []
 
@@ -143,6 +145,8 @@ def fetch_new_floyds_data(config, start_time, end_time, log):
                 proposal,
                 new_floyds_frames,
                 log)
+
+    log.info(str(new_floyds_frames) + ' new FLOYDS frame(s)')
 
     return new_floyds_frames
 
