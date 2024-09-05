@@ -17,9 +17,15 @@ def search_archive_for_data(CONFIG_FILE):
 
     (start_time, end_time) = set_date_range(config, log)
 
-    new_frames = fetch_new_frames(config, start_time, end_time, log)
+    # Fetch imaging data
+    new_frames = fetch_new_imaging_data(config, start_time, end_time, log)
 
     downloaded_frames = download_new_frames(config,new_frames,downloaded_frames,log)
+
+    # Fetch spectroscopy data
+    new_floyds_frames = fetch_new_floyds_data(config, start_time, end_time, log)
+
+    downloaded_frames = download_new_frames(config, new_floyds_frames, downloaded_frames, log)
 
     framelist_utils.output_frame_list(config, downloaded_frames, log)
 
@@ -41,6 +47,8 @@ def set_date_range(config, log):
 
     log.info('Searching for data taken between '+start_time.strftime("%Y-%m-%d %H:%M")+\
                 ' and '+end_time.strftime("%Y-%m-%d %H:%M"))
+    dt = timedelta(hours=24.0)
+    start_time -= dt
 
     return start_time, end_time
 
@@ -85,7 +93,7 @@ def read_frame_list(config, log):
 
     return downloaded_frames
 
-def fetch_new_frames(config, start_time, end_time, log):
+def fetch_new_imaging_data(config, start_time, end_time, log):
     """Function to query the archive and retrieve a list of frames,
     described as dictionaries of frame parameters."""
 
@@ -98,9 +106,39 @@ def fetch_new_frames(config, start_time, end_time, log):
 
         results = talk_to_lco_archive(config, ur, 'frames', 'GET')
 
-        new_frames = framelist_utils.build_frame_list(config, results, proposal, new_frames, log)
+        # Build a list of new frames, excluding calibration data and spectra
+        new_frames = framelist_utils.build_imaging_frame_list(config, results, proposal, new_frames, log)
 
     return new_frames
+
+def fetch_new_floyds_data(config, start_time, end_time, log):
+    """
+    Function to query the archive specifically for FLOYDS data.
+    This is handled separately because the format of the processed data products is quite
+    different from imaging data.
+    """
+    floyds_instruments = ['en06', 'en12']
+    new_floyds_frames = []
+
+    for proposal in config['proposal_ids']:
+        for inst_id in floyds_instruments:
+            ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d %H:%M"),
+                                        'end': end_time.strftime("%Y-%m-%d %H:%M"),
+                                        'instrument_id': inst_id,
+                                        'RLEVEL': 90,
+                                        'configuration_type': 'SPECTRUM'}
+
+            results = talk_to_lco_archive(config, ur, 'frames', 'GET')
+
+            # Build a list of new frames, excluding calibration data and spectra
+            new_floyds_frames = framelist_utils.build_floyds_frame_list(
+                config,
+                results,
+                proposal,
+                new_floyds_frames,
+                log)
+
+    return new_floyds_frames
 
 def talk_to_lco_archive(config,ur,end_point,method):
     """Function to communicate with various APIs of the LCO network.

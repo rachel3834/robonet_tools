@@ -8,6 +8,7 @@ import log_utils
 import subprocess
 from astropy.io import fits
 from pyDANDIA import automatic_pipeline
+import tarfile
 
 def prepare_data_for_reduction(CONFIG_FILE):
 
@@ -15,24 +16,38 @@ def prepare_data_for_reduction(CONFIG_FILE):
 
     log = log_utils.start_day_log(config, 'data_preparation')
 
-    compressed_frames = check_for_new_frames(config, log)
+    # Identify newly downloaded data, handling the different formats of
+    # compressed imaging data (single fits.fz files) and FLOYDS pipeline output
+    # (tar.gz)
+    compressed_frames = check_for_new_imaging_frames(config, log)
+    compressed_floyds_frames = check_for_new_floyds_tarballs(config, log)
 
     if len(compressed_frames) > 0:
+        log.info('Preparing and sorting imaging data')
 
-        decompressed_frames = decompress_new_frames(config, log, compressed_frames)
+        decompressed_images = decompress_new_imaging_frames(config, log, compressed_frames)
 
-        #transform_frames(decompressed_frames, log)
+        #transform_frames(decompressed_images, log)
 
-        sort_data.sort_data(config['data_download_dir'],config['separate_instruments'],log=log)
+    else:
+        log.info('No imaging data found to process')
 
-        datasets = get_dataset_list(config, log)
+    if len(compressed_floyds_frames) > 0:
+        log.info('\n Preparing and sorting FLOYDS data')
 
-        for dataset_dir in datasets:
-            transfer_to_reduction_directory(config, log, dataset_dir)
+        decompressed_spectra = decompress_floyds_tarballs(config, compressed_floyds_frames, log)
+
+    # Sort the uncompress/extracted files in the download directory:
+    sort_data.sort_data(config['data_download_dir'], config['separate_instruments'], log=log)
+
+    datasets = get_dataset_list(config, log)
+
+    for dataset_dir in datasets:
+        transfer_to_reduction_directory(config, log, dataset_dir)
 
     log_utils.close_log(log)
 
-def check_for_new_frames(config, log):
+def check_for_new_imaging_frames(config, log):
 
     if path.isdir(config['data_download_dir']) == False:
         log.info('ERROR: Cannot find data download directory')
@@ -40,11 +55,18 @@ def check_for_new_frames(config, log):
 
     new_frames = glob.glob(path.join(config['data_download_dir'],'*fits*'))
 
-    log.info('Found '+str(len(new_frames))+' new frames to process')
+    log.info('Found '+str(len(new_frames))+' new imaging frames to process')
 
     return new_frames
 
-def decompress_new_frames(config, log, compressed_frames):
+def check_for_new_floyds_tarballs(config, log):
+    new_frames = glob.glob(path.join(config['data_download_dir'], '*tar.gz*'))
+
+    log.info('Found ' + str(len(new_frames)) + ' new FLOYDS frames to process')
+
+    return new_frames
+
+def decompress_new_imaging_frames(config, log, compressed_frames):
 
     decompressed_frames = []
 
@@ -81,6 +103,40 @@ def decompress_new_frames(config, log, compressed_frames):
 
     return decompressed_frames
 
+def decompress_floyds_tarballs(config, compressed_floyds_frames, log):
+
+    # Make a storage directory for processed tarballs, if none already exists
+    tarball_dir = path.join(config['data_download_dir'], 'tarballs')
+    if path.isdir(tarball_dir) == False:
+        makedirs(tarball_dir)
+    unused_dir = path.join(config['data_download_dir'], 'unused')
+    if path.isdir(unused_dir) == False:
+        makedirs(unused_dir)
+
+    decompressed_frames = []
+
+    for tarball in compressed_floyds_frames:
+        try:
+            with tarfile.open(tarball) as tf:
+                # Identify the 1D, extracted and wavelength calibrated FITS spectrum
+                # in the list of files in the tarball
+                files = [name for name in tf.getnames() if '_ex.fits' in name]
+                for spectrum in files:
+                    tf.extract(spectrum, config['data_download_dir'])
+                    log.info('Extracting reduced spectrum ' + spectrum + ' from ' + tarball)
+                    decompressed_frames.append(spectrum)
+                tf.close()
+
+            # Move processed tarballs to storage
+            move(tarball, path.join(tarball_dir, path.basename(tarball)))
+            log.info('Moved processed tarball to storage')
+
+        except:
+            log.info('ERROR extracting tarball ' + tarball)
+            move(tarball, path.join(unused_dir, path.basename(tarball)))
+
+    return decompressed_frames
+
 def transform_frames(decompressed_frames, log):
     in_use = False
 
@@ -107,7 +163,7 @@ def get_dataset_list(config, log):
     datasets = []
 
     for item in entries:
-        if path.isdir(item) and 'unused' not in str(item).lower():
+        if path.isdir(item) and str(path.basename(item)).lower() not in ['unused', 'tarballs', 'tmp']:
             datasets.append(item)
 
     log.info('Identified '+str(len(datasets))+' datasets to prepare')

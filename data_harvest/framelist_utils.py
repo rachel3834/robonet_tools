@@ -80,11 +80,7 @@ class Frame:
                     self.site+' '+self.telescope+' '+self.instrument+' '+\
                     self.filter+' '+str(self.exptime)+' '+self.object+' '+str(self.reqnum)
 
-def is_frame_calibration_data(filename):
-    """Function to determine whether or not a given frame is a calibration or
-    science frame, based on its filename"""
-
-    search_keys = [ 'bias', 'dark', 'flat', 'skyflat' ]
+def _search_key_in_filename(filename, search_keys):
 
     status = False
     for key in search_keys:
@@ -94,14 +90,56 @@ def is_frame_calibration_data(filename):
 
     return status
 
-def build_frame_list(config,query_results, proposal, new_frames, log):
+def is_frame_calibration_data(filename):
+    """Function to determine whether or not a given frame is a calibration or
+    science frame, based on its filename"""
+
+    search_keys = [ 'bias', 'dark', 'flat', 'skyflat' ]
+
+    status = _search_key_in_filename(filename, search_keys)
+
+    return status
+
+def is_frame_spectrum(filename):
+    """
+    Function to determine whether the frame contains spectroscopy data, which is handled by
+    a separate process.
+    """
+
+    # Check for instrument names that indicate FLOYDS data
+    search_keys = ['_en']
+
+    status = _search_key_in_filename(filename, search_keys)
+
+    return status
+
+def build_imaging_frame_list(config,query_results, proposal, new_frames, log):
     """Function to add new frames to a list of frames to be downloaded,
-    excluding certain data types such as calibration frames"""
+    excluding certain data types such as calibration frames.  This function is
+    restricted to imaging data only"""
 
     fcount = 0
     for entry in query_results['results']:
         if entry['PROPID'] in config['proposal_ids'] and \
-            not is_frame_calibration_data(entry['filename']):
+            not is_frame_calibration_data(entry['filename']) and \
+            not is_frame_spectrum(entry['filename']):
+            f = Frame(params=entry)
+            new_frames.append(f)
+            fcount += 1
+
+    log.info('Found '+str(fcount)+' frame(s) available from proposal '+proposal)
+
+    return new_frames
+
+def build_floyds_frame_list(config,query_results, proposal, new_frames, log):
+    """
+    Function to add the names of new FLOYDS frames to a list of frames to be downloaded.
+    This function is designed to handle the output from the FLOYDS data pipeline.
+    """
+
+    fcount = 0
+    for entry in query_results['results']:
+        if entry['PROPID'] in config['proposal_ids']:
             f = Frame(params=entry)
             new_frames.append(f)
             fcount += 1
