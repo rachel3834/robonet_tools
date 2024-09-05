@@ -182,19 +182,22 @@ def download_new_frames(config,new_frames,downloaded_frames,log):
         if frame.filename not in downloaded_frames.keys() and \
             not framelist_utils.is_frame_calibration_data(frame.filename) and \
             frame.proposalid in config['proposal_ids']:
-            response = requests.get(frame.url)
+            try:
+                response = requests.get(frame.url)
 
-            dframe = open(path.join(config['data_download_dir'],frame.filename),'wb')
-            dframe.write(response.content)
-            dframe.close()
+                dframe = open(path.join(config['data_download_dir'],frame.filename),'wb')
+                dframe.write(response.content)
+                dframe.close()
 
-            if response.status_code == 200:
-                downloaded_frames[frame.filename] = frame
-                log.info('-> Downloaded '+frame.filename)
-            else:
-                log.info('->>>> Error downloading '+frame.filename+\
-                            ' status code='+str(response.status_code))
-
+                if response.status_code == 200:
+                    downloaded_frames[frame.filename] = frame
+                    log.info('-> Downloaded '+frame.filename)
+                else:
+                    log.info('->>>> Error downloading '+frame.filename+\
+                                ' status code='+str(response.status_code))
+            except requests.exceptions.ConnectionError:
+                log.info('->>>> ConnectionError downloading '+frame.filename)
+                
         else:
             log.info(frame.filename+' already downloaded')
 
