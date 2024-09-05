@@ -13,14 +13,17 @@ def get_config(CONFIG_FILE):
     f.close()
 
     for key, value in config_dict.items():
-        if '[' in value and ']' in value and ',' in value:
-            entries = value.replace('[','').replace(']','').split(',')
+        if '[' in value and ']' in value:
+            if ',' in value:
+                entries = value.replace('[','').replace(']','').split(',')
+            else:
+                entries = [value.replace('[','').replace(']','')]
             l = []
             for e in entries:
                 try:
                     l.append(float(e))
                 except:
-                    l.append(e)
+                    l.append(e.strip(' '))
             config_dict[key] = l
 
     config_dict = parse_booleans(config_dict)
