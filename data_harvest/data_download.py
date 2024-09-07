@@ -2,7 +2,7 @@ from os import path, makedirs
 from sys import argv
 import requests
 import json
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta
 import log_utils
 import config_utils
 import framelist_utils
@@ -43,7 +43,7 @@ def set_date_range(config, log):
         start_time = datetime.strptime(config['start_datetime'],'%Y-%m-%d %H:%M')
         end_time = datetime.strptime(config['end_datetime'],'%Y-%m-%d %H:%M')
     else:
-        end_time = datetime.now(UTC)
+        end_time = datetime.utcnow()
         start_time = end_time - timedelta(days=1)
 
     # Optional time offset for debugging
