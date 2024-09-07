@@ -14,7 +14,6 @@ def search_archive_for_data(CONFIG_FILE):
     log = log_utils.start_day_log(config,'data_download')
 
     downloaded_frames = read_frame_list(config, log)
-    print(downloaded_frames)
 
     (start_time, end_time) = set_date_range(config, log)
 
@@ -48,8 +47,8 @@ def set_date_range(config, log):
         start_time = end_time - timedelta(days=1)
 
     # Optional time offset for debugging
-    dt = timedelta(hours=24.0)
-    start_time -= dt
+    #dt = timedelta(hours=24.0)
+    #start_time -= dt
 
     log.info('Searching for data taken between '+start_time.strftime("%Y-%m-%d %H:%M")+\
                 ' and '+end_time.strftime("%Y-%m-%d %H:%M"))

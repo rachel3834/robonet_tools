@@ -2,7 +2,7 @@ from os import path, makedirs, remove, rmdir
 from sys import argv, exit
 import glob
 from shutil import move, rmtree
-from pyDANDIA import sort_data
+from pyDANDIA import sort_data, automatic_pipeline
 import config_utils
 import log_utils
 import subprocess
@@ -37,8 +37,11 @@ def prepare_data_for_reduction(CONFIG_FILE):
 
         decompressed_spectra = decompress_floyds_tarballs(config, compressed_floyds_frames, log)
 
-    # Sort the uncompress/extracted files in the download directory:
+    # Sort the uncompress/extracted image files in the download directory:
     sort_data.sort_data(config['data_download_dir'], config['separate_instruments'], log=log)
+
+    # Sort the uncompressed SOAR spectra in the download directory:
+    sort_soar_data(config, log)
 
     datasets = get_dataset_list(config, log)
 
@@ -46,6 +49,59 @@ def prepare_data_for_reduction(CONFIG_FILE):
         transfer_to_reduction_directory(config, log, dataset_dir)
 
     log_utils.close_log(log)
+
+def sort_soar_data(config, log):
+    """
+    Function to sort the SOAR/Goodman spectra into reduction directories
+    """
+    log.info('Sorting SOAR data')
+
+    # Make a file list of all SOAR/Goodman spectra files
+    frame_list = glob.glob(path.join(config['data_download_dir'], 'wecfzst_*SOAR*fits'))
+    log.info('Identified ' + str(len(frame_list)) + ' SOAR/Goodman frames')
+
+    # Sort the spectra according to different targets
+    for frame in frame_list:
+
+        # Identify the dataset for this frame
+        try:
+            hdr = fits.getheader(frame)
+
+            ds = sort_data.Dataset()
+            ds.target = hdr['OBJECT'].replace('/', '').replace(' ', '-')
+            ds.site = hdr['SITEID'].replace('/', '')
+            ds.enclosure = 'SOAR'
+            ds.tel = hdr['TELESCOP'].replace('/', '')
+            ds.instrument = hdr['INSTRUME'].replace('/', '')
+            ds.filter = hdr['GRATING'] + '-' + hdr['SLIT']
+
+            ds.id_code = str(ds.target)+'_' + \
+                    str(ds.site).lower()+'-'+\
+                    str(ds.instrument).lower()+'_'+\
+                    ds.filter
+
+            # Transfer the data to the appropriate reduction directory
+            red_dir = path.join(config['data_download_dir'], ds.id_code)
+            dest_dir = path.join(config['data_download_dir'], ds.id_code, 'data')
+            unlocked = automatic_pipeline.check_dataset_dir_unlocked(red_dir, log)
+
+            if not path.isdir(dest_dir):
+                makedirs(dest_dir)
+
+            if unlocked:
+                move(frame, path.join(dest_dir, path.basename(frame)))
+                message = path.basename(frame) + ' --> ' + dest_dir
+                log.info(message)
+            else:
+                message = 'Reduction directory ' + red_dir + ' is locked.  Data will remain in incoming directory'
+                log.info(message)
+
+        except OSError:
+            if log != None:
+                log.info('ERROR opening spectrum ' + frame)
+
+        return ds
+
 
 def check_for_new_single_frames(config, log):
 
