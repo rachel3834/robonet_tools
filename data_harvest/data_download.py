@@ -2,7 +2,7 @@ from os import path, makedirs
 from sys import argv
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import log_utils
 import config_utils
 import framelist_utils
@@ -14,18 +14,20 @@ def search_archive_for_data(CONFIG_FILE):
     log = log_utils.start_day_log(config,'data_download')
 
     downloaded_frames = read_frame_list(config, log)
+    print(downloaded_frames)
 
     (start_time, end_time) = set_date_range(config, log)
 
     # Fetch imaging data
     new_frames = fetch_new_imaging_data(config, start_time, end_time, log)
-
     downloaded_frames = download_new_frames(config,new_frames,downloaded_frames,log)
 
     # Fetch spectroscopy data
     new_floyds_frames = fetch_new_floyds_data(config, start_time, end_time, log)
-
     downloaded_frames = download_new_frames(config, new_floyds_frames, downloaded_frames, log)
+
+    new_goodman_frames = fetch_new_goodman_data(config, start_time, end_time, log)
+    downloaded_frames = download_new_frames(config, new_goodman_frames, downloaded_frames, log)
 
     framelist_utils.output_frame_list(config, downloaded_frames, log)
 
@@ -42,15 +44,15 @@ def set_date_range(config, log):
         start_time = datetime.strptime(config['start_datetime'],'%Y-%m-%d %H:%M')
         end_time = datetime.strptime(config['end_datetime'],'%Y-%m-%d %H:%M')
     else:
-        end_time = datetime.utcnow()
+        end_time = datetime.now(UTC)
         start_time = end_time - timedelta(days=1)
+
+    # Optional time offset for debugging
+    dt = timedelta(hours=24.0)
+    start_time -= dt
 
     log.info('Searching for data taken between '+start_time.strftime("%Y-%m-%d %H:%M")+\
                 ' and '+end_time.strftime("%Y-%m-%d %H:%M"))
-
-    # Optional time offset for debugging
-    #dt = timedelta(hours=24.0)
-    #start_time -= dt
 
     return start_time, end_time
 
@@ -150,6 +152,37 @@ def fetch_new_floyds_data(config, start_time, end_time, log):
 
     return new_floyds_frames
 
+def fetch_new_goodman_data(config, start_time, end_time, log):
+    """
+    Function to query the archive specifically for SOAR/Goodman data.
+    This is handled separately because the format of the processed data products is quite
+    different from imaging data.
+    """
+    log.info('Retriving new Goodman data')
+
+    new_goodman_frames = []
+
+    for proposal in config['soar_proposal_ids']:
+        log.info('Searching for data from proposal ' + proposal)
+        ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d %H:%M"),
+                                    'end': end_time.strftime("%Y-%m-%d %H:%M"),
+                                    'instrument_id': 'GHTS_RED',
+                                    'configuration_type': 'SPECTRUM'}
+
+        results = talk_to_lco_archive(config, ur, 'frames', 'GET')
+
+        # Build a list of new frames, excluding calibration data and spectra
+        new_goodman_frames = framelist_utils.build_goodman_frame_list(
+             config,
+             results,
+             proposal,
+             new_goodman_frames,
+             log)
+
+    log.info(str(len(new_goodman_frames)) + ' new Goodman frame(s)')
+
+    return new_goodman_frames
+
 def talk_to_lco_archive(config,ur,end_point,method):
     """Function to communicate with various APIs of the LCO network.
     ur should be a user request while end_point is the URL string which
@@ -188,10 +221,10 @@ def download_new_frames(config,new_frames,downloaded_frames,log):
     headers = {'Authorization': 'Token ' + config['lco_archive_token']}
 
     for frame in new_frames:
-
-        if frame.filename not in downloaded_frames.keys() and \
-            not framelist_utils.is_frame_calibration_data(frame.filename) and \
-            frame.proposalid in config['proposal_ids']:
+        altframe = frame.filename.replace('.fz','')
+        if (frame.filename not in downloaded_frames.keys() and altframe not in downloaded_frames.keys()) \
+                and not framelist_utils.is_frame_calibration_data(frame.filename) and \
+                (frame.proposalid in config['proposal_ids'] or frame.proposalid in config['soar_proposal_ids']):
             try:
                 response = requests.get(frame.url)
 

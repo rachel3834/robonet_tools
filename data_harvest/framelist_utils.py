@@ -148,6 +148,24 @@ def build_floyds_frame_list(config,query_results, proposal, new_frames, log):
 
     return new_frames
 
+def build_goodman_frame_list(config,query_results, proposal, new_frames, log):
+    """
+    Function to add the names of new Goodman frames to a list of frames to be downloaded.
+    This function is designed to handle the output from the Goodman spectroscopic data pipeline.
+    """
+
+    fcount = 0
+    for entry in query_results['results']:
+        if entry['proposal_id'] in config['soar_proposal_ids'] \
+                and 'wecfzst' in entry['basename']:
+            f = Frame(params=entry)
+            new_frames.append(f)
+            fcount += 1
+
+    log.info('Found '+str(fcount)+' frame(s) available from proposal '+proposal)
+
+    return new_frames
+
 def output_frame_list(config, frame_list, log=None):
 
     f = open(config['frame_list'],'w')

@@ -19,13 +19,13 @@ def prepare_data_for_reduction(CONFIG_FILE):
     # Identify newly downloaded data, handling the different formats of
     # compressed imaging data (single fits.fz files) and FLOYDS pipeline output
     # (tar.gz)
-    compressed_frames = check_for_new_imaging_frames(config, log)
+    compressed_frames = check_for_new_single_frames(config, log)
     compressed_floyds_frames = check_for_new_floyds_tarballs(config, log)
 
     if len(compressed_frames) > 0:
         log.info('Preparing and sorting imaging data')
 
-        decompressed_images = decompress_new_imaging_frames(config, log, compressed_frames)
+        decompressed_images = decompress_new_single_frames(config, log, compressed_frames)
 
         #transform_frames(decompressed_images, log)
 
@@ -47,7 +47,7 @@ def prepare_data_for_reduction(CONFIG_FILE):
 
     log_utils.close_log(log)
 
-def check_for_new_imaging_frames(config, log):
+def check_for_new_single_frames(config, log):
 
     if path.isdir(config['data_download_dir']) == False:
         log.info('ERROR: Cannot find data download directory')
@@ -66,7 +66,7 @@ def check_for_new_floyds_tarballs(config, log):
 
     return new_frames
 
-def decompress_new_imaging_frames(config, log, compressed_frames):
+def decompress_new_single_frames(config, log, compressed_frames):
 
     decompressed_frames = []
 
