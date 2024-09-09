@@ -100,21 +100,25 @@ def fetch_new_imaging_data(config, start_time, end_time, log):
     """Function to query the archive and retrieve a list of frames,
     described as dictionaries of frame parameters."""
 
-    log.info('Retrieving new imaging data')
-
     new_frames = []
-    for proposal in config['proposal_ids']:
+    if config['download_lco_imaging']:
+        log.info('Retrieving new imaging data')
 
-        ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d %H:%M"),
-                                    'end': end_time.strftime("%Y-%m-%d %H:%M"),
-                                    'RLEVEL': 91 }
+        for proposal in config['proposal_ids']:
 
-        results = talk_to_lco_archive(config, ur, 'frames', 'GET')
+            ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d %H:%M"),
+                                        'end': end_time.strftime("%Y-%m-%d %H:%M"),
+                                        'RLEVEL': 91 }
 
-        # Build a list of new frames, excluding calibration data and spectra
-        new_frames = framelist_utils.build_imaging_frame_list(config, results, proposal, new_frames, log)
+            results = talk_to_lco_archive(config, ur, 'frames', 'GET')
 
-    log.info(str(len(new_frames)) + ' new imaging frame(s)')
+            # Build a list of new frames, excluding calibration data and spectra
+            new_frames = framelist_utils.build_imaging_frame_list(config, results, proposal, new_frames, log)
+
+        log.info(str(len(new_frames)) + ' new imaging frame(s)')
+
+    else:
+        log.info('WARNING: Download of LCO imaging data switched off in the configuration')
 
     return new_frames
 
@@ -124,30 +128,34 @@ def fetch_new_floyds_data(config, start_time, end_time, log):
     This is handled separately because the format of the processed data products is quite
     different from imaging data.
     """
-    log.info('Retriving new FLOYDS data')
-
-    floyds_instruments = ['en06', 'en12']
     new_floyds_frames = []
 
-    for proposal in config['proposal_ids']:
-        for inst_id in floyds_instruments:
-            ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d %H:%M"),
-                                        'end': end_time.strftime("%Y-%m-%d %H:%M"),
-                                        'instrument_id': inst_id,
-                                        'RLEVEL': 90,
-                                        'configuration_type': 'SPECTRUM'}
+    if config['download_lco_2m_spectra']:
+        log.info('Retriving new FLOYDS data')
 
-            results = talk_to_lco_archive(config, ur, 'frames', 'GET')
+        floyds_instruments = ['en06', 'en12']
 
-            # Build a list of new frames, excluding calibration data and spectra
-            new_floyds_frames = framelist_utils.build_floyds_frame_list(
-                config,
-                results,
-                proposal,
-                new_floyds_frames,
-                log)
+        for proposal in config['proposal_ids']:
+            for inst_id in floyds_instruments:
+                ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d %H:%M"),
+                                            'end': end_time.strftime("%Y-%m-%d %H:%M"),
+                                            'instrument_id': inst_id,
+                                            'RLEVEL': 90,
+                                            'configuration_type': 'SPECTRUM'}
 
-    log.info(str(len(new_floyds_frames)) + ' new FLOYDS frame(s)')
+                results = talk_to_lco_archive(config, ur, 'frames', 'GET')
+
+                # Build a list of new frames, excluding calibration data and spectra
+                new_floyds_frames = framelist_utils.build_floyds_frame_list(
+                    config,
+                    results,
+                    proposal,
+                    new_floyds_frames,
+                    log)
+
+        log.info(str(len(new_floyds_frames)) + ' new FLOYDS frame(s)')
+    else:
+        log.info('WARNING: Download of LCO 2m spectroscopy data switched off in the configuration')
 
     return new_floyds_frames
 
@@ -157,28 +165,31 @@ def fetch_new_goodman_data(config, start_time, end_time, log):
     This is handled separately because the format of the processed data products is quite
     different from imaging data.
     """
-    log.info('Retriving new Goodman data')
-
     new_goodman_frames = []
 
-    for proposal in config['soar_proposal_ids']:
-        log.info('Searching for data from proposal ' + proposal)
-        ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d %H:%M"),
-                                    'end': end_time.strftime("%Y-%m-%d %H:%M"),
-                                    'instrument_id': 'GHTS_RED',
-                                    'configuration_type': 'SPECTRUM'}
+    if config['download_soar_spectra']:
+        log.info('Retriving new Goodman data')
 
-        results = talk_to_lco_archive(config, ur, 'frames', 'GET')
+        for proposal in config['soar_proposal_ids']:
+            log.info('Searching for data from proposal ' + proposal)
+            ur = { 'PROPID': proposal, 'start': start_time.strftime("%Y-%m-%d %H:%M"),
+                                        'end': end_time.strftime("%Y-%m-%d %H:%M"),
+                                        'instrument_id': 'GHTS_RED',
+                                        'configuration_type': 'SPECTRUM'}
 
-        # Build a list of new frames, excluding calibration data and spectra
-        new_goodman_frames = framelist_utils.build_goodman_frame_list(
-             config,
-             results,
-             proposal,
-             new_goodman_frames,
-             log)
+            results = talk_to_lco_archive(config, ur, 'frames', 'GET')
 
-    log.info(str(len(new_goodman_frames)) + ' new Goodman frame(s)')
+            # Build a list of new frames, excluding calibration data and spectra
+            new_goodman_frames = framelist_utils.build_goodman_frame_list(
+                 config,
+                 results,
+                 proposal,
+                 new_goodman_frames,
+                 log)
+
+        log.info(str(len(new_goodman_frames)) + ' new Goodman frame(s)')
+    else:
+        log.info('WARNING: Download of SOAR spectroscopy data switched off in the configuration')
 
     return new_goodman_frames
 

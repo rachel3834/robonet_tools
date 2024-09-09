@@ -6,5 +6,9 @@
     "frame_list": "/Users/rstreet1/OMEGA/omega_frame_list.txt",
     "data_download_dir": "/Users/rstreet1/OMEGA/incoming",
     "start_datetime": "None",
-    "end_datetime": "None"
+    "end_datetime": "None",
+    "download_lco_imaging": "True",
+    "download_lco_1m_spectra": "True",
+    "download_lco_2m_spectra": "True",
+    "download_soar_spectra": "True"
 }
