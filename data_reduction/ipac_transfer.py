@@ -39,8 +39,7 @@ def upload_file_to_ipac(args, config, file_path):
 
     # Build the command to execute
     cmd = ('java -jar ' + args.fdt_exec + ' -c ' + config['url']
-            + ' -p ' + str(config['port']) + ' -d ' + config['dir_path']
-            + ' ' + file_path)
+            + ' -p ' + str(config['port']) + ' -d INBOX ' + file_path)
 
     # Run this command synchronously
     result = subprocess.run(cmd)
