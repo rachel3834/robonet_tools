@@ -27,8 +27,7 @@ def transfer_field_dataset(args):
         for file in files:
             file_path = path.join(root, file)
 
-            upload_file_to_ipac(args, config, file_path)
-            exit()
+            upload_file_to_ipac(args, config, file_path, log)
 
     close_log(log)
 
