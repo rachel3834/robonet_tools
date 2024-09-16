@@ -32,7 +32,7 @@ def transfer_field_dataset(args):
 
     close_log(log)
 
-def upload_file_to_ipac(args, config, file_path):
+def upload_file_to_ipac(args, config, file_path, log):
     """
     Function to upload a single file to IPAC
     """
@@ -42,9 +42,10 @@ def upload_file_to_ipac(args, config, file_path):
             '-p', str(config['port']), '-d', 'INBOX', file_path])
 
     # Run this command synchronously
+    log.info('Upload cmd: ' + ' '.join(cmd))
     result = subprocess.run(cmd)
 
-    print(result.stdout)
+    log.info(result.stdout)
 
 def load_fdt_config(args):
     """
