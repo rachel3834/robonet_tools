@@ -204,6 +204,23 @@ def output_to_ipactable(args, source_table, log):
 
     tbl_file.close()
 
+def read_ipactable(file_path):
+    """
+    Function to read the source catalog in IPAC table format
+    """
+
+    if not path.isfile(file_path):
+        raise IOError('Cannot find IPAC source catalog ' + file_path)
+
+    file_lines = open(file_path, 'r').readlines()
+
+    source_catalog = []
+    for line in file_lines:
+        if '\\' not in line[0:1] and '|' not in line[0:1]:
+            source_catalog.append(line.replace('\n','').split())
+
+    return source_catalog
+
 def bin_num_string(num):
     num = str(num)
     while len(num) < 6:
@@ -342,6 +359,12 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
 
     source_table = Table(column_list)
     log.info('Built source catalog table')
+
+    # Filter the source_table for entries where no Gaia source ID is available,
+    # and ensure that the entry is given as null not None
+    jdx = source_table['gaia_source_id'] == None
+    print(jdx)
+    print(source_table['gaia_source_id'][jdx])
 
     # DATA POPULATION
     # ROME/REA photometry were normalized by selecting the instruments used for
