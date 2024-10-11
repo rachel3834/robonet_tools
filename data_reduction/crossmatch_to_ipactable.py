@@ -47,7 +47,7 @@ def load_starcounts(args, log=None):
 
     starcounts = {}
     for qid in range(1,5,1):
-        input_file = path.join(args.output_dir, args.field_name + '_starcounts_Q' + str(qid) + '.json')
+        input_file = path.join(args.output_dir, '..', args.field_name + '_starcounts_Q' + str(qid) + '.json')
 
         if not path.isfile(input_file):
             raise IOError('Missing star count data for field quadrants.  Looking for ' + input_file)
