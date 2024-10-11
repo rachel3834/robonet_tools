@@ -144,9 +144,9 @@ def define_table_columns():
         'cal_mag_error_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 15},
         'norm_mag_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 10},
         'norm_mag_error_i': {'type': 'float', 'unit': 'mag', 'nulls': '0.0', 'width': 16},
-        'ndata_g': {'type': 'int', 'unit': 'null', 'nulls': '0.0', 'width': 7},
-        'ndata_r': {'type': 'int', 'unit': 'null', 'nulls': '0.0', 'width': 7},
-        'ndata_i': {'type': 'int', 'unit': 'null', 'nulls': '0.0', 'width': 7},
+        'ndata_g': {'type': 'int', 'unit': 'null', 'nulls': '0', 'width': 7},
+        'ndata_r': {'type': 'int', 'unit': 'null', 'nulls': '0', 'width': 7},
+        'ndata_i': {'type': 'int', 'unit': 'null', 'nulls': '0', 'width': 7},
         'lc_file_path': {'type': 'char', 'unit': 'null', 'nulls': 'null', 'width': 300}
     }
 
@@ -364,8 +364,7 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     # and ensure that the entry is given as null not None
     jdx = source_table['gaia_source_id'] == 'None'
     source_table['gaia_source_id'][jdx] = 'null'
-    print(source_table['gaia_source_id'][jdx])
-    
+
     # DATA POPULATION
     # ROME/REA photometry were normalized by selecting the instruments used for
     # the survey data as primary references.
