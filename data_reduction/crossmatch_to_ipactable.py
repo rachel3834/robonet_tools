@@ -362,7 +362,7 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
 
     # Filter the source_table for entries where no Gaia source ID is available,
     # and ensure that the entry is given as null not None
-    jdx = source_table['gaia_source_id'] == None
+    jdx = source_table['gaia_source_id'] == 'None'
     print(jdx)
     print(type(source_table['gaia_source_id'][0]))
     print(source_table['gaia_source_id'][jdx])
