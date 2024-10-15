@@ -52,18 +52,18 @@ def convert_to_ipac_lightcurves(args):
         if star_datacount['gp'] > 0 or star_datacount['rp'] > 0 or star_datacount['ip'] > 0:
             lc_file_path = output_to_ipac_lightcurve(args, field_id, quad_id, xmatch, lc)
 
-        # Upload the lightcurve to the AWS Bucket
-        if upload_aws:
-            aws_utils.upload_file(aws_config, lc_file_path, args.output_dir,
-                              args.aws_root)
+            # Upload the lightcurve to the AWS Bucket
+            if upload_aws:
+                aws_utils.upload_file(aws_config, lc_file_path, args.output_dir,
+                                  args.aws_root)
 
-        # Remove the temporary local copy of the lightcurve to save space:
-        #remove(lc_file_path)
+            # Remove the temporary local copy of the lightcurve to save space:
+            #remove(lc_file_path)
 
-        if j%1000 == 0.0:
-            log.info('-> Completed output of lightcurve ' + str(j) + ', row='
-                     + str(row) + ', field_id=' + str(field_id) + ', quad_id=' + str(quad_id)
-                     + ' to file ' + lc_file_path)
+            if j%1000 == 0.0:
+                log.info('-> Completed output of lightcurve ' + str(j) + ', row='
+                         + str(row) + ', field_id=' + str(field_id) + ', quad_id=' + str(quad_id)
+                         + ' to file ' + lc_file_path)
 
         # TEMPORARY CAP FOR TESTING
         #if j%10 == 0.0:
