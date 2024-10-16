@@ -257,10 +257,10 @@ def read_ipactable(file_path):
             source_catalog_data.append(line.replace('\n','').split())
     source_catalog_data = np.array(source_catalog_data)
 
-    print(source_catalog_data[0])
+    print(source_catalog_data[:,0])
 
     column_names = table_column_names()
-    columns = [Column(name=col, data=source_catalog_data[i]) for i,col in enumerate(column_names)]
+    columns = [Column(name=col, data=source_catalog_data[:,i]) for i,col in enumerate(column_names)]
     source_catalog = Table(columns)
     print(source_catalog.colnames)
 
