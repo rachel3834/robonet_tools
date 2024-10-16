@@ -262,6 +262,7 @@ def read_ipactable(file_path):
     column_names = table_column_names()
     columns = [Column(name=col, data=source_catalog_data[i]) for i,col in enumerate(column_names)]
     source_catalog = Table(columns)
+    print(source_catalog.colnames)
 
     return source_catalog
 
