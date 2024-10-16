@@ -257,9 +257,8 @@ def read_ipactable(file_path):
             entries = []
             for item in line.replace('\n','').split():
                 entries.append(item)
-            print(entries)
             source_catalog_data.append(entries)
-    source_catalog_data = np.array(source_catalog_data)
+    source_catalog_data = np.array(source_catalog_data, dtype=object)
 
     print(source_catalog_data)
     print(source_catalog_data.shape)
