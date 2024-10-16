@@ -16,9 +16,9 @@ def check_data_products(args):
     source_catalog_file = path.join(args.output_dir, args.field_name + '_source_table.tbl')
     source_catalog = crossmatch_to_ipactable.read_ipactable(source_catalog_file)
     print('Loaded source catalog of ' + str(len(source_catalog)) + ' stars')
-    print(source_catalog)
 
     # Load the original starcount files to verify the number of lightcurves expected
+    print('Verifying stars with non-zero data counts present in source catalog...')
     starcounts = crossmatch_to_ipactable.load_starcounts(args)
     for star_id, counts in starcounts.items():
         if counts['gp'] > 0 or counts['rp'] > 0 or counts['ip'] > 0:
@@ -30,7 +30,7 @@ def check_data_products(args):
     print('Verifying presence of lightcurve files...')
     for star in source_catalog:
         lc_path = path.join(args.output_dir, star[-1])
-        if not path.isfile(lc_file):
+        if not path.isfile(lc_path):
             raise IOError('Cannot find expected lightcurve file ' + lc_path)
 
 def get_args():
