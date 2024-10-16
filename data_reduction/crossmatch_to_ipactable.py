@@ -260,6 +260,7 @@ def read_ipactable(file_path):
         if '\\' not in line[0:1] and '|' not in line[0:1]:
             entries = line.replace('\n','').split()
             for i,col in enumerate(column_names):
+                print(col, entries[i])
                 if col in str_col_names:
                     source_catalog_data[col].append(entries[i])
                 elif col in int_col_names:
