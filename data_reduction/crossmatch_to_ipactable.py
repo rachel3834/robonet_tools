@@ -254,7 +254,7 @@ def read_ipactable(file_path):
     source_catalog_data = []
     for line in file_lines:
         if '\\' not in line[0:1] and '|' not in line[0:1]:
-            source_catalog_data.append(line.replace('\n','').split())
+            source_catalog_data.append(list(line.replace('\n','').split()))
     source_catalog_data = np.array(source_catalog_data)
 
     print(source_catalog_data)
