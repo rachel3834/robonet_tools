@@ -17,12 +17,13 @@ def check_data_products(args):
     source_catalog = crossmatch_to_ipactable.read_ipactable(source_catalog_file)
     print('Loaded source catalog of ' + str(len(source_catalog)) + ' stars')
     print(source_catalog)
-    
+
     # Load the original starcount files to verify the number of lightcurves expected
     starcounts = crossmatch_to_ipactable.load_starcounts(args)
     for star_id, counts in starcounts.items():
         if counts['gp'] > 0 or counts['rp'] > 0 or counts['ip'] > 0:
-
+            if star_id not in source_catalog['field_id']:
+                raise IOError('Cannot find star ' + str(star_id) + ' non-zero lightcurve entry in source_catalog')
 
     # Verify that there is a lightcurve file for all catalog entries with a non-zero ndata
     # in at least one passband
