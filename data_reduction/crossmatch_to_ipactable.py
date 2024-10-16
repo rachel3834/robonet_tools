@@ -251,6 +251,7 @@ def read_ipactable(file_path):
 
     file_lines = open(file_path, 'r').readlines()
 
+    column_names = table_column_names()
     str_col_names = ['name', 'field', 'gaia_source_id', 'ogle_event_id', 'ogle_variable_id',
                      'moa_event_id', 'kmtnet_event_id', 'spitzer_event', 'vvv_variable_id', 'lc_file_path']
     int_col_names = ['field_id', 'quadrant', 'quadrant_id', 'ndata_g', 'ndata_r', 'ndata_i']
@@ -266,7 +267,6 @@ def read_ipactable(file_path):
                 else:
                     source_catalog_data[col].append(float(entries[i]))
 
-    column_names = table_column_names()
     columns = [Column(name=col, data=source_catalog_data[col]) for col in column_names]
     source_catalog = Table(columns)
     print(source_catalog.colnames)
