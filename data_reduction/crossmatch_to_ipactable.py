@@ -255,7 +255,7 @@ def read_ipactable(file_path):
     str_col_names = ['name', 'field', 'gaia_source_id', 'ogle_event_id', 'ogle_variable_id',
                      'moa_event_id', 'kmtnet_event_id', 'spitzer_event', 'vvv_variable_id', 'lc_file_path']
     int_col_names = ['field_id', 'quadrant', 'quadrant_id', 'ndata_g', 'ndata_r', 'ndata_i']
-    source_catalog_data = {col: [] for col in enumerate(column_names)}
+    source_catalog_data = {col: [] for col in column_names}
     for line in file_lines:
         if '\\' not in line[0:1] and '|' not in line[0:1]:
             entries = line.replace('\n','').split()
