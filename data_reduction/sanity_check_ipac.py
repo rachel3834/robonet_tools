@@ -13,7 +13,7 @@ def check_data_products(args):
     print('Found a total of ' + str(len(lc_files)) + ' lightcurve data files')
 
     # Load the source catalog to get the expected number of stars
-    source_catalog_file = path.join(args.output_dir, args.field_id + '_source_table.tbl')
+    source_catalog_file = path.join(args.output_dir, args.field_name + '_source_table.tbl')
     source_catalog = crossmatch_to_ipactable.read_ipactable(source_catalog_file)
     print('Loaded source catalog of ' + str(len(source_catalog)) + ' stars')
 
@@ -33,7 +33,7 @@ def get_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('output_dir', help='Path to top-level data directory')
-    parser.add_argument('field_id', help='Name of field')
+    parser.add_argument('field_name', help='Name of field')
     args = parser.parse_args()
 
     return args
