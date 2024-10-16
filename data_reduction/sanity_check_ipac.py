@@ -18,9 +18,9 @@ def check_data_products(args):
     print('Loaded source catalog of ' + str(len(source_catalog)) + ' stars')
 
     # Load the original starcount files to verify the number of lightcurves expected
-    starcounts = load_starcounts(args, log)
+    starcounts = crossmatch_to_ipactable.load_starcounts(args, log)
     print(starcounts)
-    
+
     # Verify that there is a lightcurve file for all catalog entries with a non-zero ndata
     # in at least one passband
     print('Verifying presence of lightcurve files...')
