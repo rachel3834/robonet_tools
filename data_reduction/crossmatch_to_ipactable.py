@@ -152,6 +152,43 @@ def define_table_columns():
 
     return table_columns
 
+def table_column_names():
+
+    column_names = [
+        'name',
+        'field',
+        'field_id',
+        'ra',
+        'dec',
+        'quadrant',
+        'quadrant_id',
+        'gaia_source_id',
+        'ogle_event_id',
+        'ogle_variable_id',
+        'moa_event_id',
+        'kmtnet_event_id',
+        'spitzer_event',
+        'vvv_variable_id',
+        'cal_mag_g',
+        'cal_mag_error_g',
+        'norm_mag_g',
+        'norm_mag_error_g',
+        'cal_mag_r',
+        'cal_mag_error_r',
+        'norm_mag_r',
+        'norm_mag_error_r',
+        'cal_mag_i',
+        'cal_mag_error_i',
+        'norm_mag_i',
+        'norm_mag_error_i',
+        'ndata_g',
+        'ndata_r',
+        'ndata_i',
+        'lc_file_path'
+    ]
+
+    return column_names
+
 def output_to_ipactable(args, source_table, log):
     """Function to output the source table to the IPAC table format"""
 
@@ -214,10 +251,15 @@ def read_ipactable(file_path):
 
     file_lines = open(file_path, 'r').readlines()
 
-    source_catalog = []
+    source_catalog_data = []
     for line in file_lines:
         if '\\' not in line[0:1] and '|' not in line[0:1]:
-            source_catalog.append(line.replace('\n','').split())
+            source_catalog_data.append(line.replace('\n','').split())
+    source_catalog_data = np.array(source_catalog_data)
+
+    table_column_names = table_column_names()
+    columns = [Column(name=col, data=source_catalog_data[i]) for i,col in enumerate(table_column_names)]
+    source_catalog = Table(columns)
 
     return source_catalog
 
