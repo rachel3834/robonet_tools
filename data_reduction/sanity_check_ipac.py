@@ -29,7 +29,7 @@ def check_data_products(args):
     # in at least one passband
     print('Verifying presence of lightcurve files...')
     for star in source_catalog:
-        lc_path = path.join(args.output_dir, star[-1])
+        lc_path = path.join(args.output_dir, '..', star[-1])
         if not path.isfile(lc_path):
             raise IOError('Cannot find expected lightcurve file ' + lc_path)
 
