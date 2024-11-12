@@ -12,6 +12,6 @@ for (root,dirs,files) in walk(args.data_dir):
         if '.gz' not in f:
             file_path = path.join(root, f)
             result = subprocess.run(["gzip", file_path], capture_output=True, text=True)
-            if '.fits' in f: nlc += 1
+        if '.fits' in f: nlc += 1
 
 print('Found ' + str(nlc) + ' lightcurves')
