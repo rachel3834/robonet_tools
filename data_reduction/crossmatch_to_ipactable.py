@@ -387,9 +387,9 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     #}
     for field_id, entry in variable_catalog.items():
         field_idx = int(field_id) - 1
-        print(field_id, entry)
         for col_name, arr in cols.items():
             arr[field_idx] = entry[col_name]
+        print(field_id, entry)
 
     for col, arr in cols.items():
         column_list.append(Column(name=col, data=arr))
