@@ -370,16 +370,24 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
 
     # Include columns for crossmatches with other catalogs.  Default entry is the maximum width
     # of the column when empty
-    cols = {
-        'ogle_event_id': np.array(['null']*nstars),
-        'ogle_variable_id': np.array(['null']*nstars),
-        'moa_event_id': np.array(['null']*nstars),
-        'kmtnet_event_id': np.array(['null']*nstars),
-        'spitzer_event': np.array(['false']*nstars),
-        'vvv_variable_id': np.array(['null']*nstars)
-    }
+    table_columns = define_table_columns()
+    catalog_cols = [
+        'ogle_event_id', 'ogle_variable_id',
+        'moa_event_id', 'kmtnet_event_id', 'spitzer_event', 'vvv_variable_id'
+    ]
+    cols = {c: np.array([padd_column_entry('null', table_columns[c]['width'])]*nstars) for c in catalog_cols}
+    print(cols)
+    #cols = {
+    #    'ogle_event_id': np.array([padd_column_entry('null', table_columns[col]['width'])]'*nstars),
+    #    'ogle_variable_id': np.array(['null']*nstars),
+    #    'moa_event_id': np.array(['null']*nstars),
+    #    'kmtnet_event_id': np.array(['null']*nstars),
+    #    'spitzer_event': np.array(['false']*nstars),
+    #    'vvv_variable_id': np.array(['null']*nstars)
+    #}
     for field_id, entry in variable_catalog.items():
         field_idx = int(field_id) - 1
+        print(field_id, entry)
         for col_name, arr in cols.items():
             arr[field_idx] = entry[col_name]
 
