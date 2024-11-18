@@ -416,6 +416,7 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     # Filter the source_table for entries where no variable identifiers are available,
     # and ensure that the entry is given as null not None.  Also ensure any entries
     # in the Spitze catalog are given in lower case
+    catalog_cols += ['gaia_source_id']
     for c in catalog_cols:
         jdx = source_table[c] == 'None'
         source_table[c][jdx] = 'null'
