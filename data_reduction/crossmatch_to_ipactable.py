@@ -380,7 +380,10 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     for field_id, entry in variable_catalog.items():
         field_idx = int(field_id) - 1
         for col_name, arr in cols.items():
-            arr[field_idx] = entry[col_name]
+            if col_name == 'spitzer_event':
+                arr[field_idx] = str(entry[col_name]).lower()
+            else:
+                arr[field_idx] = entry[col_name]
 
     for col, arr in cols.items():
         column_list.append(Column(name=col, data=arr))
@@ -410,10 +413,13 @@ def extract_source_data(args, xmatch, variable_catalog, starcounts, log):
     source_table = Table(column_list)
     log.info('Built source catalog table')
 
-    # Filter the source_table for entries where no Gaia source ID is available,
-    # and ensure that the entry is given as null not None
-    jdx = source_table['gaia_source_id'] == 'None'
-    source_table['gaia_source_id'][jdx] = 'null'
+    # Filter the source_table for entries where no variable identifiers are available,
+    # and ensure that the entry is given as null not None.  Also ensure any entries
+    # in the Spitze catalog are given in lower case
+    for c in catalog_cols:
+        jdx = source_table[c] == 'None'
+        source_table[c][jdx] = 'null'
+
 
     # DATA POPULATION
     # ROME/REA photometry were normalized by selecting the instruments used for
