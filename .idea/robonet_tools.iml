@@ -6,6 +6,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="pyDANDIA" />
     <orderEntry type="module" module-name="OMEGAII" />
+    <orderEntry type="module" module-name="ROME" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="PLAIN" />

@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$USER_HOME$/OMEGAII/.idea/OMEGAII.iml" filepath="$USER_HOME$/OMEGAII/.idea/OMEGAII.iml" />
+      <module fileurl="file://$USER_HOME$/ROME/.idea/ROME.iml" filepath="$USER_HOME$/ROME/.idea/ROME.iml" />
       <module fileurl="file://$PROJECT_DIR$/../pyDANDIA/.idea/pyDANDIA.iml" filepath="$PROJECT_DIR$/../pyDANDIA/.idea/pyDANDIA.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/robonet_tools.iml" filepath="$PROJECT_DIR$/.idea/robonet_tools.iml" />
     </modules>
