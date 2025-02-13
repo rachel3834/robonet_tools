@@ -131,7 +131,7 @@ def review_data(args, log):
     for image in image_list:
         phot_file = (path.basename(image)).replace('.fits', '.pphot')
         if phot_file in phot_list:
-            data_set[image] = phot_file
+            data_set[image] = path.join(args.red_dir, 'phot', phot_file)
 
     log.info('Paired ' + str(len(data_set)) + ' phot files with images for upload')
 
