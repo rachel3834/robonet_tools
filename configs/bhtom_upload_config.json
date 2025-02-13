@@ -1,8 +1,8 @@
 {
     "urlroot": "https://uploadsvc2.astrolabs.pl/upload/",
     "bhtom_users": {
-        "lco_user_id1": "bhtom_token1",
-        "lco_user_id1": "bhtom_token1"
+        "lco_user_id1": ["bhtom_token1", "observer name"],
+        "lco_user_id1": ["bhtom_token1", "observer name"]
         },
     "log_dir": "/Users/rstreet1/OMEGA"
 }

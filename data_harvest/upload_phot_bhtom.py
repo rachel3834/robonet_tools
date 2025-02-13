@@ -1,3 +1,4 @@
+from os import path
 import argparse
 import requests
 import log_utils
@@ -28,7 +29,6 @@ def upload_photometry(args):
     # the required information from the image header, then upload the ASCII data table
     for image, phot_file in data_set.items():
         hdr = fits.getheader(path.join(args.red_dir, 'data', image))
-
         upload_phot_file(args, config, hdr, phot_file, log)
 
     log_utils.close_log(log)
@@ -74,7 +74,7 @@ def oname_lut(params, log):
         'cpt': 'SAAO',
         'coj': 'SS',
     }
-    site = sites['SITEID']
+    site = sites[params['SITEID']]
 
     if '1m0a' in params['TELID']:
         aperture_class = '1m'
@@ -95,6 +95,22 @@ def oname_lut(params, log):
     log.info('Identified image from ' + oname)
 
     return oname
+
+def parse_filter_id(lco_filter):
+    """
+    Function to interpret the LCO filter names to BHTOM's syntax.
+    This can be 'GaiaSP/any' or filter specific, e.g. 'GaiaSP/i'
+    """
+
+    bh_filter = 'GaiaSP/any'
+    if lco_filter == 'ip':
+        bh_filter = 'GaiaSP/i'
+    elif lco_filter == 'rp':
+        bh_filter = 'GaiaSP/i'
+    elif lco_filter == 'gp':
+        bh_filter = 'GaiaSP/g'
+
+    return bh_filter
 
 def review_data(args, log):
     """
@@ -127,14 +143,17 @@ def upload_phot_file(args, config, hdr, phot_file, log):
     """
 
     oname = oname_lut(hdr, log)
-    user_token = user_lut(config, hdr, log)
+    user_token, observer_name = user_lut(config, hdr, log)
+    bh_filter = parse_filter_id(hdr['FILTER'])
 
     ur = {
         'target': hdr['OBJECT'],
-        'filter': hdr['FILTER'],
+        'filter': bh_filter,
         'data_product_type': 'photometry',
         'dry_run': DRY_RUN,
         'observatory': oname,
+        'mjd': hdr['MJD-OBS'],
+        'observer': observer_name,
     }
 
     response = requests.post(
