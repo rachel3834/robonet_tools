@@ -67,6 +67,14 @@ def get_config_path():
 
         config_file_path = '/Users/rstreet1/ROMEREA/configs/aws.xml'
 
+    elif 'mac.lco.gtn' in str(host_name).lower():
+
+        config_file_path = '/Users/rstreet/ROME/configs/aws.xml'
+
+    elif 'compute.internal' in str(host_name).lower():
+
+        config_file_path = '/Users/rstreet/ROME/configs/aws.xml'
+
     elif 'einstein' in str(host_name).lower():
 
         config_file_path = '/data/romerea/configs/aws.xml'
@@ -78,5 +86,8 @@ def get_config_path():
     elif 'messier' in str(host_name).lower():
 
         config_file_path = '/data/messier/rstreet/config/aws.xml'
+
+    else:
+        raise IOError('Cannot find AWS config file path for host_name=' + str(host_name))
 
     return config_file_path

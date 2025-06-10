@@ -7,10 +7,14 @@ def list_aws_dir(aws_config,aws_dir_path):
 
     if aws_dir_path[-1:] != '/':
         aws_dir_path = aws_dir_path+'/'
+    if aws_dir_path[0:1] == '/':
+        aws_dir_path = aws_dir_path[1:]
 
     aws_path = os.path.join(aws_config.bucket, aws_dir_path)
+    print('PATH: ', aws_path, aws_config.bucket, aws_dir_path, type(aws_config.bucket))
 
     cl = ['aws', '--profile='+aws_config.profile,'s3','ls',aws_path]
+    print(cl)
 
     p = subprocess.Popen(cl, stdout=subprocess.PIPE)
     #p.wait()
