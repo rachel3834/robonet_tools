@@ -11,10 +11,8 @@ def list_aws_dir(aws_config,aws_dir_path):
         aws_dir_path = aws_dir_path[1:]
 
     aws_path = os.path.join(aws_config.bucket, aws_dir_path)
-    print('PATH: ', aws_path, aws_config.bucket, aws_dir_path, type(aws_config.bucket))
 
     cl = ['aws', '--profile='+aws_config.profile,'s3','ls',aws_path]
-    print(cl)
 
     p = subprocess.Popen(cl, stdout=subprocess.PIPE)
     #p.wait()
@@ -65,6 +63,16 @@ def aws_move(aws_config, src_path, dest_path):
 
     p = subprocess.Popen(cl, stdout=subprocess.PIPE)
     #p.wait()
+    stdoutput = p.communicate()[0].decode("utf-8")
+    print(stdoutput)
+
+def aws_rm(aws_config, src_path):
+    aws_src_path = os.path.join(aws_config.bucket, src_path)
+
+    cl = ['aws', '--profile=' + aws_config.profile, 's3', 'rm', aws_src_path]
+
+    p = subprocess.Popen(cl, stdout=subprocess.PIPE)
+    # p.wait()
     stdoutput = p.communicate()[0].decode("utf-8")
     print(stdoutput)
 
