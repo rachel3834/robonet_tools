@@ -7,6 +7,10 @@
     <orderEntry type="module" module-name="pyDANDIA" />
     <orderEntry type="module" module-name="OMEGAII" />
     <orderEntry type="module" module-name="ROME" />
+    <orderEntry type="module" module-name="mop" />
+    <orderEntry type="module" module-name="mop_venv" />
+    <orderEntry type="module" module-name="microlensing_photometry" />
+    <orderEntry type="module" module-name="romerea_toolkit" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="PLAIN" />

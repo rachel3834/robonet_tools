@@ -24,14 +24,14 @@ class Frame:
         self.param_mapping = {'url': 'url',
                             'filename': 'filename',
                             'DATE_OBS': 'dateobs',
-                            'PROPID': 'proposalid',
+                            'PROPID': 'proposalid', #
                             'INSTRUME': 'instrument',
-                            'OBJECT': 'object',
+                            'OBJECT': 'object', #
                             'SITEID': 'site',
                             'TELID': 'telescope',
                             'EXPTIME': 'exptime',
                             'FILTER': 'filter',
-                            'REQNUM': 'reqnum'}
+                            'REQNUM': 'reqnum'} #
 
         self.header_mapping = {'url': 'url',
                             'ORIGNAME': 'filename',

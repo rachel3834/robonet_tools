@@ -4,8 +4,12 @@
     <modules>
       <module fileurl="file://$USER_HOME$/OMEGAII/.idea/OMEGAII.iml" filepath="$USER_HOME$/OMEGAII/.idea/OMEGAII.iml" />
       <module fileurl="file://$USER_HOME$/ROME/.idea/ROME.iml" filepath="$USER_HOME$/ROME/.idea/ROME.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../microlensing_photometry/.idea/microlensing_photometry.iml" filepath="$PROJECT_DIR$/../microlensing_photometry/.idea/microlensing_photometry.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../mop/.idea/mop.iml" filepath="$PROJECT_DIR$/../mop/.idea/mop.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../mop_venv/.idea/mop_venv.iml" filepath="$PROJECT_DIR$/../mop_venv/.idea/mop_venv.iml" />
       <module fileurl="file://$PROJECT_DIR$/../pyDANDIA/.idea/pyDANDIA.iml" filepath="$PROJECT_DIR$/../pyDANDIA/.idea/pyDANDIA.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/robonet_tools.iml" filepath="$PROJECT_DIR$/.idea/robonet_tools.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../romerea_toolkit/.idea/romerea_toolkit.iml" filepath="$PROJECT_DIR$/../romerea_toolkit/.idea/romerea_toolkit.iml" />
     </modules>
   </component>
 </project>

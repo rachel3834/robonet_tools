@@ -2,6 +2,9 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../microlensing_photometry" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../mop" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../pyDANDIA" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../romerea_toolkit" vcs="Git" />
   </component>
 </project>
