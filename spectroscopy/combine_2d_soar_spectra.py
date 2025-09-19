@@ -36,15 +36,17 @@ def output_coadded_spectrum(args, coadd_hdr, coadd_data, image_files, images):
     hdu0 = fits.PrimaryHDU(data=coadd_data, header=coadd_hdr)
     hdulist = [hdu0]
 
-    mask_hdr = images[image_files[0]]['mask_header']
-    mask_data = images[image_files[0]]['mask_data']
-    hdu1 = fits.ImageHDU(data=mask_data, header=mask_hdr)
-    hdulist.append(hdu1)
+    if 'mask_header' in images[image_files[0]].keys():
+        mask_hdr = images[image_files[0]]['mask_header']
+        mask_data = images[image_files[0]]['mask_data']
+        hdu1 = fits.ImageHDU(data=mask_data, header=mask_hdr)
+        hdulist.append(hdu1)
 
-    uncert_hdr = images[image_files[0]]['uncert_header']
-    uncert_data = np.sqrt(images[image_files[0]]['uncert_data'] ** 2 + images[image_files[1]]['uncert_data'] ** 2)
-    hdu2 = fits.ImageHDU(data=uncert_data, header=uncert_hdr)
-    hdulist.append(hdu2)
+    if 'uncert_header' in images[image_files[0]].keys():
+        uncert_hdr = images[image_files[0]]['uncert_header']
+        uncert_data = np.sqrt(images[image_files[0]]['uncert_data'] ** 2 + images[image_files[1]]['uncert_data'] ** 2)
+        hdu2 = fits.ImageHDU(data=uncert_data, header=uncert_hdr)
+        hdulist.append(hdu2)
 
     new_hdul = fits.HDUList(hdulist)
     new_hdul.writeto(args.output_file, overwrite=True)
@@ -159,7 +161,7 @@ def sanity_checks(args):
         if hdr['TELESCOP'] != 'SOAR 4.1m':
             raise IOError('Input spectrum ' + path.basename(f) + ' is not a SOAR spectrum')
 
-        if 'cfzst_' not in path.basename(f):
+        if 'cfzst_' not in path.basename(f) and 'cfsto_' not in path.basename(f):
             raise IOError('Input spectrum ' + path.basename(f)
                           + ' is not at the expected stage of reduction')
 def get_args():
