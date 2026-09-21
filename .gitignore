@@ -2,3 +2,7 @@
 
 *.mp4
 modeling/*mp4
+
+venv/
+.DS_Store
+.idea/*

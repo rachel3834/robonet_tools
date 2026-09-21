@@ -24,11 +24,21 @@ def output_mop_csv(args, mop_data):
     Function to output a Table of photometry data to the MOP-format CSV file
     """
 
-    with open(args.output_file, 'w', newline='') as csvfile:
-        csvwriter = csv.writer(csvfile, delimiter=',')
-        csvwriter.writerow(['time','filter','magnitude','error'])
-        for i in range(0, len(mop_data), 1):
-            csvwriter.writerow(mop_data[i])
+    # Impose a maximum number of rows to avoid triggering a 413 error on upload
+    # due to excessive filesize exceeding server limits
+    max_row = 7000
+
+    nfiles = int(len(mop_data)/max_row) + 1
+
+    for nf in range(0, nfiles, 1):
+        file_path = str(args.output_file).replace('.csv', '_'+str(nf)+'.csv')
+        min_row = nf*max_row
+        max_row = min(min_row + max_row, len(mop_data))
+        with open(file_path, 'w', newline='') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=',')
+            csvwriter.writerow(['time','filter','magnitude','error'])
+            for i in range(min_row, max_row, 1):
+                csvwriter.writerow(mop_data[i])
 
 def bhtom_to_mop(bhtom_data):
     """
@@ -36,7 +46,7 @@ def bhtom_to_mop(bhtom_data):
     photometry processor
     """
 
-    label = ['BH-'+bhtom_data['facility'][i]+'-'+bhtom_data['filter'][i]+'-'+bhtom_data['observer'][i]
+    label = ['BH-'+bhtom_data['filter'][i]
              for i in range(0,len(bhtom_data),1)]
 
     mop_data = Table([
